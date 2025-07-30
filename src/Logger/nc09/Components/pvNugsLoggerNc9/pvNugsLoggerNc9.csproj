@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+         <!-- TODO: Before release:
+         1. Replace with NuGet package:
+            <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.0.0" />
+         2. Ensure all integration tests pass with NuGet package
+         3. Update release notes if needed 
+         -->
+        <ProjectReference Include="..\..\..\..\EnumConv\nc09\Components\pvNugsEnumConvNc9\pvNugsEnumConvNc9.csproj" />
+        <ProjectReference Include="..\pvNugsLoggerNc9Abstractions\pvNugsLoggerNc9Abstractions.csproj" />
+    </ItemGroup>
+
+</Project>
