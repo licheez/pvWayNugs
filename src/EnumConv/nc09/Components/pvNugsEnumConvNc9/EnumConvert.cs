@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+// ReSharper disable MemberCanBePrivate.Global
 
 namespace pvNugsEnumConvNc9;
 
@@ -24,7 +25,7 @@ public static class EnumConvert
                 .GetCustomAttributes(
                     typeof(DescriptionAttribute), false);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // nop
         }
