@@ -10,6 +10,7 @@
          <!-- TODO: Before release:
          1. Replace with NuGet package:
             <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.0.0" />
+            <PackageReference Include="pvNugsEnumConvNc9" Version="9.0.0" />
          2. Ensure all integration tests pass with NuGet package
          3. Update release notes if needed 
          -->
