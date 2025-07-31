@@ -1,6 +1,5 @@
 
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -14,7 +13,7 @@ namespace pvNugsLoggerNc9;
 /// Implements <see cref="ILoggerService"/> interface and handles log message formatting,
 /// severity level filtering, and distribution to multiple log writers.
 /// </summary>
-internal abstract class BaseLoggerService(
+public abstract class BaseLoggerService(
     SeverityEnu minLevel,
     params ILogWriter[] logWriters) : ILoggerService
 {
@@ -439,13 +438,3 @@ internal abstract class BaseLoggerService(
         }
     }
 }
-/// <summary>
-/// Generic version of the base logger service that provides type-specific logging context.
-/// </summary>
-/// <typeparam name="T">The type that provides context for the logger.</typeparam>
-[SuppressMessage("CodeQuality", "S2326:Unused type parameters should be removed",
-    Justification = "Type parameter T is used for type safety in the logger hierarchy")]
-internal abstract class BaseLoggerService<T>(
-    SeverityEnu minLevel,
-    params ILogWriter[] logWriters)
-    : BaseLoggerService(minLevel, logWriters) where T : class;

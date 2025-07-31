@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-using Moq;
-
-namespace pvNugsEnumConvNc9.ut;
+﻿namespace pvNugsEnumConvNc9.ut;
 
 using System.ComponentModel;
 using Xunit;
