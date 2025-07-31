@@ -42,6 +42,17 @@ public static class EnumConvert
     }
 
     /// <summary>
+    /// Converts a string code to its corresponding enum value using the default equality matcher
+    /// </summary>
+    /// <typeparam name="T">The enum type to convert to.</typeparam>
+    /// <param name="code">The code string to convert.</param>
+    /// <returns>The matching enum value.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when code is null or empty.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when no matching enum value is found.</exception>
+    public static T GetValue<T>(string code) where T : Enum =>
+        GetValue<T>(code, Matcher);
+    
+    /// <summary>
     /// Converts a string code to its corresponding enum value using a custom matching function.
     /// </summary>
     /// <typeparam name="T">The enum type to convert to.</typeparam>
@@ -50,7 +61,9 @@ public static class EnumConvert
     /// <returns>The matching enum value.</returns>
     /// <exception cref="ArgumentNullException">Thrown when code is null or empty.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when no matching enum value is found.</exception>
-    public static T GetValue<T>(string code, Func<string, string, bool> match) where T : Enum
+    public static T GetValue<T>(
+        string code, 
+        Func<string, string, bool> match) where T : Enum
     {
         if (string.IsNullOrEmpty(code)) 
             throw new ArgumentNullException(nameof(code));

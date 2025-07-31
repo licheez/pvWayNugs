@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsEnumConvNc9.ut", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc9Seri", "src\Logger\nc09\Components\pvNugsLoggerNc9Seri\pvNugsLoggerNc9Seri.csproj", "{BD459784-AE83-4350-8FFD-A8518D89BEB1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc9ResWrapper", "src\Logger\nc09\Components\pvNugsLoggerNc9ResWrapper\pvNugsLoggerNc9ResWrapper.csproj", "{2B88123F-62A1-45F9-94E3-D9DE0D992100}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,7 @@ Global
 		{1362075F-385D-450E-9580-0A475F733417} = {AD9D6353-F2B0-4A3A-9DAD-14DA3E948C44}
 		{8036205E-7CD6-4796-9A81-4A504CA7A806} = {6EA76435-1C66-48CE-891E-DB5F441C4B38}
 		{BD459784-AE83-4350-8FFD-A8518D89BEB1} = {3B7DB1E3-C1FA-4A69-8F21-24F014AE2366}
+		{2B88123F-62A1-45F9-94E3-D9DE0D992100} = {3B7DB1E3-C1FA-4A69-8F21-24F014AE2366}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -65,5 +68,9 @@ Global
 		{BD459784-AE83-4350-8FFD-A8518D89BEB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD459784-AE83-4350-8FFD-A8518D89BEB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD459784-AE83-4350-8FFD-A8518D89BEB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B88123F-62A1-45F9-94E3-D9DE0D992100}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B88123F-62A1-45F9-94E3-D9DE0D992100}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B88123F-62A1-45F9-94E3-D9DE0D992100}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B88123F-62A1-45F9-94E3-D9DE0D992100}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
