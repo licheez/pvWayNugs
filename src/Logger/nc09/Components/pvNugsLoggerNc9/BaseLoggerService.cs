@@ -21,6 +21,15 @@ public abstract class BaseLoggerService(
     private string? _companyId;
     private string? _topic;
 
+    private bool _disposed;
+    
+    // No-op scope to prevent disposing the logger when scopes end
+    private sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+        public void Dispose() { }
+    }
+
     /// <inheritdoc />
     public void Log<TState>(
         LogLevel logLevel,
@@ -29,7 +38,16 @@ public abstract class BaseLoggerService(
         Exception? exception,
         Func<TState, Exception?, string> formatter)
     {
+        var severity = GetSeverity(logLevel);
+        if (severity < minLevel) return;
+        
         var logMessage = formatter(state, exception);
+        
+        // Append exception details (message + stack trace) if provided
+        if (exception != null)
+        {
+            logMessage += Environment.NewLine + exception;
+        }
 
         if (exception != null)
         {
@@ -49,8 +67,6 @@ public abstract class BaseLoggerService(
 
             logMessage += Environment.NewLine + sb;
         }
-
-        var severity = GetSeverity(logLevel);
 
         var stackTrace = new StackTrace(true);
         var frame = stackTrace.GetFrames()
@@ -78,7 +94,7 @@ public abstract class BaseLoggerService(
     /// <inheritdoc />
     public IDisposable BeginScope<TState>(TState state) where TState : notnull
     {
-        return this;
+        return NullScope.Instance;
     }
 
     /// <inheritdoc />
@@ -94,10 +110,17 @@ public abstract class BaseLoggerService(
     /// <param name="disposing">true to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
-        foreach (var logWriter in logWriters)
+        if (_disposed) return;
+        
+        if (disposing)
         {
-            logWriter.Dispose();
+            foreach (var logWriter in logWriters)
+            {
+                logWriter.Dispose();
+            }
         }
+        
+        _disposed = true;
     }
 
     /// <summary>
@@ -109,14 +132,22 @@ public abstract class BaseLoggerService(
     }
 
     /// <inheritdoc />
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        foreach (var logWriter in logWriters)
+        if (_disposed)
         {
-            logWriter.DisposeAsync();
+            GC.SuppressFinalize(this);
+            return;
         }
+        
+        // Asynchronously dispose all writers in parallel
+        var tasks = logWriters
+            .Select(w => w.DisposeAsync().AsTask());
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        
+        _disposed = true;
+
         GC.SuppressFinalize(this);
-        return new ValueTask();
     }
 
     /// <inheritdoc />
@@ -398,15 +429,21 @@ public abstract class BaseLoggerService(
         if (severity < minLevel)
             return;
 
+        var now = DateTime.UtcNow;
+        var machineName = Environment.MachineName;
+
+        var tasks = new List<Task>(logWriters.Length);
         foreach (var logWriter in logWriters)
         {
-            await logWriter.WriteLogAsync(
+            tasks.Add(logWriter.WriteLogAsync(
                 _userId, _companyId, topic,
                 severity,
-                Environment.MachineName,
+                machineName,
                 memberName, filePath, lineNumber,
-                message, DateTime.UtcNow);
+                message, now));
         }
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     /// <summary>
