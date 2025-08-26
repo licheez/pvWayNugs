@@ -5,7 +5,7 @@ using pvNugsLoggerNc9Abstractions;
 
 namespace pvNugsCacheNc9Local;
 
-public class Cache(
+internal class Cache(
     ILoggerService logger,
     IMemoryCache cache,
     IOptions<PvNugsCacheConfig> options) : IPvNugsCache
