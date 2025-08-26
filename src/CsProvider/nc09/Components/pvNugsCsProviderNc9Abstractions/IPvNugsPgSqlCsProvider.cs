@@ -18,9 +18,12 @@ public interface IPvNugsPgSqlCsProvider : IPvNugsCsProvider
     bool UseDynamicCredentials { get; }
 
     /// <summary>
-    /// Gets the username used for database authentication.
+    /// Retrieves the username associated with the specified SQL role.
     /// </summary>
-    string UserName { get; }
+    /// <param name="role">The SQL role for which the username is requested.</param>
+    /// <returns>The username associated with the specified SQL role.
+    /// Returns an empty string if the role does not exist.</returns>
+    string GetUsername(SqlRoleEnu role);
 
     /// <summary>
     /// Gets the Postgres schema name used for database operations.

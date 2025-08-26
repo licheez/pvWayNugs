@@ -10,7 +10,10 @@ public interface IPvNugsCsProvider
     /// </summary>
     /// <param name="role">The SQL role that determines the access level for the connection string. 
     /// Defaults to SqlRoleEnu.Reader if not specified.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A task that represents the asynchronous operation. The task result contains 
     /// the connection string for the specified role.</returns>
-    Task<string> GetConnectionStringAsync(SqlRoleEnu? role = SqlRoleEnu.Reader);
+    Task<string> GetConnectionStringAsync(
+        SqlRoleEnu role = SqlRoleEnu.Reader,
+        CancellationToken cancellationToken = default);
 }

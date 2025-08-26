@@ -45,7 +45,7 @@ public static class PvNugsLoggerSeriDi
     ///    - <see cref="IConsoleLoggerService"/>
     ///    - <see cref="ISeriConsoleLoggerService"/>
     /// </remarks>
-    public static IServiceCollection AddPvNugsLoggerSeriService(
+    public static IServiceCollection TryAddPvNugsLoggerSeriService(
         this IServiceCollection services,
         IConfiguration config)
     {

@@ -12,14 +12,16 @@ namespace pvNugsCsProviderNc9ByFunc;
 /// This function accepts a nullable SQL role and returns the corresponding connection string.</param>
 internal class CsProvider(
     IConsoleLoggerService logger,
-    Func<SqlRoleEnu?, Task<string>> getCsAsync) : IPvNugsCsProvider
+    Func<SqlRoleEnu, CancellationToken, Task<string>> getCsAsync) : IPvNugsCsProvider
 {
     /// <inheritdoc/>
-    public async Task<string> GetConnectionStringAsync(SqlRoleEnu? role = SqlRoleEnu.Reader)
+    public async Task<string> GetConnectionStringAsync(
+        SqlRoleEnu role = SqlRoleEnu.Reader,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            return await getCsAsync(role);
+            return await getCsAsync(role, cancellationToken);
         }
         catch (Exception e)
         {
@@ -27,4 +29,6 @@ internal class CsProvider(
             throw new PvNugsCsProviderException(e);
         }
     }
+
+
 }

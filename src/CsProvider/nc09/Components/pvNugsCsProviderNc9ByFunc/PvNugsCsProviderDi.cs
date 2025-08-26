@@ -24,10 +24,11 @@ public static class PvNugsCsProviderDi
     /// </remarks>
     public static IServiceCollection AddPvNugsCsProvider(
         this IServiceCollection services,
-        Func<SqlRoleEnu?, Task<string>> getCsAsync)
+        Func<SqlRoleEnu?, CancellationToken?, Task<string>> getCsAsync)
     {
         services.TryAddSingleton<
-            Func<SqlRoleEnu?, Task<string>>>(_ => getCsAsync);
+            Func<SqlRoleEnu?, CancellationToken?, Task<string>>>(
+            _ => getCsAsync);
         services.TryAddSingleton<IPvNugsCsProvider, CsProvider>();
         return services;
     }

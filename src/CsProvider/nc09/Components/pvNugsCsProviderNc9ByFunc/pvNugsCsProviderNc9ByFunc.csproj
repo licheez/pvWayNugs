@@ -22,7 +22,6 @@
         2. Ensure all integration tests pass with NuGet package
         3. Update release notes if needed 
         -->
-        <ProjectReference Include="..\..\..\..\..\pvNugsCsProviderNc9Abstractions\pvNugsCsProviderNc9Abstractions.csproj"/>
         <ProjectReference Include="..\..\..\..\Logger\nc09\Components\pvNugsLoggerNc9Abstractions\pvNugsLoggerNc9Abstractions.csproj"/>
 
         <None Include="readme.md" Pack="true" PackagePath="\"/>
@@ -30,6 +29,7 @@
             <Pack>true</Pack>
             <PackagePath>lib\$(TargetFramework)</PackagePath>
         </None>
+        <ProjectReference Include="..\pvNugsCsProviderNc9Abstractions\pvNugsCsProviderNc9Abstractions.csproj" />
     </ItemGroup>
 
 </Project>
