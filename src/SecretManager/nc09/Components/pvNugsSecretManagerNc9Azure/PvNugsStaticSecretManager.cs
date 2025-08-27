@@ -7,10 +7,10 @@ using pvNugsSecretManagerNc9Abstractions;
 
 namespace pvNugsSecretManagerNc9Azure;
 
-internal class PvNugsSecretManager(
+internal class PvNugsStaticSecretManager(
     ILoggerService logger,
     IOptions<PvNugsAzureSecretManagerConfig> options,
-    IPvNugsCache cache): IPvNugsSecretManager
+    IPvNugsCache cache): IPvNugsStaticSecretManager
 {
     private readonly PvNugsAzureSecretManagerConfig _config = options.Value;
 
@@ -46,7 +46,7 @@ internal class PvNugsSecretManager(
         try
         {
             // try to get the secret from the cache
-            var cacheKey = $"{nameof(PvNugsSecretManager)}-{secretName}";
+            var cacheKey = $"{nameof(PvNugsStaticSecretManager)}-{secretName}";
             var secretValue = await cache.GetAsync<string>(cacheKey, cancellationToken);
             if (secretValue != null) return secretValue;
 
@@ -66,12 +66,5 @@ internal class PvNugsSecretManager(
             await logger.LogAsync(e);
             throw new PvNugsSecretManagerException(e);
         }
-    }
-
-    public Task<IPvNugsDynamicCredential?> GetDynamicSecretAsync(
-        string secretName, 
-        CancellationToken cancellationToken = default)
-    {
-        throw new PvNugsSecretManagerException("Azure Vault does not support dynamic secrets.");
     }
 }

@@ -17,7 +17,7 @@ public static class PvNugsSecretManagerAzureDi
         services.Configure<PvNugsAzureSecretManagerConfig>(
             config.GetSection(PvNugsAzureSecretManagerConfig.Section));
         
-        services.TryAddSingleton<IPvNugsSecretManager, PvNugsSecretManager>();
+        services.TryAddSingleton<IPvNugsStaticSecretManager, PvNugsStaticSecretManager>();
         
         return services;
     }

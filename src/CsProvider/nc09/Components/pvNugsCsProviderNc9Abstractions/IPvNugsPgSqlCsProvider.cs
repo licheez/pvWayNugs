@@ -7,11 +7,6 @@ namespace pvNugsCsProviderNc9Abstractions;
 public interface IPvNugsPgSqlCsProvider : IPvNugsCsProvider
 {
     /// <summary>
-    /// Gets the SQL role associated with the current connection.
-    /// </summary>
-    SqlRoleEnu Role { get; }
-
-    /// <summary>
     /// Gets a value indicating whether the provider uses dynamic credentials
     /// for database connections.
     /// </summary>

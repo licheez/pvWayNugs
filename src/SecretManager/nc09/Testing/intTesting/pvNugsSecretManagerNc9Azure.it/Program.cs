@@ -33,7 +33,7 @@ services.TryAddPvNugsLoggerSeriService(config)
 var sp = services.BuildServiceProvider();
 
 var logger = sp.GetRequiredService<ILoggerService>();
-var svc = sp.GetRequiredService<IPvNugsSecretManager>();
+var svc = sp.GetRequiredService<IPvNugsStaticSecretManager>();
 
 await logger.LogAsync("Retrieving secret...");
 var secret = await svc.GetStaticSecretAsync("MyFirstSecretName");
