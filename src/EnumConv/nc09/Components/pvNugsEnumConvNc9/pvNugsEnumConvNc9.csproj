@@ -4,6 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Version>9.0.1</Version>
         <Authors>Pierre Van Wallendael</Authors>
         <PackageReleaseNotes>Initial</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
@@ -11,6 +12,10 @@
         <RepositoryType>GitHub</RepositoryType>
         <RepositoryBranch>main</RepositoryBranch>
         <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageTags>enum converter</PackageTags>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,6 +23,10 @@
         <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml" >
             <Pack>true</Pack>
             <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+          <Pack>True</Pack>
+          <PackagePath>/</PackagePath>
         </None>
     </ItemGroup>
 

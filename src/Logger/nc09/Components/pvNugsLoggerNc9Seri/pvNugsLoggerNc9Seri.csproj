@@ -11,28 +11,30 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
         <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
         <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageTags>Serilog console logger logging</PackageTags>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
       <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
+      <PackageReference Include="pvNugsLoggerNc9" Version="9.0.1" />
       <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <!-- TODO: Before release:
-        1. Replace with NuGet package:
-           <PackageReference Include="pvNugsLoggerNc9" Version="9.0.0" />
-        2. Ensure all integration tests pass with NuGet package
-        3. Update release notes if needed 
-        -->
-      <ProjectReference Include="..\pvNugsLoggerNc9\pvNugsLoggerNc9.csproj" />
-
         <None Include="readme.md" Pack="true" PackagePath="\"/>
         <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml" >
             <Pack>true</Pack>
             <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+          <Pack>True</Pack>
+          <PackagePath>/</PackagePath>
         </None>
         
     </ItemGroup>
