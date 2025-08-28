@@ -9,13 +9,18 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7"/>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7"/>
-        <ProjectReference Include="..\..\..\..\Logger\nc09\Components\pvNugsLoggerNc9Abstractions\pvNugsLoggerNc9Abstractions.csproj"/>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
+        <PackageReference Include="pvNugsCsProviderNc9Abstractions" Version="9.0.0" />
+        <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.0.1" />
+        
         <ProjectReference Include="..\..\..\..\SecretManager\nc09\Components\pvNugsSecretManagerNc9Abstractions\pvNugsSecretManagerNc9Abstractions.csproj" />
-        <ProjectReference Include="..\pvNugsCsProviderNc9Abstractions\pvNugsCsProviderNc9Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
+      <None Update="pvwayLogoTextLess256.png">
+        <Pack>True</Pack>
+        <PackagePath>/</PackagePath>
+      </None>
     </ItemGroup>
 
 </Project>
