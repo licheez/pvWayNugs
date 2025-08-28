@@ -70,8 +70,7 @@ public static class PvNugsCsProviderPgSqlDi
     /// <para>This method performs two key registrations:</para>
     /// <list type="number">
     /// <item><description>Configures <see cref="PvNugsCsProviderPgSqlConfig"/> using the Options pattern, binding to the configuration section specified by <see cref="PvNugsCsProviderPgSqlConfig.Section"/>.</description></item>
-    /// <item><description>Registers <see cref="CsProvider"/> as a singleton implementation of <see cref="IPvNugsCsProvider"/> using <see cref="ServiceCollectionServiceExtensions.TryAddSingleton{TService, TImplementation}(IServiceCollection)"/>.</description></item>
-    /// </list>
+    /// <item><description>Registers <see cref="CsProvider"/> as a singleton implementation of <see cref="IPvNugsCsProvider"/> using <see cref="Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton{TService, TImplementation}(IServiceCollection)"/>.</description></item>    /// </list>
     /// 
     /// <para><c>Dependency Resolution and Mode Detection:</c></para>
     /// <para>The provider automatically selects the appropriate constructor based on which dependencies are registered:</para>

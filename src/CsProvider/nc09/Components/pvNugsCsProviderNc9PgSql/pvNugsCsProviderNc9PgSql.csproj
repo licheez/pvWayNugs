@@ -4,23 +4,41 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Version>9.0.0</Version>
+        <Authors>Pierre Van Wallendael</Authors>
+        <PackageReleaseNotes>Initial</PackageReleaseNotes>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
+        <PackageTags>PostgreSQL ConnectionString Provider Database PgSql Npgsql ConnectionManagement SecretManager DynamicCredentials StaticSecrets RoleBasedAccess DatabaseSecurity Configuration Caching ThreadSafe Async NET9 pvWayNugs</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7"/>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7"/>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
-        <PackageReference Include="pvNugsCsProviderNc9Abstractions" Version="9.0.0" />
-        <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.0.1" />
-        
-        <ProjectReference Include="..\..\..\..\SecretManager\nc09\Components\pvNugsSecretManagerNc9Abstractions\pvNugsSecretManagerNc9Abstractions.csproj" />
+        <PackageReference Include="pvNugsCsProviderNc9Abstractions" Version="9.0.1" />
+        <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.0.1"/>
+        <PackageReference Include="pvNugsSecretManagerNc9Abstractions" Version="9.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="pvwayLogoTextLess256.png">
-        <Pack>True</Pack>
-        <PackagePath>/</PackagePath>
-      </None>
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+            <Pack>True</Pack>
+            <PackagePath>/</PackagePath>
+        </None>
+        <None Update="readme.md">
+          <Pack>true</Pack>
+          <PackagePath>\</PackagePath>
+        </None>
     </ItemGroup>
 
 </Project>

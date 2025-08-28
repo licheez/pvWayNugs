@@ -272,7 +272,7 @@ public class CsProvider(
         {
             var secretName = $"{_config.SecretName}-{role}";
             var password = await
-                _staticSecretManager!.GetStaticSecretAsync(
+                _staticSecretManager.GetStaticSecretAsync(
                     secretName, cancellationToken);
             if (password == null)
             {
@@ -318,7 +318,7 @@ public class CsProvider(
         {
             var secretName = $"{_config.SecretName}-{role}";
             var dbSecret = await
-                _dynamicSecretManager!.GetDynamicSecretAsync(
+                _dynamicSecretManager.GetDynamicSecretAsync(
                     secretName, cancellationToken);
             if (dbSecret == null)
             {
