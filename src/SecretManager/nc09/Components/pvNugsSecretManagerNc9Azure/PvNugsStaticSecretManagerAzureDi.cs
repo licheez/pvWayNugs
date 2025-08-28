@@ -1,16 +1,13 @@
-using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
-using pvNugsLoggerNc9Abstractions;
 using pvNugsSecretManagerNc9Abstractions;
 
 namespace pvNugsSecretManagerNc9Azure;
 
-public static class PvNugsSecretManagerAzureDi
+public static class PvNugsStaticSecretManagerAzureDi
 {
-    public static IServiceCollection TryAddPvNugsAzureSecretManager(
+    public static IServiceCollection TryAddPvNugsAzureStaticSecretManager(
         this IServiceCollection services,
         IConfiguration config)
     {

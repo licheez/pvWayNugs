@@ -28,7 +28,7 @@ var services = new ServiceCollection();
 
 services.TryAddPvNugsLoggerSeriService(config)
     .TryAddPvNugsCacheNc9Local(config)
-    .TryAddPvNugsAzureSecretManager(config);
+    .TryAddPvNugsAzureStaticSecretManager(config);
 
 var sp = services.BuildServiceProvider();
 

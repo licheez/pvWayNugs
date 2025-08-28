@@ -64,7 +64,7 @@ internal class PvNugsStaticSecretManager(
         catch (Exception e)
         {
             await logger.LogAsync(e);
-            throw new PvNugsSecretManagerException(e);
+            throw new PvNugsStaticSecretManagerException(e);
         }
     }
 }
