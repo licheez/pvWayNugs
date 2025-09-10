@@ -1,128 +1,302 @@
-# pvNugsCsProviderNc9Abstractions
+# pvNugs Connection String Provider Abstractions
 
-A .NET library providing abstractions for managing database connection strings with role-based access control. This package defines the core interfaces and contracts for connection string providers without being tied to any specific database technology.
+[![NuGet Version](https://img.shields.io/nuget/v/pvNugsCsProviderNc9Abstractions.svg)](https://www.nuget.org/packages/pvNugsCsProviderNc9Abstractions/)
+[![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/download)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+A comprehensive .NET 9.0 abstraction library for database connection string providers with support for multiple database types, authentication modes, and role-based access control. This package provides interfaces and contracts for integrating with various database systems including PostgreSQL and Microsoft SQL Server.
 
-- Role-based connection string management
-- Database-agnostic connection string provider abstractions
-- Support for dynamic credentials
-- Schema-aware configuration
-- Async-first design
-- Clean separation between abstractions and implementations
-- .NET 9.0 target framework support
+## 🔐 Features
 
-## Installation
+- **Multi-Database Support**: Unified abstractions for PostgreSQL and Microsoft SQL Server
+- **Multiple Authentication Modes**: Support for config-based, static secrets, and dynamic credentials
+- **Role-Based Access Control**: Built-in support for Owner, Application, and Reader roles
+- **Secure Credential Management**: Integration with secret management systems
+- **Thread-Safe Operations**: Designed for concurrent access in multi-threaded applications
+- **Comprehensive Documentation**: Extensive XML documentation with examples and best practices
 
-Install the package via NuGet:
-
-```bash
+## 📦 Installation
+```
+bash
 dotnet add package pvNugsCsProviderNc9Abstractions
 ```
+Or via Package Manager Console:
+```
+powershell
+Install-Package pvNugsCsProviderNc9Abstractions
+```
+## 🚀 Quick Start
 
-## Usage
-
-### Basic Connection String Provider
-
-```csharp
-// Inject the provider
-public class MyService
+### Basic Connection String Provider Usage
+```
+csharp
+public class DatabaseService
 {
-    private readonly IPvNugsCsProvider _connectionStringProvider;
+private readonly IPvNugsCsProvider _csProvider;
 
-    public MyService(IPvNugsCsProvider connectionStringProvider)
+    public DatabaseService(IPvNugsCsProvider csProvider)
     {
-        _connectionStringProvider = connectionStringProvider;
+        _csProvider = csProvider;
     }
 
-    public async Task ConnectToDatabase()
+    public async Task<List<User>> GetUsersAsync()
     {
-        // Get connection string with default reader role
-        string connectionString = await _connectionStringProvider.GetConnectionStringAsync();
+        // Get connection string for Reader role (least privilege)
+        var connectionString = await _csProvider.GetConnectionStringAsync(SqlRoleEnu.Reader);
         
-        // Or specify a different role
-        string ownerConnectionString = await _connectionStringProvider.GetConnectionStringAsync(SqlRoleEnu.Owner);
+        // Use connection string with your preferred data access technology
+        // (Entity Framework, Dapper, ADO.NET, etc.)
+        return users;
     }
 }
 ```
-
-
-### Database-Specific Provider Interface
-
-```csharp
-// Example using a database-specific provider interface
-public class MyDatabaseService
+### PostgreSQL-Specific Usage
+```
+csharp
+public class PostgreSqlService
 {
-    private readonly IDatabaseSpecificCsProvider _provider;
+private readonly IPvNugsPgSqlCsProvider _pgProvider;
 
-    public MyDatabaseService(IDatabaseSpecificCsProvider provider)
+    public PostgreSqlService(IPvNugsPgSqlCsProvider pgProvider)
     {
-        _provider = provider;
+        _pgProvider = pgProvider;
     }
 
-    public void ConfigureConnection()
+    public async Task<string> GetPostgreSqlConnectionAsync()
     {
-        // Access database-specific properties
-        string schema = _provider.Schema;
-        string username = _provider.UserName;
-        bool usesDynamicCreds = _provider.UseDynamicCredentials;
-        SqlRoleEnu currentRole = _provider.Role;
+        var connectionString = await _pgProvider.GetConnectionStringAsync(SqlRoleEnu.Application);
+        var schema = _pgProvider.GetSchema();
+        var useDynamic = _pgProvider.UseDynamicCredentials;
+        
+        return connectionString;
     }
 }
 ```
-
-## Available Roles
-
-The package defines three levels of database access roles:
-
-- `SqlRoleEnu.Owner` - Highest privilege level with full database control
-- `SqlRoleEnu.Application` - Standard application-level privileges with write access
-- `SqlRoleEnu.Reader` - Read-only access level
-
-## Architecture
-
-This abstractions package provides:
-
-- **Core interfaces** for connection string providers
-- **Role enumeration** for access level management
-- **Base contracts** for database-specific implementations
-- **Async patterns** for modern application development
-
-The actual database-specific implementations are provided in separate packages that depend on this abstraction layer, ensuring clean separation of concerns and testability.
-
-## Dependency Injection
-
-```csharp
-// Register your chosen implementation
-services.AddSingleton<IPvNugsCsProvider, YourDatabaseCsProvider>();
-
-// Or use with factory pattern
-services.AddSingleton<ICsProviderFactory, CsProviderFactory>();
+### Microsoft SQL Server-Specific Usage
 ```
+csharp
+public class MsSqlService
+{
+private readonly IPvNugsMsSqlCsProvider _msSqlProvider;
 
-## Implementation Guidelines
+    public MsSqlService(IPvNugsMsSqlCsProvider msSqlProvider)
+    {
+        _msSqlProvider = msSqlProvider;
+    }
 
-When implementing the interfaces from this package:
+    public async Task<string> GetMsSqlConnectionAsync()
+    {
+        var connectionString = await _msSqlProvider.GetConnectionStringAsync(SqlRoleEnu.Application);
+        var username = _msSqlProvider.GetUsername(SqlRoleEnu.Application);
+        var useTrusted = _msSqlProvider.UseTrustedConnection;
+        var useDynamic = _msSqlProvider.UseDynamicCredentials;
+        
+        return connectionString;
+    }
+}
+```
+## 🏗️ Core Interfaces
 
-- **Thread Safety**: Ensure implementations are thread-safe
-- **Configuration**: Support various configuration sources
-- **Security**: Handle credentials securely
-- **Error Handling**: Provide meaningful error messages
-- **Logging**: Integrate with logging frameworks appropriately
+### IPvNugsCsProvider
 
-## Requirements
+The base interface providing fundamental connection string functionality.
 
-- .NET 9.0 or higher
+**Key Features:**
+- Asynchronous connection string retrieval
+- Role-based access control
+- Cancellation token support
+- Thread-safe operations
 
-## Related Packages
+**Methods:**
+```
+csharp
+Task<string> GetConnectionStringAsync(SqlRoleEnu role, CancellationToken cancellationToken = default);
+```
+### IPvNugsPgSqlCsProvider
 
-This abstractions package works with database-specific implementation packages:
+Extends the base provider with PostgreSQL-specific functionality.
 
-- Implementation packages for various database providers
-- Extensions for specific frameworks and scenarios
-- Testing utilities and mocks
+**Additional Features:**
+- Schema information access
+- Dynamic credential status
+- PostgreSQL-specific connection properties
 
-## License
+**Properties:**
+```
+csharp
+string GetSchema();
+bool UseDynamicCredentials { get; }
+```
+### IPvNugsMsSqlCsProvider
 
-MIT
+Extends the base provider with Microsoft SQL Server-specific functionality.
 
+**Additional Features:**
+- Trusted connection support detection
+- Username retrieval by role
+- Dynamic credential status
+- SQL Server-specific connection properties
+
+**Properties and Methods:**
+```
+csharp
+bool UseTrustedConnection { get; }
+bool UseDynamicCredentials { get; }
+string GetUsername(SqlRoleEnu role);
+```
+## 🎯 SQL Role Enumeration
+
+The `SqlRoleEnu` enum defines three standard database roles for implementing the principle of least privilege:
+```
+csharp
+public enum SqlRoleEnu
+{
+Owner,       // Full administrative access
+Application, // Standard application operations
+Reader       // Read-only access
+}
+```
+### Role Usage Guidelines
+
+- **Reader**: Use for read-only operations (SELECT queries)
+- **Application**: Use for standard CRUD operations (INSERT, UPDATE, DELETE)
+- **Owner**: Use for administrative tasks (DDL operations, user management)
+
+## 🔧 Implementation Patterns
+
+### Dependency Injection Setup
+```
+csharp
+// Program.cs
+services.AddSingleton<IPvNugsCsProvider, YourCsProviderImplementation>();
+services.AddSingleton<IPvNugsPgSqlCsProvider, YourPostgreSqlProviderImplementation>();
+services.AddSingleton<IPvNugsMsSqlCsProvider, YourMsSqlProviderImplementation>();
+```
+### Role-Based Data Access
+```
+csharp
+public class ProductService
+{
+private readonly IPvNugsCsProvider _csProvider;
+
+    public ProductService(IPvNugsCsProvider csProvider)
+    {
+        _csProvider = csProvider;
+    }
+
+    // Read operations - use Reader role
+    public async Task<List<Product>> GetProductsAsync()
+    {
+        var connectionString = await _csProvider.GetConnectionStringAsync(SqlRoleEnu.Reader);
+        // Use connection string for read operations...
+    }
+
+    // Write operations - use Application role
+    public async Task<Product> CreateProductAsync(Product product)
+    {
+        var connectionString = await _csProvider.GetConnectionStringAsync(SqlRoleEnu.Application);
+        // Use connection string for write operations...
+    }
+
+    // Administrative operations - use Owner role
+    public async Task CreateProductTableAsync()
+    {
+        var connectionString = await _csProvider.GetConnectionStringAsync(SqlRoleEnu.Owner);
+        // Use connection string for DDL operations...
+    }
+}
+```
+## 🛡️ Security Best Practices
+
+1. **Use Role-Based Access**: Always use the minimum required role for each operation
+2. **Secure Credential Storage**: Never store credentials in plain text configuration
+3. **Use Dynamic Credentials**: Prefer dynamic credentials over static ones when possible
+4. **Monitor Access**: Implement proper logging and monitoring for database access
+5. **Regular Rotation**: Implement credential rotation policies for enhanced security
+
+## 📚 Error Handling
+
+Implementations should throw `PvNugsCsProviderException` for provider-specific errors:
+```
+csharp
+try
+{
+var connectionString = await _csProvider.GetConnectionStringAsync(SqlRoleEnu.Application);
+// Use connection string...
+}
+catch (PvNugsCsProviderException ex)
+{
+_logger.LogError(ex, "Failed to retrieve connection string for {Role}", SqlRoleEnu.Application);
+// Handle provider-specific errors
+}
+```
+## 🔄 Integration Examples
+
+### With Entity Framework Core
+```
+csharp
+public class ApplicationDbContext : DbContext
+{
+private readonly IPvNugsCsProvider _csProvider;
+
+    public ApplicationDbContext(IPvNugsCsProvider csProvider)
+    {
+        _csProvider = csProvider;
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        var connectionString = _csProvider.GetConnectionStringAsync(SqlRoleEnu.Application).Result;
+        optionsBuilder.UseSqlServer(connectionString); // or UseNpgsql for PostgreSQL
+    }
+}
+```
+### With Dapper
+```
+csharp
+public class UserRepository
+{
+private readonly IPvNugsCsProvider _csProvider;
+
+    public UserRepository(IPvNugsCsProvider csProvider)
+    {
+        _csProvider = csProvider;
+    }
+
+    public async Task<List<User>> GetUsersAsync()
+    {
+        var connectionString = await _csProvider.GetConnectionStringAsync(SqlRoleEnu.Reader);
+        
+        using var connection = new SqlConnection(connectionString); // or NpgsqlConnection
+        return (await connection.QueryAsync<User>("SELECT * FROM Users")).ToList();
+    }
+}
+```
+## 🎯 Target Framework
+
+- **.NET 9.0**: Built specifically for the latest .NET platform with modern language features
+
+## 📚 Documentation
+
+The package includes comprehensive XML documentation with:
+- Detailed interface descriptions
+- Method parameter explanations
+- Usage examples and best practices
+- Security considerations and guidelines
+- Integration patterns and common use cases
+
+## 🤝 Contributing
+
+This package is part of the pvWayNugs ecosystem. For issues, suggestions, or contributions, please visit the [GitHub repository](https://github.com/licheez/pvWayNugs).
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](https://opensource.org/licenses/MIT) file for details.
+
+## 🏢 About pvWay Ltd
+
+pvWay Ltd specializes in secure, enterprise-grade .NET solutions with a focus on security, reliability, and developer experience.
+
+---
+
+**Keywords**: Connection String Provider, Database Access, PostgreSQL, Microsoft SQL Server, Role-Based Access, Security, .NET 9, Abstractions, pvWayNugs
