@@ -11,7 +11,6 @@ A comprehensive .NET logging framework that provides structured, contextual logg
 - **Method Result Tracking**: Built-in support for tracking method execution results and notifications
 - **Async Support**: Both synchronous and asynchronous logging methods
 - **Unit Testing Support**: Specialized interfaces for testing logging behavior
-- **Generic Type Support**: Typed logging capabilities through generic interfaces
 
 ## Installation
 
@@ -46,7 +45,6 @@ shell dotnet add package pvNugsLoggerNc9Abstractions
 ### Method Results
 
 - **IMethodResult**: Tracks method execution status and notifications
-- **IMethodResult<T>**: Adds typed payload support to method results
 - **IMethodResultNotification**: Represents individual notifications within results
 
 ### Data Structures
@@ -111,5 +109,3 @@ public class LoggingTests
 }
 
 ```
-
-

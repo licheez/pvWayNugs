@@ -9,13 +9,3 @@ namespace pvNugsLoggerNc9Abstractions;
 /// </summary>
 /// <seealso cref="ILoggerService"/>
 public interface IUTestLoggerService : ILoggerService;
-
-/// <summary>
-/// Generic version of the unit test logging service that combines
-/// unit test logging capabilities with typed logging support.
-/// See also <see cref="IUTestLoggerService"/>
-/// </summary>
-/// <typeparam name="T">
-/// The type that provides context for the logger.
-/// </typeparam>
-public interface IUTestLoggerService<out T>: ILoggerService<T>;

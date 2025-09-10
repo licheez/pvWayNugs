@@ -19,12 +19,3 @@ public interface ISqlLoggerService: ILoggerService
     /// </returns>
     Task<int> PurgeLogsAsync(IDictionary<SeverityEnu, TimeSpan> retainDic);
 }
-
-/// <summary>
-/// Generic version of the SQL logging service that combines
-/// SQL persistence capabilities with typed logging support.
-/// </summary>
-/// <typeparam name="T">
-/// The type that provides context for the logger.
-/// </typeparam>
-public interface ISqlLoggerService<out T>: ISqlLoggerService, ILoggerService<T>;

@@ -329,13 +329,3 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
 }
-
-/// <summary>
-/// Extends ILoggerService with generic type support,
-/// combining the functionality of both ILogger{T}
-/// and ILoggerService interfaces.
-/// </summary>
-/// <typeparam name="T">
-/// The type that provides context for the logger.
-/// </typeparam>
-public interface ILoggerService<out T>: ILogger<T>, ILoggerService { }

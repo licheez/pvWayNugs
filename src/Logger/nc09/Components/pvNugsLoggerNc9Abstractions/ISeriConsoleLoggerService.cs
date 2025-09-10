@@ -7,12 +7,3 @@ namespace pvNugsLoggerNc9Abstractions;
 /// compared to standard console logging.
 /// </summary>
 public interface ISeriConsoleLoggerService : IConsoleLoggerService;
-
-/// <summary>
-/// Generic version of the Serilog console logging service that combines
-/// Serilog's structured logging capabilities with typed logging support.
-/// </summary>
-/// <typeparam name="T">
-/// The type that provides context for the logger.
-/// </typeparam>
-public interface ISeriConsoleLoggerService<out T>: IConsoleLoggerService<T>;
