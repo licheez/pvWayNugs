@@ -368,7 +368,7 @@ public class CsProvider(
         var cs = $"Server={server};" +
                  $"Database={database};" +
                  $"User Id={username};" +
-                 "Include Error Detail=true";
+                 "Include Error Detail=true;";
         if (port.HasValue)
             cs += $"Port={port.Value};";
         if (!string.IsNullOrEmpty(password))
