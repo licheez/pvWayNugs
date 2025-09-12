@@ -284,32 +284,35 @@ internal class DynamicSecretManager(
             throw new ArgumentException("Secret name cannot be null or empty", 
                 nameof(secretName));
 
-        var usernameKey = $"{secretName}__username";
-        var passwordKey = $"{secretName}__password";
-        var expKey = $"{secretName}__expirationDateUtc";
-
-        string? username, password, dateStr;
+        var section = await GetSectionAsync();
+        IConfigurationSection secret;
+        
         try
         {
-            username = await GetStaticSecretAsync(
-                usernameKey, cancellationToken);
-            password = await GetStaticSecretAsync(
-                passwordKey, cancellationToken);
-            dateStr = await GetStaticSecretAsync(
-                expKey, cancellationToken);
+            secret = section.GetSection(secretName);
+            if (!secret.Exists())
+            {
+                var ex = new InvalidOperationException($"Required configuration section '{secretName}' does not exist.");
+                await Logger.LogAsync(ex);
+                throw ex;
+            }
         }
         catch (Exception  e)
         {
             await Logger.LogAsync(e);
             throw new PvNugsSecretManagerException(e);
         }
+        var username = secret["username"];
+        var password = secret["password"];
+        var dateStr = secret["expirationDateUtc"];
 
         if (username is null || password is null || dateStr is null)
             return null;
 
         var dateOk = DateTime.TryParse(
             dateStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var expDate);
-        if (dateOk) return new DynamicCredential(username, password, expDate);
+        if (dateOk) 
+            return new DynamicCredential(username, password, expDate);
 
         var err = $"Invalid date format for expiration date: '{dateStr}'. Expected UTC format.";
         await Logger.LogAsync(err);

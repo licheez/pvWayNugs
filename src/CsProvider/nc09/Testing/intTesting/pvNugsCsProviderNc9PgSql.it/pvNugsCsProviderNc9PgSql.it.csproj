@@ -15,6 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\..\..\Logger\nc09\Components\pvNugsLoggerNc9Seri\pvNugsLoggerNc9Seri.csproj" />
+      <ProjectReference Include="..\..\..\..\..\SecretManager\nc09\Components\pvNugsSecretManagerNc9EnvVariables\pvNugsSecretManagerNc9EnvVariables.csproj" />
       <ProjectReference Include="..\..\..\Components\pvNugsCsProviderNc9PgSql\pvNugsCsProviderNc9PgSql.csproj" />
     </ItemGroup>
 

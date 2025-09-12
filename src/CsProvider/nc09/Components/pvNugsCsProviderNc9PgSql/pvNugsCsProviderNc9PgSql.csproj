@@ -4,9 +4,9 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.0.2</Version>
+        <Version>9.0.3</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>Fix bug related to 'Include Error Detail'</PackageReleaseNotes>
+        <PackageReleaseNotes>Fix some bugs, added expiration date validation</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>

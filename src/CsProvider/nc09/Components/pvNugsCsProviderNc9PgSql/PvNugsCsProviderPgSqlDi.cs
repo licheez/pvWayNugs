@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using pvNugsCsProviderNc9Abstractions;
+using pvNugsLoggerNc9Abstractions;
+using pvNugsSecretManagerNc9Abstractions;
 
 namespace pvNugsCsProviderNc9PgSql;
 
@@ -9,50 +12,73 @@ namespace pvNugsCsProviderNc9PgSql;
 /// Provides dependency injection configuration for the PostgreSQL connection string provider.
 /// This static class extends <see cref="IServiceCollection"/> to register the <see cref="CsProvider"/> 
 /// and its required configuration for PostgreSQL database connections with multiple authentication modes.
+/// Uses an intelligent factory pattern to automatically resolve constructor ambiguity based on registered dependencies.
 /// </summary>
 /// <remarks>
-/// <para><c>Required Dependencies:</c></para>
+/// <para><strong>Required Dependencies:</strong></para>
 /// <list type="bullet">
 /// <item><description><see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/> - Mandatory logging service for error and diagnostic logging throughout the provider lifecycle.</description></item>
 /// </list>
 /// 
-/// <para><c>Optional Dependencies (mode-specific):</c></para>
+/// <para><strong>Optional Dependencies (mode-specific):</strong></para>
 /// <list type="bullet">
 /// <item><description><see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsStaticSecretManager"/> - Optional service for StaticSecret mode, retrieves passwords from secure storage using static secret names.</description></item>
 /// <item><description><see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsDynamicSecretManager"/> - Optional service for DynamicSecret mode, generates temporary database credentials with automatic expiration and renewal.</description></item>
 /// </list>
 /// 
-/// <para><c>Constructor Selection:</c></para>
-/// <para>The <see cref="CsProvider"/> supports three operational modes based on which dependencies are registered:</para>
+/// <para><strong>Automatic Constructor Resolution:</strong></para>
+/// <para>The registration method uses a factory pattern to intelligently select the appropriate <see cref="CsProvider"/> constructor based on which dependencies are available in the service container. This eliminates constructor ambiguity and ensures the correct operational mode:</para>
 /// <list type="number">
-/// <item><description><c>Config Mode:</c> Only <see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/> is required. Credentials are read from configuration files.</description></item>
-/// <item><description><c>StaticSecret Mode:</c> Requires <see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/> and <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsStaticSecretManager"/>. Passwords are retrieved from secret storage.</description></item>
-/// <item><description><c>DynamicSecret Mode:</c> Requires <see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/> and <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsDynamicSecretManager"/>. Uses temporary credentials with automatic renewal.</description></item>
+/// <item><description><strong>DynamicSecret Mode (Highest Priority):</strong> When <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsDynamicSecretManager"/> is registered, uses the dynamic secret constructor for time-limited credentials with automatic renewal.</description></item>
+/// <item><description><strong>StaticSecret Mode (Medium Priority):</strong> When only <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsStaticSecretManager"/> is registered, uses the static secret constructor for password retrieval from secure storage.</description></item>
+/// <item><description><strong>Config Mode (Fallback):</strong> When no secret managers are registered, uses the primary constructor for configuration-based credentials.</description></item>
 /// </list>
 /// 
-/// <para><c>Configuration:</c></para>
+/// <para><strong>Priority Resolution Logic:</strong></para>
+/// <para>The factory pattern implements a hierarchical resolution strategy:</para>
+/// <code>
+/// DynamicSecretManager → StaticSecretManager → Config Mode
+/// </code>
+/// <para>This ensures that the most sophisticated credential management available is automatically selected while maintaining backward compatibility.</para>
+/// 
+/// <para><strong>Configuration:</strong></para>
 /// <para>The provider requires <see cref="PvNugsCsProviderPgSqlConfig"/> to be configured through the application's configuration system.
 /// The configuration section name is defined by <see cref="PvNugsCsProviderPgSqlConfig.Section"/>.</para>
+/// 
+/// <para><strong>Thread Safety and Lifecycle:</strong></para>
+/// <para>The factory-registered provider is thread-safe and designed as a singleton service. The factory pattern ensures that only one provider instance is created per application lifetime, with proper dependency resolution occurring at startup time.</para>
 /// </remarks>
 /// <example>
-/// <para>Register for Config mode (configuration-based authentication):</para>
+/// <para><strong>Register for Config mode (configuration-based authentication):</strong></para>
 /// <code>
 /// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLoggerServiceImpl&gt;();
 /// services.TryAddPvNugsCsProviderPgSql(configuration);
+/// // Factory will select Config mode constructor automatically
 /// </code>
 /// 
-/// <para>Register for StaticSecret mode (secret manager with static secrets):</para>
+/// <para><strong>Register for StaticSecret mode (secret manager with static secrets):</strong></para>
 /// <code>
 /// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLoggerServiceImpl&gt;();
 /// services.AddSingleton&lt;IPvNugsStaticSecretManager, StaticSecretManagerImpl&gt;();
 /// services.TryAddPvNugsCsProviderPgSql(configuration);
+/// // Factory will detect StaticSecretManager and select appropriate constructor
 /// </code>
 /// 
-/// <para>Register for DynamicSecret mode (secret manager with dynamic credentials):</para>
+/// <para><strong>Register for DynamicSecret mode (secret manager with dynamic credentials):</strong></para>
 /// <code>
 /// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLoggerServiceImpl&gt;();
 /// services.AddSingleton&lt;IPvNugsDynamicSecretManager, DynamicSecretManagerImpl&gt;();
 /// services.TryAddPvNugsCsProviderPgSql(configuration);
+/// // Factory will detect DynamicSecretManager and select dynamic constructor
+/// </code>
+/// 
+/// <para><strong>Mixed registration (DynamicSecret takes precedence):</strong></para>
+/// <code>
+/// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLoggerServiceImpl&gt;();
+/// services.AddSingleton&lt;IPvNugsStaticSecretManager, StaticSecretManagerImpl&gt;();
+/// services.AddSingleton&lt;IPvNugsDynamicSecretManager, DynamicSecretManagerImpl&gt;();
+/// services.TryAddPvNugsCsProviderPgSql(configuration);
+/// // Factory will choose DynamicSecret mode (highest priority)
 /// </code>
 /// </example>
 public static class PvNugsCsProviderPgSqlDi
@@ -60,60 +86,74 @@ public static class PvNugsCsProviderPgSqlDi
     /// <summary>
     /// Registers the PostgreSQL connection string provider and its configuration with the dependency injection container.
     /// This method configures the provider as a singleton service implementing <see cref="IPvNugsCsProvider"/>,
-    /// enabling role-based PostgreSQL connections with multiple authentication modes throughout your application.
+    /// using an intelligent factory pattern to automatically resolve constructor selection based on registered dependencies.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
     /// <param name="config">The configuration instance containing the PostgreSQL provider settings from appsettings.json or other configuration sources.</param>
     /// <returns>The same <see cref="IServiceCollection"/> instance so that additional calls can be chained in a fluent manner.</returns>
     /// <remarks>
-    /// <para><c>Service Registration:</c></para>
+    /// <para><strong>Service Registration Process:</strong></para>
     /// <para>This method performs two key registrations:</para>
     /// <list type="number">
-    /// <item><description>Configures <see cref="PvNugsCsProviderPgSqlConfig"/> using the Options pattern, binding to the configuration section specified by <see cref="PvNugsCsProviderPgSqlConfig.Section"/>.</description></item>
-    /// <item><description>Registers <see cref="CsProvider"/> as a singleton implementation of <see cref="IPvNugsCsProvider"/> using <see cref="Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddSingleton{TService, TImplementation}(IServiceCollection)"/>.</description></item>    /// </list>
-    /// 
-    /// <para><c>Dependency Resolution and Mode Detection:</c></para>
-    /// <para>The provider automatically selects the appropriate constructor based on which dependencies are registered:</para>
-    /// <list type="bullet">
-    /// <item><description><c>Config Mode:</c> Only requires <see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/>. Uses primary constructor with logger and configuration options.</description></item>
-    /// <item><description><c>StaticSecret Mode:</c> Requires <see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/> and <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsStaticSecretManager"/>. Uses constructor overload with static secret manager.</description></item>
-    /// <item><description><c>DynamicSecret Mode:</c> Requires <see cref="pvNugsLoggerNc9Abstractions.IConsoleLoggerService"/> and <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsDynamicSecretManager"/>. Uses constructor overload with dynamic secret manager.</description></item>
+    /// <item><description><strong>Configuration Binding:</strong> Configures <see cref="PvNugsCsProviderPgSqlConfig"/> using the Options pattern, binding to the configuration section specified by <see cref="PvNugsCsProviderPgSqlConfig.Section"/>.</description></item>
+    /// <item><description><strong>Factory Registration:</strong> Registers a factory function that dynamically resolves the appropriate <see cref="CsProvider"/> constructor based on available dependencies, eliminating constructor ambiguity.</description></item>
     /// </list>
     /// 
-    /// <para><c>Configuration Requirements:</c></para>
-    /// <para>The configuration section must contain appropriate settings based on the intended operational mode:</para>
-    /// <list type="bullet">
-    /// <item><description><c>All Modes:</c> Server, Database, Schema, and Mode properties are always required.</description></item>
-    /// <item><description><c>Config Mode:</c> Additionally requires Username. Password is optional for password-less authentication.</description></item>
-    /// <item><description><c>StaticSecret Mode:</c> Additionally requires Username and SecretName for secret manager integration.</description></item>
-    /// <item><description><c>DynamicSecret Mode:</c> Additionally requires SecretName. Username is ignored as it's dynamically generated.</description></item>
+    /// <para><strong>Intelligent Constructor Resolution:</strong></para>
+    /// <para>The factory pattern implements a sophisticated dependency detection algorithm:</para>
+    /// <list type="number">
+    /// <item><description><strong>Dynamic Secret Detection:</strong> Checks for <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsDynamicSecretManager"/> first (highest priority)</description></item>
+    /// <item><description><strong>Static Secret Detection:</strong> Falls back to checking for <see cref="pvNugsSecretManagerNc9Abstractions.IPvNugsStaticSecretManager"/> (medium priority)</description></item>
+    /// <item><description><strong>Config Mode Fallback:</strong> Uses the primary constructor when no secret managers are available (default priority)</description></item>
     /// </list>
     /// 
-    /// <para><c>Secret Name Resolution:</c></para>
+    /// <para><strong>Resolution Algorithm Benefits:</strong></para>
+    /// <list type="bullet">
+    /// <item><description><strong>Automatic Mode Detection:</strong> No need to manually specify which constructor to use</description></item>
+    /// <item><description><strong>Fail-Safe Fallback:</strong> Always defaults to a working configuration (Config mode)</description></item>
+    /// <item><description><strong>Forward Compatibility:</strong> New secret manager types can be easily integrated</description></item>
+    /// <item><description><strong>Clear Precedence:</strong> Predictable behavior when multiple secret managers are registered</description></item>
+    /// </list>
+    /// 
+    /// <para><strong>Configuration Requirements by Mode:</strong></para>
+    /// <para>The configuration section must contain appropriate settings based on which constructor the factory selects:</para>
+    /// <list type="bullet">
+    /// <item><description><strong>All Modes:</strong> Server, Database, Schema, and Mode properties are always required.</description></item>
+    /// <item><description><strong>Config Mode (Selected when no secret managers):</strong> Additionally requires Username. Password is optional for password-less authentication.</description></item>
+    /// <item><description><strong>StaticSecret Mode (Selected when IPvNugsStaticSecretManager available):</strong> Additionally requires Username and SecretName for secret manager integration.</description></item>
+    /// <item><description><strong>DynamicSecret Mode (Selected when IPvNugsDynamicSecretManager available):</strong> Additionally requires SecretName. Username is ignored as it's dynamically generated.</description></item>
+    /// </list>
+    /// 
+    /// <para><strong>Factory Pattern Implementation Details:</strong></para>
+    /// <para>The factory function uses <see cref="Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetService{T}(IServiceProvider)"/> 
+    /// for optional dependencies and <see cref="Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService{T}(IServiceProvider)"/> 
+    /// for mandatory dependencies, ensuring proper exception handling for missing required services.</para>
+    /// 
+    /// <para><strong>Secret Name Resolution:</strong></para>
     /// <para>For StaticSecret and DynamicSecret modes, the provider constructs secret names using the pattern: <c>{config.SecretName}-{SqlRole}</c></para>
     /// <para>Where SqlRole can be Owner, Application, or Reader, allowing role-based credential management in your secret store.</para>
     /// 
-    /// <para><c>Thread Safety and Lifecycle:</c></para>
-    /// <para>The registered provider is thread-safe and designed as a singleton service. It uses internal caching and locking mechanisms 
+    /// <para><strong>Singleton Lifecycle Management:</strong></para>
+    /// <para>The factory-registered provider is designed as a singleton service with internal caching and locking mechanisms 
     /// to ensure efficient and safe credential retrieval across multiple concurrent requests. Dynamic credentials are automatically 
     /// refreshed before expiration without blocking application operations.</para>
     /// 
-    /// <para><c>Integration Patterns:</c></para>
+    /// <para><strong>Integration Patterns:</strong></para>
     /// <para>After registration, inject <see cref="IPvNugsCsProvider"/> or <see cref="IPvNugsPgSqlCsProvider"/> into your services 
     /// to retrieve connection strings. The provider supports multiple SQL roles (Owner, Application, Reader) for implementing 
     /// principle of least privilege in database access.</para>
     /// </remarks>
     /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="services"/> or <paramref name="config"/> is null.</exception>
     /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">
-    /// Thrown during service resolution if the configuration is invalid for the selected mode 
+    /// Thrown during service resolution if the configuration is invalid for the factory-selected mode 
     /// (e.g., missing required properties, invalid Mode value).
     /// </exception>
     /// <exception cref="System.InvalidOperationException">
     /// Thrown during service resolution if required dependencies are not registered in the container 
-    /// (e.g., missing IConsoleLoggerService or required secret manager services).
+    /// (e.g., missing IConsoleLoggerService). Note: Secret manager dependencies are optional and checked by the factory.
     /// </exception>
     /// <example>
-    /// <para><c>Basic registration for Config mode:</c></para>
+    /// <para><strong>Basic registration with automatic mode detection:</strong></para>
     /// <code>
     /// public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     /// {
@@ -121,6 +161,7 @@ public static class PvNugsCsProviderPgSqlDi
     ///     services.AddSingleton&lt;IConsoleLoggerService, ConsoleLoggerServiceImpl&gt;();
     ///     
     ///     // Register the PostgreSQL connection string provider
+    ///     // Factory will automatically select Config mode (no secret managers registered)
     ///     services.TryAddPvNugsCsProviderPgSql(configuration);
     ///     
     ///     // Now you can inject IPvNugsCsProvider in your services
@@ -128,32 +169,46 @@ public static class PvNugsCsProviderPgSqlDi
     /// }
     /// </code>
     /// 
-    /// <para><c>Advanced registration for DynamicSecret mode with Azure Key Vault:</c></para>
+    /// <para><strong>Advanced registration with automatic DynamicSecret mode detection:</strong></para>
     /// <code>
     /// public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     /// {
     ///     // Register required dependencies
     ///     services.AddSingleton&lt;IConsoleLoggerService, ConsoleLoggerServiceImpl&gt;();
-    ///     services.AddSingleton&lt;IPvNugsDynamicSecretManager, HashicorpVaultDynamicSecretManager&gt;();
+    ///     services.AddSingleton&lt;IPvNugsDynamicSecretManager, HashiCorpVaultDynamicSecretManager&gt;();
     ///     
-    ///     // Register the provider - it will automatically detect DynamicSecret mode
+    ///     // Register the provider - factory will automatically detect and select DynamicSecret mode
     ///     services.TryAddPvNugsCsProviderPgSql(configuration);
     /// }
     /// 
-    /// // Usage in your service
+    /// // The factory has automatically wired the DynamicSecret constructor
     /// public class DataService
     /// {
     ///     public DataService(IPvNugsPgSqlCsProvider csProvider) { ... }
     ///     
     ///     public async Task&lt;List&lt;User&gt;&gt; GetUsersAsync()
     ///     {
+    ///         // This will use dynamic credentials with automatic renewal
     ///         var connectionString = await csProvider.GetConnectionStringAsync(SqlRoleEnu.Reader);
     ///         // Use connection string with Npgsql...
     ///     }
     /// }
     /// </code>
     /// 
-    /// <para><c>Configuration example (appsettings.json):</c></para>
+    /// <para><strong>Priority demonstration with mixed dependencies:</strong></para>
+    /// <code>
+    /// // Both secret managers are registered
+    /// services.AddSingleton&lt;IPvNugsStaticSecretManager, KeyVaultStaticSecretManager&gt;();
+    /// services.AddSingleton&lt;IPvNugsDynamicSecretManager, HashiCorpVaultDynamicSecretManager&gt;();
+    /// services.TryAddPvNugsCsProviderPgSql(configuration);
+    /// 
+    /// // Factory resolution priority:
+    /// // 1. Detects IPvNugsDynamicSecretManager → Selects DynamicSecret constructor ✓
+    /// // 2. IPvNugsStaticSecretManager is ignored due to lower priority
+    /// // 3. Result: DynamicSecret mode with automatic credential renewal
+    /// </code>
+    /// 
+    /// <para><strong>Configuration example supporting all modes:</strong></para>
     /// <code>
     /// {
     ///   "PvNugsCsProviderPgSqlConfig": {
@@ -163,8 +218,11 @@ public static class PvNugsCsProviderPgSqlDi
     ///     "Schema": "app_schema",
     ///     "Port": 5432,
     ///     "SecretName": "myapp-postgres",
+    ///     "Username": "fallback_user",        // Used only in Config/Static modes
     ///     "Timezone": "UTC",
-    ///     "TimeoutInSeconds": 30
+    ///     "TimeoutInSeconds": 30,
+    ///     "ExpirationWarningToleranceInMinutes": 30,
+    ///     "ExpirationErrorToleranceInMinutes": 5
     ///   }
     /// }
     /// </code>
@@ -183,7 +241,29 @@ public static class PvNugsCsProviderPgSqlDi
         services.Configure<PvNugsCsProviderPgSqlConfig>(
             config.GetSection(PvNugsCsProviderPgSqlConfig.Section));
         
-        services.TryAddSingleton<IPvNugsCsProvider, CsProvider>();
+        // Use a factory pattern to resolve the constructor ambiguity
+        services.TryAddSingleton<IPvNugsCsProvider>(serviceProvider =>
+        {
+            var logger = serviceProvider.GetRequiredService<IConsoleLoggerService>();
+            var options = serviceProvider.GetRequiredService<IOptions<PvNugsCsProviderPgSqlConfig>>();
+            
+            // Check for dynamic secret manager first (highest priority)
+            var dynamicSecretManager = serviceProvider.GetService<IPvNugsDynamicSecretManager>();
+            if (dynamicSecretManager != null)
+            {
+                return new CsProvider(logger, options, dynamicSecretManager);
+            }
+            
+            // Then check for static secret manager (medium priority)
+            var staticSecretManager = serviceProvider.GetService<IPvNugsStaticSecretManager>();
+            if (staticSecretManager != null)
+            {
+                return new CsProvider(logger, options, staticSecretManager);
+            }
+            
+            // Fall back to config-only mode (default priority)
+            return new CsProvider(logger, options);
+        });
         
         return services;
     }

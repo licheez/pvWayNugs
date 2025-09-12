@@ -141,4 +141,32 @@ public class PvNugsCsProviderPgSqlConfig
     /// <para>Example: If SecretName is "myapp-db", the provider will query for "myapp-db-Reader", "myapp-db-Application", etc.</para>
     /// </remarks>
     public string? SecretName { get; set; }
+
+    /// <summary>
+    /// When a dynamic secret is within this time window before expiration, a warning will be logged.
+    /// </summary>
+    /// <value>The warning tolerance in minutes, or null to use the default value of 30 minutes.</value>
+    /// <remarks>
+    /// <para><c>Config Mode:</c> Not used - no expiration for configuration-based credentials.</para>
+    /// <para><c>StaticSecret Mode:</c> Not used - static secrets do not expire.</para>
+    /// <para><c>DynamicSecret Mode:</c> Optional - used to determine when to log expiration warnings.</para>
+    /// <para>When null, the default warning tolerance of 30 minutes is applied.</para>
+    /// <para>This should be set higher than <see cref="ExpirationErrorToleranceInMinutes"/> to provide appropriate warning before errors.</para>
+    /// </remarks>
+    public int? ExpirationWarningToleranceInMinutes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error tolerance in minutes before secret expiration.
+    /// When a dynamic secret is within this time window before expiration, an error will be thrown.
+    /// </summary>
+    /// <value>The error tolerance in minutes, or null to use the default value of 5 minutes.</value>
+    /// <remarks>
+    /// <para><c>Config Mode:</c> Not used - no expiration for configuration-based credentials.</para>
+    /// <para><c>StaticSecret Mode:</c> Not used - static secrets do not expire.</para>
+    /// <para><c>DynamicSecret Mode:</c> Optional - used to determine when to throw expiration errors.</para>
+    /// <para>When null, the default error tolerance of 5 minutes is applied.</para>
+    /// <para>This should be set lower than <see cref="ExpirationWarningToleranceInMinutes"/> to allow warnings before errors occur.</para>
+    /// </remarks>
+    public int? ExpirationErrorToleranceInMinutes { get; set; }
+
 }

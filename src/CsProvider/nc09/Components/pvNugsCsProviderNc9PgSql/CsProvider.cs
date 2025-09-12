@@ -14,17 +14,75 @@ namespace pvNugsCsProviderNc9PgSql;
 /// Connection strings are cached per role and automatically refreshed when dynamic credentials expire.
 /// </summary>
 /// <remarks>
-/// <para><c>Constructor Selection:</c></para>
+/// <para><strong>Constructor Selection:</strong></para>
 /// <list type="bullet">
-/// <item><description><c>Config Mode:</c> Use the primary constructor with logger and options only. Credentials are read from configuration.</description></item>
-/// <item><description><c>StaticSecret Mode:</c> Use the constructor with <see cref="IPvNugsStaticSecretManager"/>. Passwords are retrieved from a secret manager using static secrets.</description></item>
-/// <item><description><c>DynamicSecret Mode:</c> Use the constructor with <see cref="IPvNugsDynamicSecretManager"/>. Username/password pairs are dynamically generated with expiration times.</description></item>
+/// <item><description><strong>Config Mode:</strong> Use the primary constructor with logger and options only. Credentials are read from configuration.</description></item>
+/// <item><description><strong>StaticSecret Mode:</strong> Use the constructor with <see cref="IPvNugsStaticSecretManager"/>. Passwords are retrieved from a secret manager using static secrets.</description></item>
+/// <item><description><strong>DynamicSecret Mode:</strong> Use the constructor with <see cref="IPvNugsDynamicSecretManager"/>. Username/password pairs are dynamically generated with expiration times.</description></item>
 /// </list>
-/// <para><c>Secret Name Resolution:</c></para>
+/// <para><strong>Secret Name Resolution:</strong></para>
 /// <para>For StaticSecret and DynamicSecret modes, the secret name is constructed as: <c>{SecretName}-{Role}</c></para>
 /// <para>Where SecretName comes from configuration and Role is the SQL role (Owner, Application, or Reader).</para>
 /// <para>Example: If SecretName is "myapp-db" and role is "Application", the secret manager will query for "myapp-db-Application".</para>
+/// <para><strong>Expiration Management (Dynamic Mode):</strong></para>
+/// <para>Dynamic credentials support configurable expiration tolerance thresholds:</para>
+/// <list type="bullet">
+/// <item><description><strong>Warning Threshold:</strong> Logs warnings when credentials are approaching expiration (default: 30 minutes before)</description></item>
+/// <item><description><strong>Error Threshold:</strong> Throws exceptions when credentials are too close to expiration for safe use (default: 5 minutes before)</description></item>
+/// </list>
+/// <para>These thresholds can be configured via <see cref="PvNugsCsProviderPgSqlConfig.ExpirationWarningToleranceInMinutes"/> and <see cref="PvNugsCsProviderPgSqlConfig.ExpirationErrorToleranceInMinutes"/>.</para>
+/// <para><strong>Thread Safety:</strong></para>
+/// <para>This class is thread-safe and uses per-role semaphores to prevent concurrent credential fetching for the same role while allowing parallel access across different roles.</para>
+/// <para><strong>Performance Characteristics:</strong></para>
+/// <list type="bullet">
+/// <item><description>O(1) cached connection string retrieval per role</description></item>
+/// <item><description>Automatic cache invalidation for expired credentials</description></item>
+/// <item><description>Double-checked locking pattern for thread-safe cache access</description></item>
+/// <item><description>Minimal contention with role-specific synchronization</description></item>
+/// </list>
 /// </remarks>
+/// <example>
+/// <para><strong>Config Mode Usage:</strong></para>
+/// <code>
+/// var services = new ServiceCollection();
+/// services.Configure&lt;PvNugsCsProviderPgSqlConfig&gt;(config =&gt; 
+/// {
+///     config.Mode = CsProviderModeEnu.Config;
+///     config.Server = "localhost";
+///     config.Database = "myapp";
+///     config.Schema = "public";
+///     config.Username = "app_user";
+///     config.Password = "secure_password";
+/// });
+/// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLogger&gt;();
+/// services.AddSingleton&lt;IPvNugsCsProvider, CsProvider&gt;();
+/// 
+/// var provider = serviceProvider.GetService&lt;IPvNugsCsProvider&gt;();
+/// var connectionString = await provider.GetConnectionStringAsync(SqlRoleEnu.Reader);
+/// </code>
+/// 
+/// <para><strong>DynamicSecret Mode Usage:</strong></para>
+/// <code>
+/// var services = new ServiceCollection();
+/// services.Configure&lt;PvNugsCsProviderPgSqlConfig&gt;(config =&gt; 
+/// {
+///     config.Mode = CsProviderModeEnu.DynamicSecret;
+///     config.Server = "localhost";
+///     config.Database = "myapp";
+///     config.Schema = "public";
+///     config.SecretName = "myapp-db";
+///     config.ExpirationWarningToleranceInMinutes = 45;
+///     config.ExpirationErrorToleranceInMinutes = 10;
+/// });
+/// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLogger&gt;();
+/// services.AddSingleton&lt;IPvNugsDynamicSecretManager, VaultDynamicSecretManager&gt;();
+/// services.AddSingleton&lt;IPvNugsCsProvider, CsProvider&gt;();
+/// 
+/// var provider = serviceProvider.GetService&lt;IPvNugsCsProvider&gt;();
+/// var connectionString = await provider.GetConnectionStringAsync(SqlRoleEnu.Application);
+/// // Credentials will be automatically refreshed before expiration
+/// </code>
+/// </example>
 public class CsProvider(
     IConsoleLoggerService logger,
     IOptions<PvNugsCsProviderPgSqlConfig> options) : IPvNugsPgSqlCsProvider
@@ -326,7 +384,9 @@ public class CsProvider(
                 await logger.LogAsync(err, SeverityEnu.Error);
                 throw new PvNugsCsProviderException(err);
             }
-
+            
+            await ValidateSecretExpirationAsync(dbSecret, secretName);
+            
             var username = dbSecret.Username;
             var cs = BuildConnectionString(
                 _config.Server, _config.Database,
@@ -343,19 +403,142 @@ public class CsProvider(
             throw new PvNugsCsProviderException(e);
         }
     }
+    
+    /// <summary>
+    /// Validates the expiration of a database secret with configurable tolerance thresholds.
+    /// Implements a three-tier validation system: normal operation, warning zone, and error zone.
+    /// This proactive validation prevents the use of credentials that may expire during active database operations.
+    /// </summary>
+    /// <param name="dbSecret">The database secret to validate containing expiration information.</param>
+    /// <param name="secretName">The name of the secret for logging and error reporting purposes.</param>
+    /// <returns>A task representing the asynchronous validation operation.</returns>
+    /// <exception cref="PvNugsCsProviderException">
+    /// Thrown when the secret has expired or is within the error threshold window.
+    /// This prevents the use of credentials that may expire during active database operations.
+    /// </exception>
+    /// <remarks>
+    /// <para><strong>Validation Zones:</strong></para>
+    /// <list type="number">
+    /// <item><description><strong>Normal Zone:</strong> Credential is valid and safe to use (no action taken)</description></item>
+    /// <item><description><strong>Warning Zone:</strong> Credential is approaching expiration but still usable (warning logged)</description></item>
+    /// <item><description><strong>Error Zone:</strong> Credential is too close to expiration for safe use (exception thrown)</description></item>
+    /// <item><description><strong>Expired:</strong> Credential has already expired (exception thrown)</description></item>
+    /// </list>
+    /// <para><strong>Configurable Thresholds:</strong></para>
+    /// <para>The tolerance thresholds are configurable via:</para>
+    /// <list type="bullet">
+    /// <item><description><see cref="PvNugsCsProviderPgSqlConfig.ExpirationWarningToleranceInMinutes"/> (default: 30 minutes) - Controls when warnings are logged</description></item>
+    /// <item><description><see cref="PvNugsCsProviderPgSqlConfig.ExpirationErrorToleranceInMinutes"/> (default: 5 minutes) - Controls when errors are thrown</description></item>
+    /// </list>
+    /// <para><strong>Design Rationale:</strong></para>
+    /// <para>This approach ensures that applications have sufficient time to complete database operations before credentials expire.
+    /// By throwing exceptions proactively rather than allowing expired credentials to reach the database, we prevent
+    /// connection failures during critical operations and provide clear error messages for troubleshooting.</para>
+    /// <para><strong>Logging Behavior:</strong></para>
+    /// <list type="bullet">
+    /// <item><description><strong>Warning:</strong> "Secret 'SecretName' will expire in X.X minutes at yyyy-MM-dd HH:mm:ss UTC"</description></item>
+    /// <item><description><strong>Error (near expiration):</strong> "Secret 'SecretName' will expire in X.X minutes at yyyy-MM-dd HH:mm:ss UTC"</description></item>
+    /// <item><description><strong>Error (expired):</strong> "Secret 'SecretName' has expired at yyyy-MM-dd HH:mm:ss UTC"</description></item>
+    /// </list>
+    /// </remarks>
+    /// <example>
+    /// <para><strong>Configuration Example:</strong></para>
+    /// <code>
+    /// {
+    ///   "PvNugsCsProviderPgSqlConfig": {
+    ///     "Mode": "DynamicSecret",
+    ///     "ExpirationWarningToleranceInMinutes": 60,  // Warn 60 minutes before expiration
+    ///     "ExpirationErrorToleranceInMinutes": 15     // Error 15 minutes before expiration
+    ///   }
+    /// }
+    /// </code>
+    /// <para>With this configuration:</para>
+    /// <list type="bullet">
+    /// <item><description>61+ minutes remaining: Normal operation</description></item>
+    /// <item><description>16-60 minutes remaining: Warning logged, operation continues</description></item>
+    /// <item><description>0-15 minutes remaining: Exception thrown</description></item>
+    /// <item><description>Already expired: Exception thrown</description></item>
+    /// </list>
+    /// </example>
+    private async Task ValidateSecretExpirationAsync(
+        IPvNugsDynamicCredential dbSecret, string secretName)
+    {
+        var expirationDateUtc = dbSecret.ExpirationDateUtc;
+        var currentUtc = DateTime.UtcNow;
+        
+        // Configuration for tolerance - could be moved to config if needed
+        var warningToleranceMinutes = _config.ExpirationWarningToleranceInMinutes ?? 30; // Default 30 minutes
+        var errorToleranceMinutes = _config.ExpirationErrorToleranceInMinutes ?? 5; // Default 5 minutes
+        
+        var warningThreshold = expirationDateUtc.AddMinutes(-warningToleranceMinutes);
+        var errorThreshold = expirationDateUtc.AddMinutes(-errorToleranceMinutes);
+
+        if (currentUtc >= expirationDateUtc)
+        {
+            var err = $"Secret '{secretName}' has expired at {expirationDateUtc:yyyy-MM-dd HH:mm:ss} UTC";
+            await logger.LogAsync(err, SeverityEnu.Error);
+            throw new PvNugsCsProviderException(err);
+        }
+        
+        if (currentUtc >= errorThreshold)
+        {
+            var timeRemaining = expirationDateUtc - currentUtc;
+            var err = $"Secret '{secretName}' will expire in {timeRemaining.TotalMinutes:F1} minutes at {expirationDateUtc:yyyy-MM-dd HH:mm:ss} UTC";
+            await logger.LogAsync(err, SeverityEnu.Error);
+            throw new PvNugsCsProviderException(err);
+        }
+        
+        if (currentUtc >= warningThreshold)
+        {
+            var timeRemaining = expirationDateUtc - currentUtc;
+            var warning = $"Secret '{secretName}' will expire in {timeRemaining.TotalMinutes:F1} minutes at {expirationDateUtc:yyyy-MM-dd HH:mm:ss} UTC";
+            await logger.LogAsync(warning, SeverityEnu.Warning);
+        }
+    }
+
 
     /// <summary>
     /// Builds a PostgreSQL connection string with the specified parameters.
-    /// Automatically includes the configured schema in the Search Path.
+    /// Automatically includes the configured schema in the Search Path and sets secure connection defaults.
     /// </summary>
     /// <param name="server">The database server hostname or IP address.</param>
     /// <param name="database">The database name to connect to.</param>
-    /// <param name="port">Optional port number for the database connection.</param>
+    /// <param name="port">Optional port number for the database connection. Uses PostgreSQL default (5432) if null.</param>
     /// <param name="username">The username for authentication.</param>
-    /// <param name="password">Optional password for authentication.</param>
-    /// <param name="timezone">Optional timezone setting for the connection.</param>
-    /// <param name="timeoutInSeconds">Optional command timeout in seconds.</param>
+    /// <param name="password">Optional password for authentication. Can be null for password-less authentication.</param>
+    /// <param name="timezone">Optional timezone setting for the connection. Uses server default if null.</param>
+    /// <param name="timeoutInSeconds">Optional command timeout in seconds. Uses driver default if null.</param>
     /// <returns>A complete PostgreSQL connection string ready for use with Npgsql.</returns>
+    /// <remarks>
+    /// <para><strong>Automatic Schema Configuration:</strong></para>
+    /// <para>The configured schema from <see cref="PvNugsCsProviderPgSqlConfig.Schema"/> is automatically added 
+    /// to the connection string's Search Path parameter, making it the default schema for unqualified table references.</para>
+    /// <para><strong>Security Features:</strong></para>
+    /// <list type="bullet">
+    /// <item><description><c>Include Error Detail=true</c> - Provides detailed error information for troubleshooting</description></item>
+    /// <item><description>Automatic parameter escaping - All values are properly formatted for connection string safety</description></item>
+    /// </list>
+    /// <para><strong>Connection String Format:</strong></para>
+    /// <para>The generated connection string follows this pattern:</para>
+    /// <code>
+    /// Server={server};Database={database};User Id={username};Include Error Detail=true;
+    /// [Port={port};][Password={password};][TimeZone={timezone};][CommandTimeout={timeoutInSeconds};]
+    /// Search Path={schema};
+    /// </code>
+    /// <para>Optional parameters are only included when provided (non-null values).</para>
+    /// </remarks>
+    /// <example>
+    /// <para><strong>Example Output:</strong></para>
+    /// <code>
+    /// // Full configuration
+    /// Server=localhost;Database=myapp;User Id=app_user;Include Error Detail=true;
+    /// Port=5432;Password=secret123;TimeZone=UTC;CommandTimeout=300;Search Path=app_schema;
+    /// 
+    /// // Minimal configuration (using defaults)
+    /// Server=prod.postgres.com;Database=production;User Id=readonly_user;Include Error Detail=true;
+    /// Search Path=public;
+    /// </code>
+    /// </example>
     private string BuildConnectionString(
         string server,
         string database,
