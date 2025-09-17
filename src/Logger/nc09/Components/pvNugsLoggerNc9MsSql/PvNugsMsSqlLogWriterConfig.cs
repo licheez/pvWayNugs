@@ -1,4 +1,3 @@
-
 namespace pvNugsLoggerNc9MsSql;
 
 /// <summary>
@@ -7,17 +6,17 @@ namespace pvNugsLoggerNc9MsSql;
 /// <remarks>
 /// <para>
 /// This configuration class defines all customizable aspects of the SQL Server logging implementation,
-/// including table structure, column names, and initialization behavior. It is designed to work with
+/// including table structure, column names, column lengths, and initialization behavior. It is designed to work with
 /// the .NET configuration system and can be populated from appsettings.json, environment variables,
 /// or other configuration sources.
 /// </para>
 /// <para>
-/// The configuration supports flexible table and column naming to accommodate existing database schemas
-/// and naming conventions. All string properties have sensible defaults that follow common database
-/// naming practices.
+/// The configuration supports flexible table and column naming, as well as customizable column lengths
+/// to accommodate existing database schemas and naming conventions. All string properties have sensible
+/// defaults that follow common database naming practices.
 /// </para>
 /// <para>
-/// <strong>Important:</strong> Changes to table structure configuration (table name, schema, column names)
+/// <strong>Important:</strong> Changes to table structure configuration (table name, schema, column names, lengths)
 /// should be made before first use of the log writer, as the table validation occurs on first log operation.
 /// </para>
 /// </remarks>
@@ -31,9 +30,12 @@ namespace pvNugsLoggerNc9MsSql;
 ///     "CreateTableAtFirstUse": true,
 ///     "CheckTableAtFirstUse": true,
 ///     "UserIdColumnName": "UserId",
+///     "UserIdColumnLength": 256,
 ///     "CompanyIdColumnName": "CompanyId",
+///     "CompanyIdColumnLength": 64,
 ///     "SeverityCodeColumnName": "LogLevel",
-///     "MessageColumnName": "LogMessage"
+///     "MessageColumnName": "LogMessage",
+///     "ContextColumnLength": 2048
 ///   }
 /// }
 /// 
@@ -42,6 +44,8 @@ namespace pvNugsLoggerNc9MsSql;
 /// {
 ///     options.TableName = "CustomLogTable";
 ///     options.SchemaName = "audit";
+///     options.UserIdColumnLength = 100;
+///     options.TopicColumnLength = 200;
 ///     options.CreateTableAtFirstUse = false; // Use existing table
 /// });
 /// 
@@ -119,7 +123,7 @@ public class PvNugsMsSqlLogWriterConfig
     /// <remarks>
     /// <para>
     /// This column stores the user context for log entries and can be null. The column will be created
-    /// as VARCHAR with a length determined by the existing table schema or database constraints.
+    /// as VARCHAR with the length specified by <see cref="UserIdColumnLength"/>.
     /// </para>
     /// <para>
     /// Common alternative names include "UserName", "User_Id", or "LoginId" depending on your
@@ -127,6 +131,28 @@ public class PvNugsMsSqlLogWriterConfig
     /// </para>
     /// </remarks>
     public string UserIdColumnName { get; set; } = "UserId";
+    
+    /// <summary>
+    /// Gets or sets the maximum length for the user ID column.
+    /// </summary>
+    /// <value>
+    /// The column length in characters. Default value is 128.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This value determines the VARCHAR length for the user ID column when the table is created automatically.
+    /// User IDs longer than this value will be automatically truncated with "..." suffix to prevent database errors.
+    /// </para>
+    /// <para>
+    /// Consider your application's user identification scheme when setting this value. Common lengths:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>50-100 characters for typical username schemes</item>
+    /// <item>128-256 characters for email addresses or longer identifiers</item>
+    /// <item>36-50 characters for GUID-based user IDs</item>
+    /// </list>
+    /// </remarks>
+    public int UserIdColumnLength { get; set; } = 128;
     
     /// <summary>
     /// Gets or sets the name of the column that stores company or organization identifiers.
@@ -137,8 +163,7 @@ public class PvNugsMsSqlLogWriterConfig
     /// <remarks>
     /// <para>
     /// This column stores the company/organization context for log entries in multi-tenant applications
-    /// and can be null. The column will be created as VARCHAR with a length determined by the existing
-    /// table schema or database constraints.
+    /// and can be null. The column will be created as VARCHAR with the length specified by <see cref="CompanyIdColumnLength"/>.
     /// </para>
     /// <para>
     /// Alternative names might include "OrganizationId", "TenantId", "Company_Id", or "ClientId"
@@ -146,6 +171,28 @@ public class PvNugsMsSqlLogWriterConfig
     /// </para>
     /// </remarks>
     public string CompanyIdColumnName { get; set; } = "CompanyId";
+    
+    /// <summary>
+    /// Gets or sets the maximum length for the company ID column.
+    /// </summary>
+    /// <value>
+    /// The column length in characters. Default value is 128.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This value determines the VARCHAR length for the company ID column when the table is created automatically.
+    /// Company IDs longer than this value will be automatically truncated with "..." suffix to prevent database errors.
+    /// </para>
+    /// <para>
+    /// Consider your application's multi-tenancy model when setting this value. Common patterns:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>50-100 characters for company codes or short names</item>
+    /// <item>128-256 characters for full company names or longer identifiers</item>
+    /// <item>36-50 characters for GUID-based tenant IDs</item>
+    /// </list>
+    /// </remarks>
+    public int CompanyIdColumnLength { get; set; } = 128;
     
     /// <summary>
     /// Gets or sets the name of the column that stores the machine name where the log entry originated.
@@ -157,7 +204,7 @@ public class PvNugsMsSqlLogWriterConfig
     /// <para>
     /// This column stores the name of the server or machine where the log entry was generated,
     /// which is useful for distributed applications and troubleshooting. The column will be created
-    /// as VARCHAR and cannot be null.
+    /// as VARCHAR with the length specified by <see cref="MachineNameColumnLength"/> and cannot be null.
     /// </para>
     /// <para>
     /// The value is automatically populated with <see cref="System.Environment.MachineName"/> if
@@ -165,6 +212,31 @@ public class PvNugsMsSqlLogWriterConfig
     /// </para>
     /// </remarks>
     public string MachineNameColumnName { get; set; } = "MachineName";
+    
+    /// <summary>
+    /// Gets or sets the maximum length for the machine name column.
+    /// </summary>
+    /// <value>
+    /// The column length in characters. Default value is 128.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This value determines the VARCHAR length for the machine name column when the table is created automatically.
+    /// Machine names longer than this value will be automatically truncated with "..." suffix.
+    /// </para>
+    /// <para>
+    /// Windows machine names are typically limited to 15 characters, but container environments,
+    /// cloud services, and other platforms may use longer names. The default of 128 characters
+    /// should accommodate most scenarios including:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>Standard Windows computer names (up to 15 characters)</item>
+    /// <item>Container names and Kubernetes pod names</item>
+    /// <item>Cloud service instance names</item>
+    /// <item>Virtual machine names</item>
+    /// </list>
+    /// </remarks>
+    public int MachineNameColumnLength { get; set; } = 128;
     
     /// <summary>
     /// Gets or sets the name of the column that stores log severity codes.
@@ -193,7 +265,8 @@ public class PvNugsMsSqlLogWriterConfig
     /// <remarks>
     /// <para>
     /// This column stores formatted contextual information including method name, file path, and line number
-    /// in the format: "methodName # filePath # lineNumber". The column will be created as VARCHAR and cannot be null.
+    /// in the format: "methodName # filePath # lineNumber". The column will be created as VARCHAR 
+    /// with the length specified by <see cref="ContextColumnLength"/> and cannot be null.
     /// </para>
     /// <para>
     /// This information is invaluable for debugging and tracing the source of log entries back to specific
@@ -201,6 +274,32 @@ public class PvNugsMsSqlLogWriterConfig
     /// </para>
     /// </remarks>
     public string ContextColumnName { get; set; } = "Context";
+    
+    /// <summary>
+    /// Gets or sets the maximum length for the context column.
+    /// </summary>
+    /// <value>
+    /// The column length in characters. Default value is 1024.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This value determines the VARCHAR length for the context column when the table is created automatically.
+    /// Context information longer than this value will be automatically truncated with "..." suffix.
+    /// </para>
+    /// <para>
+    /// The context field combines method name, file path, and line number information. Consider file path lengths
+    /// in your development environment when setting this value:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>500-1000 characters for typical development setups</item>
+    /// <item>1024-2048 characters for complex project structures or long paths</item>
+    /// <item>2048+ characters for very deep directory structures</item>
+    /// </list>
+    /// <para>
+    /// <strong>Performance Note:</strong> Larger column lengths may impact query performance and storage requirements.
+    /// </para>
+    /// </remarks>
+    public int ContextColumnLength { get; set; } = 1024;
     
     /// <summary>
     /// Gets or sets the name of the column that stores topic or category information.
@@ -211,7 +310,7 @@ public class PvNugsMsSqlLogWriterConfig
     /// <remarks>
     /// <para>
     /// This column stores optional topic or category information that can be used to group related log entries.
-    /// The column will be created as VARCHAR and can be null.
+    /// The column will be created as VARCHAR with the length specified by <see cref="TopicColumnLength"/> and can be null.
     /// </para>
     /// <para>
     /// Topics are useful for organizing logs by functional area, feature, or business process.
@@ -219,6 +318,28 @@ public class PvNugsMsSqlLogWriterConfig
     /// </para>
     /// </remarks>
     public string TopicColumnName { get; set; } = "Topic";
+    
+    /// <summary>
+    /// Gets or sets the maximum length for the topic column.
+    /// </summary>
+    /// <value>
+    /// The column length in characters. Default value is 128.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This value determines the VARCHAR length for the topic column when the table is created automatically.
+    /// Topics longer than this value will be automatically truncated with "..." suffix.
+    /// </para>
+    /// <para>
+    /// Consider your application's topic/category naming conventions when setting this value:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>50-100 characters for simple category names</item>
+    /// <item>128-256 characters for hierarchical topics or longer descriptions</item>
+    /// <item>Less than 50 characters for short, coded categories</item>
+    /// </list>
+    /// </remarks>
+    public int TopicColumnLength { get; set; } = 128;
     
     /// <summary>
     /// Gets or sets the name of the column that stores the actual log message content.
@@ -290,7 +411,7 @@ public class PvNugsMsSqlLogWriterConfig
     /// <remarks>
     /// <para>
     /// When set to <c>true</c>, the log writer will validate the existing table schema on first use to ensure
-    /// it matches the expected structure (column names, data types, nullability). This helps catch configuration
+    /// it matches the expected structure (column names, data types, lengths, nullability). This helps catch configuration
     /// errors early and ensures reliable logging operations.
     /// </para>
     /// <para>

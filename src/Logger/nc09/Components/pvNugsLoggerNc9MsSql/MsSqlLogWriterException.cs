@@ -1,3 +1,5 @@
+using Microsoft.Data.SqlClient;
+
 namespace pvNugsLoggerNc9MsSql;
 
 /// <summary>
@@ -92,7 +94,7 @@ public class MsSqlLogWriterException: Exception
     /// </summary>
     /// <param name="e">
     /// The exception that is the cause of the current exception. This is typically a database-related
-    /// exception such as <see cref="System.Data.SqlClient.SqlException"/> or <see cref="System.InvalidOperationException"/>.
+    /// exception such as <see cref="SqlException"/> or <see cref="System.InvalidOperationException"/>.
     /// Cannot be null.
     /// </param>
     /// <remarks>

@@ -40,20 +40,26 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
 
     private readonly string _tableName;
     private readonly string _schemaName;
+    
     private readonly string _userIdColumnName;
+    private int _userIdLength;
+    
     private readonly string _companyIdColumnName;
+    private int _companyIdLength;
+    
     private readonly string _severityCodeColumnName;
+    
     private readonly string _machineNameColumnName;
+    private int _machineNameLength;
+    
     private readonly string _topicColumnName;
+    private int _topicLength;
+    
     private readonly string _contextColumnName;
+    private int _contextLength;
+    
     private readonly string _messageColumnName;
     private readonly string _createDateColumnName;
-
-    private int _userIdLength;
-    private int _companyIdLength;
-    private int _machineNameLength;
-    private int _topicLength;
-    private int _contextLength;
 
     private MsSqlLogWriter(
         IPvNugsCsProvider csp,
@@ -64,12 +70,24 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
 
         _tableName = _config.TableName;
         _schemaName = _config.SchemaName;
+        
         _userIdColumnName = _config.UserIdColumnName;
+        _userIdLength = _config.UserIdColumnLength;
+        
         _companyIdColumnName = _config.CompanyIdColumnName;
+        _companyIdLength = _config.CompanyIdColumnLength;
+        
         _severityCodeColumnName = _config.SeverityCodeColumnName;
+        
         _machineNameColumnName = _config.MachineNameColumnName;
+        _machineNameLength = _config.MachineNameColumnLength;
+        
         _topicColumnName = _config.TopicColumnName;
+        _topicLength = _config.TopicColumnLength;
+        
         _contextColumnName = _config.ContextColumnName;
+        _contextLength = _config.ContextColumnLength;
+        
         _messageColumnName = _config.MessageColumnName;
         _createDateColumnName = _config.CreateDateUtcColumnName;
     }
@@ -395,11 +413,14 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
         return value.Length > maxLength ? value[..(maxLength - 3)] + "..." : value;
     }
 
-    private async Task CreateTableIfNotExistsAsync(SqlConnection readerCn)
+    private async Task CreateTableIfNotExistsAsync()
     {
-        SqlConnection? ownerCn = null;
         try
         {
+            await LogActivityAsync($"Checking table '{_tableName}' existence");
+            var readerCs = await _csp.GetConnectionStringAsync();
+            await using var readerCn = new SqlConnection(readerCs);
+            await readerCn.OpenAsync();
             // Use parameters for table/schema names in queries where possible
             const string existsCommandText = "SELECT 1 FROM sys.tables t " +
                                              "INNER JOIN sys.schemas s ON t.schema_id = s.schema_id " +
@@ -410,13 +431,22 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
             cmd.Parameters.Add("@schemaName", SqlDbType.NVarChar, 128).Value = _schemaName;
 
             var tableExists = await cmd.ExecuteScalarAsync() != null;
+            
+            await readerCn.CloseAsync();
 
             if (tableExists) return;
-
+        }
+        catch (Exception e)
+        {
+            await LogExceptionAsync(e);
+        }
+        
+        try
+        {
             await LogActivityAsync($"creating table {_schemaName}.{_tableName}");
 
             var ownerCs = await _csp.GetConnectionStringAsync(SqlRoleEnu.Owner);
-            ownerCn = new SqlConnection(ownerCs);
+            await using var ownerCn = new SqlConnection(ownerCs);
             await ownerCn.OpenAsync();
 
             // Note: Table/column names can't be parameterized in DDL, but they come from config, not user input
@@ -425,12 +455,12 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
                 $"( " +
                 $" [{_userIdColumnName}] {SqlVarChar}({_userIdLength}), " +
                 $" [{_companyIdColumnName}] {SqlVarChar}({_companyIdLength}), " +
-                $" [{_severityCodeColumnName}] {SqlChar}(1), " +
-                $" [{_machineNameColumnName}] {SqlVarChar}({_machineNameLength}), " +
+                $" [{_severityCodeColumnName}] {SqlChar}(1)  NOT NULL, " +
+                $" [{_machineNameColumnName}] {SqlVarChar}({_machineNameLength}) NOT NULL, " +
                 $" [{_topicColumnName}] {SqlVarChar}({_topicLength}), " +
-                $" [{_contextColumnName}] {SqlVarChar}({_contextLength}), " +
-                $" [{_messageColumnName}] {SqlNVarChar}(MAX), " +
-                $" [{_createDateColumnName}] {SqlDateTime} " +
+                $" [{_contextColumnName}] {SqlVarChar}({_contextLength}) NOT NULL, " +
+                $" [{_messageColumnName}] {SqlNVarChar}(MAX) NOT NULL , " +
+                $" [{_createDateColumnName}] {SqlDateTime} NOT NULL " +
                 $")";
 
             await using var createCmd = new SqlCommand(createCommandText, ownerCn);
@@ -441,21 +471,18 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
             await LogExceptionAsync(e);
             throw new MsSqlLogWriterException(e);
         }
-        finally
-        {
-            if (ownerCn != null)
-                await ownerCn.CloseAsync();
-        }
     }
 
-    private async Task CheckTable(SqlConnection cn)
+    private async Task CheckTable()
     {
         var errors = new List<string>();
+        await LogActivityAsync($"Checking table {_tableName}");
         try
         {
-            await LogActivityAsync($"Checking table {_tableName}");
+            var readerCs = await _csp.GetConnectionStringAsync();
+            await using var readerCn = new SqlConnection(readerCs);
 
-            await cn.OpenAsync();
+            await readerCn.OpenAsync();
             const string cmdText = "SELECT [column_name], " +
                           "       [data_type], " +
                           "       [is_nullable], " +
@@ -464,7 +491,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
                           "WHERE [table_schema] = @schemaName " +
                           "AND   [table_name] = @tableName";
 
-            var cmd = cn.CreateCommand();
+            var cmd = readerCn.CreateCommand();
             cmd.CommandText = cmdText;
             cmd.CommandType = CommandType.Text;
         
@@ -480,7 +507,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
             }
 
             await reader.CloseAsync();
-            await cn.CloseAsync();
+            await readerCn.CloseAsync();
 
             if (dic.Count == 0)
             {
@@ -594,15 +621,11 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
                 return;
             }
 
-            var readerCs = await _csp.GetConnectionStringAsync();
-            await using var readerCn = new SqlConnection(readerCs);
-            await readerCn.OpenAsync();
-
             if (_config.CreateTableAtFirstUse)
-                await CreateTableIfNotExistsAsync(readerCn);
+                await CreateTableIfNotExistsAsync();
 
             if (_config.CheckTableAtFirstUse)
-                await CheckTable(readerCn);
+                await CheckTable();
 
             _isInitialized = true;
         }

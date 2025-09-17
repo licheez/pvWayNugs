@@ -101,7 +101,7 @@ public class MsSqlLoggerService(
     /// </exception>
     /// <remarks>
     /// <para>
-    /// This method delegates to the underlying <see cref="IMsSqlLogWriter.PurgeLogsAsync"/> implementation,
+    /// This method delegates to the underlying IMsSqlLogWriter.PurgeLogsAsync implementation,
     /// which performs the database operations using parameterized queries for security.
     /// </para>
     /// <para>
