@@ -4,9 +4,9 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.1.0</Version>
+        <Version>9.1.1</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>aligned with abstraction version</PackageReleaseNotes>
+        <PackageReleaseNotes>aligned with abstraction version 9.1.1</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
@@ -21,7 +21,7 @@
 
     <ItemGroup>
         <PackageReference Include="pvNugsEnumConvNc9" Version="9.0.1" />
-        <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.1.0" />
+        <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.1.1" />
 
         <None Include="readme.md" Pack="true" PackagePath="\"/>
         <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml" >
