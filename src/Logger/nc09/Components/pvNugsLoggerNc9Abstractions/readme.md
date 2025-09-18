@@ -9,29 +9,28 @@ A comprehensive .NET logging framework that provides structured, contextual logg
 - **Structured Logging**: Detailed metadata for each log entry including machine name, method name, and line numbers
 - **Severity Levels**: Comprehensive severity level system compatible with Microsoft's `LogLevel`
 - **Method Result Tracking**: Built-in support for tracking method execution results and notifications
+- **Base Implementation**: Ready-to-use abstract base class for creating custom logging implementations
 - **Async Support**: Both synchronous and asynchronous logging methods
 - **Unit Testing Support**: Specialized interfaces for testing logging behavior
 
 ## Installation
 
 Install via NuGet Package Manager:
-
-```shell
+```
+shell
 Install-Package pvNugsLoggerNc9Abstractions
 ```
-
 Or via .NET CLI:
-
-```shell
-shell dotnet add package pvNugsLoggerNc9Abstractions
 ```
-
-
+shell
+dotnet add package pvNugsLoggerNc9Abstractions
+```
 ## Core Components
 
 ### Logger Services
 
 - **ILoggerService**: The main logging interface that provides comprehensive logging functionality
+- **BaseLoggerService**: Abstract base class implementing ILoggerService with core functionality
 - **IConsoleLoggerService**: Specialized service for console output
 - **IHybridLoggerService**: Combines multiple logging outputs
 - **IUTestLoggerService**: Specialized service for unit testing scenarios
@@ -55,48 +54,88 @@ shell dotnet add package pvNugsLoggerNc9Abstractions
 
 ## Basic Usage
 
-```csharp
-public class ExampleService { private readonly ILoggerService _logger;
-public ExampleService(ILoggerService logger)
+### Using Existing Implementations
+```
+csharp
+public class ExampleService
 {
-    _logger = logger;
-}
+private readonly ILoggerService _logger;
 
-public async Task DoSomethingAsync()
-{
-    // Set context for subsequent log entries
-    _logger.SetUser("user123", "company456");
-    _logger.SetTopic("ImportantOperation");
-
-    try
+    public ExampleService(ILoggerService logger)
     {
-        // Log a simple message
-        _logger.Log("Starting operation", SeverityEnu.Info);
-
-        // Perform some work...
-
-        // Log multiple messages
-        await _logger.LogAsync(
-            new[] { "Step 1 complete", "Step 2 complete" },
-            SeverityEnu.Debug);
+        _logger = logger;
     }
-    catch (Exception ex)
+
+    public async Task DoSomethingAsync()
     {
-        // Log exception with context
-        await _logger.LogAsync(ex);
-        throw;
+        // Set context for subsequent log entries
+        _logger.SetUser("user123", "company456");
+        _logger.SetTopic("ImportantOperation");
+
+        try
+        {
+            // Log a simple message
+            _logger.Log("Starting operation", SeverityEnu.Info);
+
+            // Perform some work...
+
+            // Log multiple messages
+            await _logger.LogAsync(
+                new[] { "Step 1 complete", "Step 2 complete" },
+                SeverityEnu.Debug);
+        }
+        catch (Exception ex)
+        {
+            // Log exception with context
+            await _logger.LogAsync(ex);
+            throw;
+        }
     }
 }
 ```
+### Creating Custom Implementations
+```
+csharp
+public class CustomLoggerService : BaseLoggerService
+{
+public CustomLoggerService(SeverityEnu minLevel, params ILogWriter[] logWriters)
+: base(minLevel, logWriters)
+{
+}
 
+    // BaseLoggerService provides all the core functionality
+    // Override specific methods if needed for custom behavior
+}
+
+public class CustomLogWriter : ILogWriter
+{
+public void WriteLog(string? userId, string? companyId, string? topic,
+SeverityEnu severity, string machineName, string memberName,
+string filePath, int lineNumber, string message, DateTime dateUtc)
+{
+// Implement your custom log writing logic
+}
+
+    public async Task WriteLogAsync(string? userId, string? companyId, string? topic,
+        SeverityEnu severity, string machineName, string memberName, 
+        string filePath, int lineNumber, string message, DateTime dateUtc)
+    {
+        // Implement your custom async log writing logic
+        await Task.CompletedTask;
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+```
 ### Unit Testing
+```
+csharp
+public class LoggingTests
+{
+private readonly IUTestLogWriter _logWriter;
+private readonly IUTestLoggerService _logger;
 
-```csharp
-public class LoggingTests 
-{ 
-    private readonly IUTestLogWriter _logWriter; 
-    private readonly IUTestLoggerService _logger;
-    
     [Fact]
     public void ShouldLogError()
     {
@@ -107,5 +146,14 @@ public class LoggingTests
         Assert.Equal(SeverityEnu.Error, logEntry.Severity);
     }
 }
-
 ```
+## Available Implementations
+
+This abstractions package provides the foundation for logging. For ready-to-use implementations, consider these companion packages:
+
+- **pvNugsLoggerNc9MsSql**: SQL Server logging implementation
+- **pvNugsLoggerNc9Serilog**: Serilog integration implementation
+
+## Microsoft.Extensions.Logging Integration
+
+The `BaseLoggerService` implements `Microsoft.Extensions.Logging.ILogger` interface, making it fully compatible with .NET's built-in logging framework and dependency injection container.
