@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using pvNugsLoggerNc9Abstractions;
-using pvNugsLoggerNc9;
 
 namespace pvNugsLoggerNc9Seri;
 

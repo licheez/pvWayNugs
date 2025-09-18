@@ -32,20 +32,21 @@ csharp
 builder.Services.AddPvNugsLoggerSeriService(builder.Configuration);
 ```
 2. Configure in `appsettings.json`:
-```
-json
+```json
 {
-"PvNugsLogger": {
-"MinLevel": "Debug"
-}
+  "PvNugsLogger": {
+    "MinLevel": "Debug"
+  }
 }
 ```
+```
+
+
 3. Inject and use in your code:
-```
-csharp
+```csharp
 public class MyService
 {
-private readonly ILoggerService _logger;
+    private readonly ILoggerService _logger;
 
     public MyService(ILoggerService logger)
     {
@@ -65,13 +66,15 @@ private readonly ILoggerService _logger;
     }
 }
 ```
+
+
 ## Dependencies
 
 - .NET 9.0
 - Microsoft.Extensions.Logging.Abstractions (9.0.7)
 - Microsoft.Extensions.Options.ConfigurationExtensions (9.0.7)
 - Serilog.Sinks.Console (6.0.0)
-- pvNugsLoggerNc9 (9.0.0)
+- pvNugsLoggerNc9Abstractions (9.1.3)
 
 ## License
 
