@@ -1,9 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using pvNugsCsProviderNc9Abstractions;
-using pvNugsLoggerNc9;
 using pvNugsLoggerNc9Abstractions;
 
 namespace pvNugsLoggerNc9MsSql;

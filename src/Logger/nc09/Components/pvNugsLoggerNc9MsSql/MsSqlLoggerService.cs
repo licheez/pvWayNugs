@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using pvNugsLoggerNc9;
 using pvNugsLoggerNc9Abstractions;
 
 namespace pvNugsLoggerNc9MsSql;
@@ -86,15 +85,12 @@ public class MsSqlLoggerService(
     /// <param name="retainDic">
     /// A dictionary mapping <see cref="SeverityEnu"/> values to their respective retention periods.
     /// Log entries older than the specified <see cref="TimeSpan"/> for each severity level will be permanently deleted.
-    /// Cannot be null or empty.
+    /// If null, uses the default retention policies from configuration.
     /// </param>
     /// <returns>
     /// A task that represents the asynchronous purge operation.
     /// The task result contains the total number of log entries deleted across all processed severity levels.
     /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="retainDic"/> is null.
-    /// </exception>
     /// <exception cref="MsSqlLogWriterException">
     /// Thrown when a database error occurs during the purge operation.
     /// The original database exception can be accessed through the <see cref="Exception.InnerException"/> property.
@@ -105,6 +101,7 @@ public class MsSqlLoggerService(
     /// which performs the database operations using parameterized queries for security.
     /// </para>
     /// <para>
+    /// When <paramref name="retainDic"/> is null, the method uses default retention policies from configuration.
     /// The purge operation processes each severity level sequentially within a single database transaction,
     /// ensuring consistency. The cutoff date for each severity is calculated as <c>DateTime.UtcNow - retentionPeriod</c>.
     /// </para>
@@ -115,7 +112,11 @@ public class MsSqlLoggerService(
     /// </remarks>
     /// <example>
     /// <code>
-    /// // Define retention policies by severity
+    /// // Use default retention policies from configuration
+    /// int totalDeleted = await loggerService.PurgeLogsAsync();
+    /// Console.WriteLine($"Successfully purged {totalDeleted} log entries using default policies");
+    /// 
+    /// // Or define custom retention policies
     /// var retentionPolicies = new Dictionary&lt;SeverityEnu, TimeSpan&gt;
     /// {
     ///     { SeverityEnu.Critical, TimeSpan.FromDays(365) },  // Keep critical logs for 1 year
@@ -137,9 +138,9 @@ public class MsSqlLoggerService(
     /// }
     /// </code>
     /// </example>
-    public async Task<int> PurgeLogsAsync(IDictionary<SeverityEnu, TimeSpan> retainDic)
+    public async Task<int> PurgeLogsAsync(IDictionary<SeverityEnu, TimeSpan>? retainDic = null)
     {
-        ArgumentNullException.ThrowIfNull(retainDic);
         return await logWriter.PurgeLogsAsync(retainDic);
     }
+    
 }

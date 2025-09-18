@@ -1,3 +1,6 @@
+
+using pvNugsLoggerNc9Abstractions;
+
 namespace pvNugsLoggerNc9MsSql;
 
 /// <summary>
@@ -6,14 +9,15 @@ namespace pvNugsLoggerNc9MsSql;
 /// <remarks>
 /// <para>
 /// This configuration class defines all customizable aspects of the SQL Server logging implementation,
-/// including table structure, column names, column lengths, and initialization behavior. It is designed to work with
-/// the .NET configuration system and can be populated from appsettings.json, environment variables,
-/// or other configuration sources.
+/// including table structure, column names, column lengths, initialization behavior, and retention policies. 
+/// It is designed to work with the .NET configuration system and can be populated from appsettings.json, 
+/// environment variables, or other configuration sources.
 /// </para>
 /// <para>
-/// The configuration supports flexible table and column naming, as well as customizable column lengths
-/// to accommodate existing database schemas and naming conventions. All string properties have sensible
-/// defaults that follow common database naming practices.
+/// The configuration supports flexible table and column naming, customizable column lengths, and 
+/// configurable log retention policies to accommodate existing database schemas and operational requirements. 
+/// All properties have sensible defaults that follow common database naming practices and enterprise 
+/// logging standards.
 /// </para>
 /// <para>
 /// <strong>Important:</strong> Changes to table structure configuration (table name, schema, column names, lengths)
@@ -35,7 +39,14 @@ namespace pvNugsLoggerNc9MsSql;
 ///     "CompanyIdColumnLength": 64,
 ///     "SeverityCodeColumnName": "LogLevel",
 ///     "MessageColumnName": "LogMessage",
-///     "ContextColumnLength": 2048
+///     "ContextColumnLength": 2048,
+///     "DefaultRetentionPolicies": {
+///       "Critical": "730.00:00:00",
+///       "Error": "180.00:00:00",
+///       "Warning": "60.00:00:00",
+///       "Info": "14.00:00:00",
+///       "Debug": "1.00:00:00"
+///     }
 ///   }
 /// }
 /// 
@@ -47,6 +58,10 @@ namespace pvNugsLoggerNc9MsSql;
 ///     options.UserIdColumnLength = 100;
 ///     options.TopicColumnLength = 200;
 ///     options.CreateTableAtFirstUse = false; // Use existing table
+///     
+///     // Configure custom retention policies
+///     options.DefaultRetentionPolicies[SeverityEnu.Critical] = TimeSpan.FromDays(1095); // 3 years
+///     options.DefaultRetentionPolicies[SeverityEnu.Error] = TimeSpan.FromDays(365);     // 1 year
 /// });
 /// 
 /// // Registration with DI container
@@ -114,6 +129,110 @@ public class PvNugsMsSqlLogWriterConfig
     /// </remarks>
     public string SchemaName { get; set; } = "dbo";
     
+    /// <summary>
+    /// Gets or sets a value indicating whether an identity column should be included in the log table.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if an identity column should be created; otherwise, <c>false</c>. Default value is <c>true</c>.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When set to <c>true</c>, an auto-incrementing integer identity column will be created as the primary key
+    /// of the log table. This provides unique identification for each log entry and improves query performance.
+    /// </para>
+    /// <para>
+    /// Set to <c>false</c> if your existing table doesn't have an identity column or if you prefer a different
+    /// primary key strategy.
+    /// </para>
+    /// </remarks>
+    public bool IncludeIdentityColumn { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets the name of the identity column.
+    /// </summary>
+    /// <value>
+    /// The identity column name. Default value is "Id".
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// This setting is only used when <see cref="IncludeIdentityColumn"/> is <c>true</c>.
+    /// The identity column will be created as INT IDENTITY(1,1) PRIMARY KEY.
+    /// </para>
+    /// <para>
+    /// Common alternative names include "LogId", "EntryId", or "SequenceId" depending on your
+    /// naming conventions.
+    /// </para>
+    /// </remarks>
+    public string IdentityColumnName { get; set; } = "Id";
+    
+        /// <summary>
+    /// Gets or sets a value indicating whether an index should be created on the CreateDateUtc column.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if a date index should be created; otherwise, <c>false</c>. Default value is <c>true</c>.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When set to <c>true</c>, a non-clustered index will be created on the CreateDateUtc column in descending order,
+    /// optimizing time-based queries which are very common in logging scenarios.
+    /// </para>
+    /// <para>
+    /// This index is highly recommended for log tables as most log queries involve date range filtering.
+    /// </para>
+    /// </remarks>
+    public bool IncludeDateIndex { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a composite index should be created for purge operations.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if a purge index should be created; otherwise, <c>false</c>. Default value is <c>true</c>.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When set to <c>true</c>, a composite non-clustered index will be created on (SeverityCode, CreateDateUtc)
+    /// to optimize the performance of log purging operations which filter by both severity and date.
+    /// </para>
+    /// <para>
+    /// This index significantly improves the performance of the PurgeLogsAsync method.
+    /// </para>
+    /// </remarks>
+    public bool IncludePurgeIndex { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether an index should be created for user-based queries.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if a user index should be created; otherwise, <c>false</c>. Default value is <c>false</c>.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When set to <c>true</c>, a filtered non-clustered index will be created on (UserId, CreateDateUtc)
+    /// where UserId is not null, optimizing queries that filter logs by specific users.
+    /// </para>
+    /// <para>
+    /// Enable this only if you frequently query logs by user ID, as it adds storage overhead.
+    /// </para>
+    /// </remarks>
+    public bool IncludeUserIndex { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether an index should be created for topic-based queries.
+    /// </summary>
+    /// <value>
+    /// <c>true</c> if a topic index should be created; otherwise, <c>false</c>. Default value is <c>false</c>.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// When set to <c>true</c>, a filtered non-clustered index will be created on (Topic, CreateDateUtc)
+    /// where Topic is not null, optimizing queries that filter logs by specific topics or categories.
+    /// </para>
+    /// <para>
+    /// Enable this only if you frequently query logs by topic, as it adds storage overhead.
+    /// </para>
+    /// </remarks>
+    public bool IncludeTopicIndex { get; set; } = false;
+
     /// <summary>
     /// Gets or sets the name of the column that stores user identifiers.
     /// </summary>
@@ -426,4 +545,83 @@ public class PvNugsMsSqlLogWriterConfig
     /// </para>
     /// </remarks>
     public bool CheckTableAtFirstUse { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the default retention periods for each severity level when purging logs.
+    /// </summary>
+    /// <value>
+    /// A dictionary mapping severity levels to their default retention periods.
+    /// Used when <see cref="MsSqlLogWriter.PurgeLogsAsync"/> is called with a null retention dictionary.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// These default values provide a balanced approach to log retention that considers both storage costs
+    /// and operational requirements:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><strong>Critical:</strong> 365 days (1 year) - Extended retention for critical system events and security incidents</item>
+    /// <item><strong>Error:</strong> 90 days (3 months) - Sufficient time for troubleshooting and root cause analysis</item>
+    /// <item><strong>Warning:</strong> 30 days (1 month) - Adequate for monitoring trends and identifying patterns</item>
+    /// <item><strong>Info:</strong> 7 days (1 week) - Short retention for high-volume informational logs</item>
+    /// <item><strong>Debug:</strong> 1 day - Minimal retention for verbose debugging information</item>
+    /// </list>
+    /// <para>
+    /// <strong>Configuration Options:</strong> You can customize these defaults through configuration or 
+    /// programmatically. The retention periods should align with your organization's compliance requirements,
+    /// storage capacity, and operational needs.
+    /// </para>
+    /// <para>
+    /// <strong>JSON Configuration:</strong> When configuring through appsettings.json, use the TimeSpan 
+    /// string format (e.g., "365.00:00:00" for 365 days). The format is "days.hours:minutes:seconds".
+    /// </para>
+    /// <para>
+    /// <strong>Performance Impact:</strong> Longer retention periods result in larger log tables, which may
+    /// impact query performance and storage costs. Consider your specific requirements when adjusting these values.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // appsettings.json configuration
+    /// {
+    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///     "DefaultRetentionPolicies": {
+    ///       "Critical": "730.00:00:00",   // 2 years for critical events
+    ///       "Error": "180.00:00:00",      // 6 months for errors
+    ///       "Warning": "60.00:00:00",     // 2 months for warnings  
+    ///       "Info": "14.00:00:00",        // 2 weeks for info logs
+    ///       "Debug": "3.00:00:00"         // 3 days for debug logs
+    ///     }
+    ///   }
+    /// }
+    /// 
+    /// // Programmatic configuration
+    /// builder.Services.Configure&lt;PvNugsMsSqlLogWriterConfig&gt;(options =&gt;
+    /// {
+    ///     options.DefaultRetentionPolicies[SeverityEnu.Critical] = TimeSpan.FromDays(1095); // 3 years
+    ///     options.DefaultRetentionPolicies[SeverityEnu.Error] = TimeSpan.FromDays(365);     // 1 year
+    ///     options.DefaultRetentionPolicies[SeverityEnu.Warning] = TimeSpan.FromDays(90);    // 3 months
+    ///     options.DefaultRetentionPolicies[SeverityEnu.Info] = TimeSpan.FromDays(30);       // 1 month
+    ///     options.DefaultRetentionPolicies[SeverityEnu.Debug] = TimeSpan.FromHours(12);     // 12 hours
+    /// });
+    /// 
+    /// // Usage with default policies
+    /// int purgedRows = await logWriter.PurgeLogsAsync(); // Uses DefaultRetentionPolicies
+    /// 
+    /// // Override with custom policies
+    /// var customPolicies = new Dictionary&lt;SeverityEnu, TimeSpan&gt;
+    /// {
+    ///     { SeverityEnu.Debug, TimeSpan.FromHours(6) } // Purge debug logs after 6 hours
+    /// };
+    /// int customPurgedRows = await logWriter.PurgeLogsAsync(customPolicies);
+    /// </code>
+    /// </example>
+    public Dictionary<SeverityEnu, TimeSpan> DefaultRetentionPolicies { get; set; } = new()
+    {
+        { SeverityEnu.Fatal, TimeSpan.FromDays(365) },  // 1 year
+        { SeverityEnu.Error, TimeSpan.FromDays(90) },   // 3 months  
+        { SeverityEnu.Warning, TimeSpan.FromDays(30) }, // 1 month
+        { SeverityEnu.Info, TimeSpan.FromDays(7) },     // 1 week
+        { SeverityEnu.Debug, TimeSpan.FromDays(3) },     // 1 day
+        { SeverityEnu.Trace, TimeSpan.FromDays(1) }     // 1 day
+    };
 }

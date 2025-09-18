@@ -11,21 +11,171 @@ namespace pvNugsLoggerNc9MsSql;
 
 /// <summary>
 /// Provides a Microsoft SQL Server-based implementation for writing log entries to a database table.
-/// Supports automatic table creation, validation, and thread-safe lazy initialization.
+/// Supports automatic table creation, schema validation, performance optimization through indexing, and thread-safe lazy initialization.
 /// </summary>
 /// <remarks>
-/// This class implements a robust logging solution with the following features:
+/// <para>
+/// This class implements a comprehensive logging solution designed for enterprise applications with the following key features:
+/// </para>
+/// <para>
+/// <strong>Core Functionality:</strong>
+/// </para>
 /// <list type="bullet">
 /// <item>Parameterized queries to prevent SQL injection attacks</item>
 /// <item>Lazy initialization with thread-safe double-check locking pattern</item>
-/// <item>Automatic table creation and schema validation</item>
-/// <item>String truncation to prevent database constraint violations</item>
-/// <item>Comprehensive error handling and logging</item>
-/// <item>Support for log purging based on severity and retention policies</item>
+/// <item>Automatic table creation and comprehensive schema validation</item>
+/// <item>Intelligent string truncation to prevent database constraint violations</item>
+/// <item>Comprehensive error handling and internal activity logging</item>
+/// <item>Support for log purging based on severity-specific retention policies</item>
+/// </list>
+/// <para>
+/// <strong>Performance Optimization:</strong>
+/// </para>
+/// <list type="bullet">
+/// <item>Configurable index creation for time-based queries (most common in logging scenarios)</item>
+/// <item>Composite indexes optimized for purge operations (severity + date)</item>
+/// <item>Optional filtered indexes for user-based and topic-based queries</item>
+/// <item>Proper index design with descending date ordering for recent logs first</item>
+/// <item>Intelligent index naming to prevent conflicts</item>
+/// </list>
+/// <para>
+/// <strong>Database Schema Management:</strong>
+/// </para>
+/// <list type="bullet">
+/// <item>Flexible table and column naming through configuration</item>
+/// <item>Support for both identity-based and custom primary key strategies</item>
+/// <item>Automatic column length validation and truncation</item>
+/// <item>Schema drift detection through comprehensive table validation</item>
+/// <item>Support for different SQL Server data types and constraints</item>
+/// </list>
+/// <para>
+/// <strong>Operational Features:</strong>
+/// </para>
+/// <list type="bullet">
+/// <item>Configurable retention policies with default enterprise-grade settings</item>
+/// <item>Bulk purging operations optimized for large log tables</item>
+/// <item>Support for multi-tenant scenarios through company/user context</item>
+/// <item>Topic-based log categorization for easier filtering and analysis</item>
+/// <item>Rich contextual information including method name, file path, and line numbers</item>
+/// </list>
+/// <para>
+/// <strong>Configuration-Driven Behavior:</strong>
+/// </para>
+/// <para>
+/// The log writer's behavior is entirely controlled through <see cref="PvNugsMsSqlLogWriterConfig"/>,
+/// allowing for flexible deployment scenarios:
+/// </para>
+/// <list type="bullet">
+/// <item><strong>Development:</strong> Full automatic table creation with validation and comprehensive indexing</item>
+/// <item><strong>Staging:</strong> Schema validation with selective indexing based on query patterns</item>
+/// <item><strong>Production:</strong> Manual table management with optimized indexes for performance</item>
+/// </list>
+/// <para>
+/// <strong>Thread Safety and Performance:</strong>
+/// </para>
+/// <para>
+/// This implementation is fully thread-safe and uses async/await patterns throughout for optimal scalability.
+/// The initialization process uses a semaphore-based double-check locking pattern to ensure that expensive
+/// database operations (table creation, schema validation, index creation) are performed exactly once,
+/// regardless of concurrent access patterns.
+/// </para>
+/// <para>
+/// <strong>Error Handling Strategy:</strong>
+/// </para>
+/// <para>
+/// The class follows a defensive programming approach where non-critical errors (like index creation failures)
+/// are logged but don't prevent the core logging functionality from working. Critical errors (like table
+/// creation failures or severe schema mismatches) result in <see cref="MsSqlLogWriterException"/> being thrown
+/// with the original exception preserved for detailed diagnostics.
+/// </para>
+/// <para>
+/// <strong>Best Practices Integration:</strong>
+/// </para>
+/// <list type="bullet">
+/// <item>Implements both <see cref="IDisposable"/> and <see cref="IAsyncDisposable"/> for proper resource management</item>
+/// <item>Uses connection string providers for secure database access with role-based permissions</item>
+/// <item>Supports structured logging patterns with rich metadata</item>
+/// <item>Follows Microsoft's logging conventions and integrates with .NET's logging infrastructure</item>
+/// <item>Designed for dependency injection and configuration-based setup</item>
 /// </list>
 /// </remarks>
-public sealed class MsSqlLogWriter : IMsSqlLogWriter
-{
+/// <example>
+/// <code>
+/// // Basic configuration and setup
+/// builder.Services.Configure&lt;PvNugsMsSqlLogWriterConfig&gt;(options =&gt;
+/// {
+///     options.TableName = "ApplicationLogs";
+///     options.SchemaName = "Logging";
+///     
+///     // Enable performance indexes
+///     options.IncludeDateIndex = true;      // Essential for time-based queries
+///     options.IncludePurgeIndex = true;     // Optimizes maintenance operations
+///     options.IncludeUserIndex = true;      // Enable if filtering by user frequently
+///     
+///     // Configure retention policies
+///     options.DefaultRetentionPolicies[SeverityEnu.Error] = TimeSpan.FromDays(180);
+///     options.DefaultRetentionPolicies[SeverityEnu.Info] = TimeSpan.FromDays(30);
+/// });
+/// 
+/// // Register with dependency injection
+/// builder.Services.AddSingleton&lt;IMsSqlLogWriter, MsSqlLogWriter&gt;();
+/// builder.Services.AddSingleton&lt;IMsSqlLoggerService, MsSqlLoggerService&gt;();
+/// 
+/// // Usage in application
+/// public class OrderService
+/// {
+///     private readonly IMsSqlLogWriter _logWriter;
+///     
+///     public OrderService(IMsSqlLogWriter logWriter)
+///     {
+///         _logWriter = logWriter;
+///     }
+///     
+///     public async Task ProcessOrderAsync(string orderId, string userId)
+///     {
+///         await _logWriter.WriteLogAsync(
+///             userId: userId,
+///             companyId: "ACME Corp",
+///             topic: "OrderProcessing",
+///             severity: SeverityEnu.Info,
+///             machineName: Environment.MachineName,
+///             memberName: nameof(ProcessOrderAsync),
+///             filePath: __FILE__,
+///             lineNumber: __LINE__,
+///             message: $"Processing order {orderId}",
+///             dateUtc: DateTime.UtcNow);
+///         
+///         // Process order logic...
+///     }
+///     
+///     public async Task PurgeOldLogsAsync()
+///     {
+///         // Use default retention policies
+///         int purgedCount = await _logWriter.PurgeLogsAsync();
+///         Console.WriteLine($"Purged {purgedCount} old log entries");
+///     }
+/// }
+/// 
+/// // Advanced configuration for high-performance scenarios
+/// builder.Services.Configure&lt;PvNugsMsSqlLogWriterConfig&gt;(options =&gt;
+/// {
+///     // Disable automatic operations for production
+///     options.CreateTableAtFirstUse = false;   // Use migration scripts
+///     options.CheckTableAtFirstUse = false;    // Skip validation for performance
+///     
+///     // Optimize indexes for specific query patterns
+///     options.IncludeDateIndex = true;          // Always needed
+///     options.IncludePurgeIndex = true;         // Always needed for maintenance
+///     options.IncludeUserIndex = false;         // Skip if not filtering by user
+///     options.IncludeTopicIndex = true;         // Enable if using topic-based filtering
+///     
+///     // Tune column sizes for your data
+///     options.UserIdColumnLength = 256;         // Accommodate email addresses
+///     options.ContextColumnLength = 2048;       // Handle complex file paths
+/// });
+/// </code>
+/// </example>
+public sealed class MsSqlLogWriter : IMsSqlLogWriter{
     private const string SqlVarChar = "varchar";
     private const string SqlChar = "char";
     private const string SqlNVarChar = "nvarchar";
@@ -286,43 +436,98 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
     }
 
     /// <summary>
-    /// Asynchronously purges log entries from the database based on severity and retention policies.
+    /// Asynchronously purges log entries from the database based on severity-specific retention policies.
     /// </summary>
     /// <param name="retainDic">
-    /// A dictionary mapping severity levels to their respective retention periods.
-    /// Log entries older than the retention period for each severity will be deleted.
+    /// A dictionary mapping <see cref="SeverityEnu"/> values to their respective retention periods.
+    /// Log entries older than the specified <see cref="TimeSpan"/> for each severity level will be permanently deleted.
+    /// If null, uses the default retention policies from configuration (<see cref="PvNugsMsSqlLogWriterConfig.DefaultRetentionPolicies"/>).
     /// </param>
     /// <returns>
     /// A task that represents the asynchronous purge operation. 
-    /// The task result contains the total number of rows deleted across all severity levels.
+    /// The task result contains the total number of log entries deleted across all processed severity levels.
     /// </returns>
     /// <exception cref="MsSqlLogWriterException">
     /// Thrown when a database error occurs during the purge operation.
     /// The original exception is wrapped and can be accessed via the <see cref="Exception.InnerException"/> property.
     /// </exception>
     /// <remarks>
-    /// <para>This method performs lazy initialization on first call, which may include table creation and validation.</para>
-    /// <para>The purge operation processes each severity level sequentially within a single database connection.</para>
-    /// <para>The cutoff date is calculated as <c>DateTime.UtcNow - retainPeriod</c> for each severity.</para>
-    /// <para>All database operations use parameterized queries to prevent SQL injection attacks.</para>
+    /// <para>
+    /// This method performs lazy initialization on first call, which may include table creation and validation
+    /// depending on the <see cref="PvNugsMsSqlLogWriterConfig.CreateTableAtFirstUse"/> and 
+    /// <see cref="PvNugsMsSqlLogWriterConfig.CheckTableAtFirstUse"/> configuration settings.
+    /// </para>
+    /// <para>
+    /// When <paramref name="retainDic"/> is null, the method uses the default retention policies from the
+    /// <see cref="PvNugsMsSqlLogWriterConfig.DefaultRetentionPolicies"/> configuration. This provides a convenient
+    /// way to perform routine log maintenance without specifying retention periods each time.
+    /// </para>
+    /// <para>
+    /// The purge operation processes each severity level sequentially within a single database connection.
+    /// Each severity level is processed in a separate DELETE statement with parameterized queries to prevent 
+    /// SQL injection attacks. The cutoff date is calculated as <c>DateTime.UtcNow - retainPeriod</c> for each severity.
+    /// </para>
+    /// <para>
+    /// <strong>Performance Considerations:</strong>
+    /// </para>
+    /// <list type="bullet">
+    /// <item>For large log tables, this operation may take considerable time and consume significant I/O resources</item>
+    /// <item>Consider running during maintenance windows to minimize impact on application performance</item>
+    /// <item>For very large datasets, consider implementing batched deletion strategies</item>
+    /// <item>Ensure appropriate database indexes exist on the severity and date columns for optimal performance</item>
+    /// </list>
+    /// <para>
+    /// <strong>Transaction Behavior:</strong> Each DELETE operation runs as a separate statement within the same
+    /// database connection, but not within an explicit transaction. This means partial completion is possible
+    /// if an error occurs partway through processing multiple severity levels.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
-    /// var retentionPolicy = new Dictionary&lt;SeverityEnu, TimeSpan&gt;
+    /// // Use default retention policies from configuration
+    /// int deletedRows = await logWriter.PurgeLogsAsync();
+    /// Console.WriteLine($"Purged {deletedRows} log entries using default retention policies");
+    /// 
+    /// // Define custom retention policies
+    /// var customRetentionPolicy = new Dictionary&lt;SeverityEnu, TimeSpan&gt;
     /// {
-    ///     { SeverityEnu.Error, TimeSpan.FromDays(90) },
-    ///     { SeverityEnu.Warning, TimeSpan.FromDays(30) },
-    ///     { SeverityEnu.Info, TimeSpan.FromDays(7) }
+    ///     { SeverityEnu.Critical, TimeSpan.FromDays(730) },   // 2 years for critical
+    ///     { SeverityEnu.Error, TimeSpan.FromDays(180) },      // 6 months for errors
+    ///     { SeverityEnu.Warning, TimeSpan.FromDays(60) },     // 2 months for warnings
+    ///     { SeverityEnu.Info, TimeSpan.FromDays(14) },        // 2 weeks for info
+    ///     { SeverityEnu.Debug, TimeSpan.FromDays(1) }         // 1 day for debug
     /// };
     /// 
-    /// int deletedRows = await logWriter.PurgeLogsAsync(retentionPolicy);
-    /// Console.WriteLine($"Purged {deletedRows} log entries");
+    /// try
+    /// {
+    ///     int customDeletedRows = await logWriter.PurgeLogsAsync(customRetentionPolicy);
+    ///     Console.WriteLine($"Purged {customDeletedRows} log entries using custom policies");
+    /// }
+    /// catch (MsSqlLogWriterException ex)
+    /// {
+    ///     Console.WriteLine($"Failed to purge logs: {ex.Message}");
+    ///     // Access the original database exception if needed
+    ///     if (ex.InnerException is SqlException sqlEx)
+    ///     {
+    ///         Console.WriteLine($"SQL Error Number: {sqlEx.Number}");
+    ///     }
+    /// }
+    /// 
+    /// // Purge only specific severity levels
+    /// var partialPolicy = new Dictionary&lt;SeverityEnu, TimeSpan&gt;
+    /// {
+    ///     { SeverityEnu.Debug, TimeSpan.FromHours(6) },       // Purge debug logs older than 6 hours
+    ///     { SeverityEnu.Trace, TimeSpan.FromHours(1) }        // Purge trace logs older than 1 hour
+    /// };
+    /// int partialDeleted = await logWriter.PurgeLogsAsync(partialPolicy);
     /// </code>
     /// </example>
-    public async Task<int> PurgeLogsAsync(IDictionary<SeverityEnu, TimeSpan> retainDic)
+    public async Task<int> PurgeLogsAsync(IDictionary<SeverityEnu, TimeSpan>? retainDic = null)
     {
         await EnsureInitializedAsync();
 
+        retainDic ??= _config.DefaultRetentionPolicies;
+        
         string appCs;
         try
         {
@@ -448,29 +653,117 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter
             var ownerCs = await _csp.GetConnectionStringAsync(SqlRoleEnu.Owner);
             await using var ownerCn = new SqlConnection(ownerCs);
             await ownerCn.OpenAsync();
-
-            // Note: Table/column names can't be parameterized in DDL, but they come from config, not user input
-            var createCommandText =
-                $"CREATE TABLE [{_schemaName}].[{_tableName}] " +
-                $"( " +
-                $" [{_userIdColumnName}] {SqlVarChar}({_userIdLength}), " +
-                $" [{_companyIdColumnName}] {SqlVarChar}({_companyIdLength}), " +
-                $" [{_severityCodeColumnName}] {SqlChar}(1)  NOT NULL, " +
-                $" [{_machineNameColumnName}] {SqlVarChar}({_machineNameLength}) NOT NULL, " +
-                $" [{_topicColumnName}] {SqlVarChar}({_topicLength}), " +
-                $" [{_contextColumnName}] {SqlVarChar}({_contextLength}) NOT NULL, " +
-                $" [{_messageColumnName}] {SqlNVarChar}(MAX) NOT NULL , " +
-                $" [{_createDateColumnName}] {SqlDateTime} NOT NULL " +
-                $")";
-
-            await using var createCmd = new SqlCommand(createCommandText, ownerCn);
-            await createCmd.ExecuteNonQueryAsync();
+            
+            // Create the table
+            await CreateTableAsync(ownerCn);
+            
+            // Create indexes for optimal query performance
+            await CreateIndexesAsync(ownerCn);
         }
         catch (Exception e)
         {
             await LogExceptionAsync(e);
             throw new MsSqlLogWriterException(e);
         }
+    }
+    
+    /// <summary>
+    /// Creates the log table with the configured schema.
+    /// </summary>
+    /// <param name="connection">Open database connection with owner privileges.</param>
+    private async Task CreateTableAsync(SqlConnection connection)
+    {
+        // Note: Table/column names can't be parameterized in DDL, but they come from config, not user input
+        var identityColumn = _config.IncludeIdentityColumn 
+            ? $"[{_config.IdentityColumnName}] INT IDENTITY(1,1) PRIMARY KEY CLUSTERED," 
+            : "";
+
+        var createCommandText =
+            $"CREATE TABLE [{_schemaName}].[{_tableName}] " +
+            $"(" +
+            identityColumn +
+            $"[{_userIdColumnName}] {SqlVarChar}({_userIdLength})," +
+            $"[{_companyIdColumnName}] {SqlVarChar}({_companyIdLength})," +
+            $"[{_severityCodeColumnName}] {SqlChar}(1) NOT NULL," +
+            $"[{_machineNameColumnName}] {SqlVarChar}({_machineNameLength}) NOT NULL," +
+            $"[{_topicColumnName}] {SqlVarChar}({_topicLength})," +
+            $"[{_contextColumnName}] {SqlVarChar}({_contextLength}) NOT NULL," +
+            $"[{_messageColumnName}] {SqlNVarChar}(MAX) NOT NULL," +
+            $"[{_createDateColumnName}] {SqlDateTime} NOT NULL" +
+            $")";
+
+        await using var createCmd = new SqlCommand(createCommandText, connection);
+        await createCmd.ExecuteNonQueryAsync();
+        
+        await LogActivityAsync($"Created table structure for {_schemaName}.{_tableName}");
+    }
+    
+        /// <summary>
+    /// Creates performance-optimized indexes on the log table.
+    /// </summary>
+    /// <param name="connection">Open database connection with owner privileges.</param>
+    private async Task CreateIndexesAsync(SqlConnection connection)
+    {
+        var indexes = new List<string>();
+
+        // Primary index for time-based queries (most common for logs)
+        if (_config.IncludeDateIndex)
+        {
+            var dateIndexName = $"IX_{_tableName}_{_createDateColumnName}";
+            var dateIndexSql = 
+                $"CREATE NONCLUSTERED INDEX [{dateIndexName}] " +
+                $"ON [{_schemaName}].[{_tableName}] ([{_createDateColumnName}] DESC)";
+            indexes.Add(dateIndexSql);
+        }
+
+        // Composite index for efficient purge operations (severity + date)
+        if (_config.IncludePurgeIndex)
+        {
+            var purgeIndexName = $"IX_{_tableName}_Purge";
+            var purgeIndexSql = 
+                $"CREATE NONCLUSTERED INDEX [{purgeIndexName}] " +
+                $"ON [{_schemaName}].[{_tableName}] ([{_severityCodeColumnName}], [{_createDateColumnName}])";
+            indexes.Add(purgeIndexSql);
+        }
+
+        // Optional: Composite index for user-based queries
+        if (_config.IncludeUserIndex)
+        {
+            var userIndexName = $"IX_{_tableName}_User";
+            var userIndexSql = 
+                $"CREATE NONCLUSTERED INDEX [{userIndexName}] " +
+                $"ON [{_schemaName}].[{_tableName}] ([{_userIdColumnName}], [{_createDateColumnName}] DESC) " +
+                $"WHERE [{_userIdColumnName}] IS NOT NULL";
+            indexes.Add(userIndexSql);
+        }
+
+        // Optional: Index for topic-based queries
+        if (_config.IncludeTopicIndex)
+        {
+            var topicIndexName = $"IX_{_tableName}_Topic";
+            var topicIndexSql = 
+                $"CREATE NONCLUSTERED INDEX [{topicIndexName}] " +
+                $"ON [{_schemaName}].[{_tableName}] ([{_topicColumnName}], [{_createDateColumnName}] DESC) " +
+                $"WHERE [{_topicColumnName}] IS NOT NULL";
+            indexes.Add(topicIndexSql);
+        }
+
+        // Create all indexes
+        foreach (var indexSql in indexes)
+        {
+            try
+            {
+                await using var indexCmd = new SqlCommand(indexSql, connection);
+                await indexCmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception e)
+            {
+                await LogActivityAsync($"Warning: Failed to create index. SQL: {indexSql}. Error: {e.Message}");
+                // Don't throw - table creation should succeed even if some indexes fail
+            }
+        }
+        
+        await LogActivityAsync($"Created {indexes.Count} indexes for {_schemaName}.{_tableName}");
     }
 
     private async Task CheckTable()
