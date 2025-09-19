@@ -1,7 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using pvNugsCsProviderNc9Abstractions;
 using pvNugsCsProviderNc9MsSql;
 using pvNugsLoggerNc9Abstractions;
 using pvNugsLoggerNc9MsSql;
@@ -24,8 +22,9 @@ var inMemSettings = new Dictionary<string, string>
     { "PvNugsCsProviderMsSqlConfig:TimeoutInSeconds", "300" },
     { "PvNugsCsProviderMsSqlConfig:UseIntegratedSecurity", "true" },
     
-    // MS SQL LOGGER CONFIG
-    // use all default values
+    // MS SQL LOG WRITER CONFIG
+    { "PvNugsMsSqlLogWriterConfig:DefaultRetentionPeriodForTrace", "00:00:01" },
+    
 };
 
 var config = new ConfigurationBuilder()
@@ -46,3 +45,10 @@ var svc = sp.GetRequiredService<IMsSqlLoggerService>();
 await logger.LogAsync("Logging into the Db", SeverityEnu.Trace);
 await svc.LogAsync("Hello World", SeverityEnu.Trace);
 await logger.LogAsync("Done", SeverityEnu.Trace);
+
+await logger.LogAsync("Sleeping 1 second", SeverityEnu.Trace);
+await Task.Delay(1000);
+
+await logger.LogAsync("Purging", SeverityEnu.Trace);
+var nbRowsPurged = await svc.PurgeLogsAsync();
+await logger.LogAsync($"{nbRowsPurged} rows() purged", SeverityEnu.Trace);

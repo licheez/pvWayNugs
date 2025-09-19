@@ -441,7 +441,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
     /// <param name="retainDic">
     /// A dictionary mapping <see cref="SeverityEnu"/> values to their respective retention periods.
     /// Log entries older than the specified <see cref="TimeSpan"/> for each severity level will be permanently deleted.
-    /// If null, uses the default retention policies from configuration (<see cref="PvNugsMsSqlLogWriterConfig.DefaultRetentionPolicies"/>).
+    /// If null, uses the default retention policies from configuration (see <see cref="PvNugsMsSqlLogWriterConfig"/>).
     /// </param>
     /// <returns>
     /// A task that represents the asynchronous purge operation. 
@@ -459,7 +459,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
     /// </para>
     /// <para>
     /// When <paramref name="retainDic"/> is null, the method uses the default retention policies from the
-    /// <see cref="PvNugsMsSqlLogWriterConfig.DefaultRetentionPolicies"/> configuration. This provides a convenient
+    /// <see cref="PvNugsMsSqlLogWriterConfig"/> configuration. This provides a convenient
     /// way to perform routine log maintenance without specifying retention periods each time.
     /// </para>
     /// <para>
@@ -526,7 +526,15 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
     {
         await EnsureInitializedAsync();
 
-        retainDic ??= _config.DefaultRetentionPolicies;
+        retainDic ??= new Dictionary<SeverityEnu, TimeSpan>
+        {
+            { SeverityEnu.Fatal, _config.DefaultRetentionPeriodForFatal },
+            { SeverityEnu.Error, _config.DefaultRetentionPeriodForError },
+            { SeverityEnu.Warning, _config.DefaultRetentionPeriodForWarning },
+            { SeverityEnu.Info, _config.DefaultRetentionPeriodForInfo },
+            { SeverityEnu.Debug, _config.DefaultRetentionPeriodForDebug },
+            { SeverityEnu.Trace, _config.DefaultRetentionPeriodForTrace },
+        };
         
         string appCs;
         try

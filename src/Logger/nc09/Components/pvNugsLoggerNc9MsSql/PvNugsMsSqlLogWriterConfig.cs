@@ -40,13 +40,12 @@ namespace pvNugsLoggerNc9MsSql;
 ///     "SeverityCodeColumnName": "LogLevel",
 ///     "MessageColumnName": "LogMessage",
 ///     "ContextColumnLength": 2048,
-///     "DefaultRetentionPolicies": {
-///       "Critical": "730.00:00:00",
-///       "Error": "180.00:00:00",
-///       "Warning": "60.00:00:00",
-///       "Info": "14.00:00:00",
-///       "Debug": "1.00:00:00"
-///     }
+///     "DefaultRetentionPeriodForFatal": "730.00:00:00",
+///     "DefaultRetentionPeriodForError": "180.00:00:00",
+///     "DefaultRetentionPeriodForWarning": "60.00:00:00",
+///     "DefaultRetentionPeriodForInfo": "14.00:00:00",
+///     "DefaultRetentionPeriodForDebug": "1.00:00:00",
+///     "DefaultRetentionPeriodForTrace": "01:00:00"
 ///   }
 /// }
 /// 
@@ -60,8 +59,8 @@ namespace pvNugsLoggerNc9MsSql;
 ///     options.CreateTableAtFirstUse = false; // Use existing table
 ///     
 ///     // Configure custom retention policies
-///     options.DefaultRetentionPolicies[SeverityEnu.Critical] = TimeSpan.FromDays(1095); // 3 years
-///     options.DefaultRetentionPolicies[SeverityEnu.Error] = TimeSpan.FromDays(365);     // 1 year
+///     options.DefaultRetentionPeriodForFatal = TimeSpan.FromDays(1095); // 3 years
+///     options.DefaultRetentionPeriodForError = TimeSpan.FromDays(365);  // 1 year
 /// });
 /// 
 /// // Registration with DI container
@@ -165,7 +164,7 @@ public class PvNugsMsSqlLogWriterConfig
     /// </remarks>
     public string IdentityColumnName { get; set; } = "Id";
     
-        /// <summary>
+    /// <summary>
     /// Gets or sets a value indicating whether an index should be created on the CreateDateUtc column.
     /// </summary>
     /// <value>
@@ -547,81 +546,235 @@ public class PvNugsMsSqlLogWriterConfig
     public bool CheckTableAtFirstUse { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the default retention periods for each severity level when purging logs.
+    /// Gets or sets the default retention period for Fatal severity logs when purging operations are performed.
     /// </summary>
     /// <value>
-    /// A dictionary mapping severity levels to their default retention periods.
-    /// Used when <see cref="MsSqlLogWriter.PurgeLogsAsync"/> is called with a null retention dictionary.
+    /// The retention period for Fatal logs. Default value is 365 days (1 year).
     /// </value>
     /// <remarks>
     /// <para>
-    /// These default values provide a balanced approach to log retention that considers both storage costs
-    /// and operational requirements:
+    /// Fatal logs typically contain critical system failures, security incidents, and catastrophic errors
+    /// that require extended retention for compliance, forensic analysis, and regulatory purposes.
+    /// The extended retention period reflects the critical nature of these events.
     /// </para>
-    /// <list type="bullet">
-    /// <item><strong>Critical:</strong> 365 days (1 year) - Extended retention for critical system events and security incidents</item>
-    /// <item><strong>Error:</strong> 90 days (3 months) - Sufficient time for troubleshooting and root cause analysis</item>
-    /// <item><strong>Warning:</strong> 30 days (1 month) - Adequate for monitoring trends and identifying patterns</item>
-    /// <item><strong>Info:</strong> 7 days (1 week) - Short retention for high-volume informational logs</item>
-    /// <item><strong>Debug:</strong> 1 day - Minimal retention for verbose debugging information</item>
+    /// <para>
+    /// <strong>Usage in Purge Operations:</strong>
+    /// </para>
+    /// <para>
+    /// This value is used when <see cref="MsSqlLogWriter.PurgeLogsAsync(IDictionary{SeverityEnu, TimeSpan}?)"/>
+    /// is called with a null retention dictionary parameter, implementing the three-tier decision cascade:
+    /// </para>
+    /// <list type="number">
+    /// <item><strong>Option 1:</strong> If a custom retention dictionary is passed to PurgeLogsAsync, those values are used instead</item>
+    /// <item><strong>Option 2:</strong> If no custom dictionary is provided AND this property is not configured in settings, this default value (365 days) is used</item>
+    /// <item><strong>Option 3:</strong> If no custom dictionary is provided AND this property IS configured in settings (e.g., appsettings.json), the configured value is used</item>
     /// </list>
     /// <para>
-    /// <strong>Configuration Options:</strong> You can customize these defaults through configuration or 
-    /// programmatically. The retention periods should align with your organization's compliance requirements,
-    /// storage capacity, and operational needs.
+    /// <strong>Configuration Examples:</strong>
     /// </para>
     /// <para>
-    /// <strong>JSON Configuration:</strong> When configuring through appsettings.json, use the TimeSpan 
-    /// string format (e.g., "365.00:00:00" for 365 days). The format is "days.hours:minutes:seconds".
+    /// You can override this default through configuration:
     /// </para>
-    /// <para>
-    /// <strong>Performance Impact:</strong> Longer retention periods result in larger log tables, which may
-    /// impact query performance and storage costs. Consider your specific requirements when adjusting these values.
-    /// </para>
-    /// </remarks>
-    /// <example>
     /// <code>
-    /// // appsettings.json configuration
+    /// // appsettings.json
     /// {
     ///   "PvNugsMsSqlLogWriterConfig": {
-    ///     "DefaultRetentionPolicies": {
-    ///       "Critical": "730.00:00:00",   // 2 years for critical events
-    ///       "Error": "180.00:00:00",      // 6 months for errors
-    ///       "Warning": "60.00:00:00",     // 2 months for warnings  
-    ///       "Info": "14.00:00:00",        // 2 weeks for info logs
-    ///       "Debug": "3.00:00:00"         // 3 days for debug logs
-    ///     }
+    ///     "DefaultRetentionPeriodForFatal": "730.00:00:00"  // 2 years for compliance
     ///   }
     /// }
     /// 
-    /// // Programmatic configuration
+    /// // Or programmatically
     /// builder.Services.Configure&lt;PvNugsMsSqlLogWriterConfig&gt;(options =&gt;
     /// {
-    ///     options.DefaultRetentionPolicies[SeverityEnu.Critical] = TimeSpan.FromDays(1095); // 3 years
-    ///     options.DefaultRetentionPolicies[SeverityEnu.Error] = TimeSpan.FromDays(365);     // 1 year
-    ///     options.DefaultRetentionPolicies[SeverityEnu.Warning] = TimeSpan.FromDays(90);    // 3 months
-    ///     options.DefaultRetentionPolicies[SeverityEnu.Info] = TimeSpan.FromDays(30);       // 1 month
-    ///     options.DefaultRetentionPolicies[SeverityEnu.Debug] = TimeSpan.FromHours(12);     // 12 hours
+    ///     options.DefaultRetentionPeriodForFatal = TimeSpan.FromDays(1095); // 3 years
     /// });
-    /// 
-    /// // Usage with default policies
-    /// int purgedRows = await logWriter.PurgeLogsAsync(); // Uses DefaultRetentionPolicies
-    /// 
-    /// // Override with custom policies
-    /// var customPolicies = new Dictionary&lt;SeverityEnu, TimeSpan&gt;
-    /// {
-    ///     { SeverityEnu.Debug, TimeSpan.FromHours(6) } // Purge debug logs after 6 hours
-    /// };
-    /// int customPurgedRows = await logWriter.PurgeLogsAsync(customPolicies);
     /// </code>
-    /// </example>
-    public Dictionary<SeverityEnu, TimeSpan> DefaultRetentionPolicies { get; set; } = new()
-    {
-        { SeverityEnu.Fatal, TimeSpan.FromDays(365) },  // 1 year
-        { SeverityEnu.Error, TimeSpan.FromDays(90) },   // 3 months  
-        { SeverityEnu.Warning, TimeSpan.FromDays(30) }, // 1 month
-        { SeverityEnu.Info, TimeSpan.FromDays(7) },     // 1 week
-        { SeverityEnu.Debug, TimeSpan.FromDays(3) },     // 1 day
-        { SeverityEnu.Trace, TimeSpan.FromDays(1) }     // 1 day
-    };
+    /// <para>
+    /// <strong>Compliance Considerations:</strong>
+    /// </para>
+    /// <para>
+    /// Consider your organization's compliance requirements when setting this value:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>Financial services: Often require 7+ years retention for critical system events</item>
+    /// <item>Healthcare: May require extended retention for security and audit events</item>
+    /// <item>General enterprise: 1-2 years is typically sufficient for operational needs</item>
+    /// <item>Development environments: Can be set to shorter periods (days or weeks) for cost management</item>
+    /// </list>
+    /// </remarks>
+    public TimeSpan DefaultRetentionPeriodForFatal { get; set; } = TimeSpan.FromDays(365);
+
+    /// <summary>
+    /// Gets or sets the default retention period for Error severity logs when purging operations are performed.
+    /// </summary>
+    /// <value>
+    /// The retention period for Error logs. Default value is 90 days (3 months).
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Error logs contain application errors, exceptions, and system failures that require sufficient
+    /// retention for troubleshooting, root cause analysis, and pattern identification. The 90-day
+    /// default provides adequate time for investigation while managing storage costs.
+    /// </para>
+    /// <para>
+    /// This value follows the same three-tier decision cascade as other retention periods.
+    /// See <see cref="DefaultRetentionPeriodForFatal"/> for detailed cascade behavior documentation.
+    /// </para>
+    /// <para>
+    /// <strong>Operational Considerations:</strong>
+    /// </para>
+    /// <list type="bullet">
+    /// <item>90 days allows for monthly analysis cycles and quarterly reviews</item>
+    /// <item>Sufficient time for delayed bug reports and customer escalations</item>
+    /// <item>Enables trend analysis for recurring error patterns</item>
+    /// <item>Balances investigative needs with storage cost management</item>
+    /// </list>
+    /// </remarks>
+    public TimeSpan DefaultRetentionPeriodForError { get; set; } = TimeSpan.FromDays(90);
+
+    /// <summary>
+    /// Gets or sets the default retention period for Warning severity logs when purging operations are performed.
+    /// </summary>
+    /// <value>
+    /// The retention period for Warning logs. Default value is 30 days (1 month).
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Warning logs contain potential issues, performance degradations, and anomalies that are useful
+    /// for monitoring trends and identifying patterns over a moderate time period. The 30-day retention
+    /// provides sufficient data for monthly operational reviews.
+    /// </para>
+    /// <para>
+    /// This value follows the same three-tier decision cascade as other retention periods.
+    /// See <see cref="DefaultRetentionPeriodForFatal"/> for detailed cascade behavior documentation.
+    /// </para>
+    /// </remarks>
+    public TimeSpan DefaultRetentionPeriodForWarning { get; set; } = TimeSpan.FromDays(30);
+
+    /// <summary>
+    /// Gets or sets the default retention period for Info severity logs when purging operations are performed.
+    /// </summary>
+    /// <value>
+    /// The retention period for Info logs. Default value is 7 days (1 week).
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Info logs contain general operational information, successful operations, and routine system
+    /// events that are useful for short-term monitoring and recent activity analysis. The 7-day
+    /// retention covers typical operational review cycles while keeping storage requirements manageable.
+    /// </para>
+    /// <para>
+    /// This value follows the same three-tier decision cascade as other retention periods.
+    /// See <see cref="DefaultRetentionPeriodForFatal"/> for detailed cascade behavior documentation.
+    /// </para>
+    /// <para>
+    /// <strong>Volume Considerations:</strong>
+    /// </para>
+    /// <para>
+    /// Info logs typically represent the highest volume of log entries in most applications.
+    /// Consider your storage capacity and query performance when adjusting this value:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>High-traffic applications may need shorter retention (1-3 days)</item>
+    /// <item>Low-traffic applications can afford longer retention (14-30 days)</item>
+    /// <item>Development environments may use very short retention (hours or 1 day)</item>
+    /// </list>
+    /// </remarks>
+    public TimeSpan DefaultRetentionPeriodForInfo { get; set; } = TimeSpan.FromDays(7);
+
+    /// <summary>
+    /// Gets or sets the default retention period for Debug severity logs when purging operations are performed.
+    /// </summary>
+    /// <value>
+    /// The retention period for Debug logs. Default value is 1 day.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Debug logs contain detailed diagnostic information, method entry/exit traces, and verbose
+    /// operational details that are typically only needed for immediate troubleshooting and
+    /// development activities. The short retention period reflects their high volume and temporary utility.
+    /// </para>
+    /// <para>
+    /// This value follows the same three-tier decision cascade as other retention periods.
+    /// See <see cref="DefaultRetentionPeriodForFatal"/> for detailed cascade behavior documentation.
+    /// </para>
+    /// <para>
+    /// <strong>Performance Impact:</strong>
+    /// </para>
+    /// <para>
+    /// Debug logs can significantly impact both storage and query performance due to their volume:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>Production environments should minimize debug logging or use very short retention</item>
+    /// <item>Development/staging environments can use longer retention for active debugging</item>
+    /// <item>Consider disabling debug logging entirely in high-performance production scenarios</item>
+    /// </list>
+    /// </remarks>
+    public TimeSpan DefaultRetentionPeriodForDebug { get; set; } = TimeSpan.FromDays(1);
+
+    /// <summary>
+    /// Gets or sets the default retention period for Trace severity logs when purging operations are performed.
+    /// </summary>
+    /// <value>
+    /// The retention period for Trace logs. Default value is 1 hour.
+    /// </value>
+    /// <remarks>
+    /// <para>
+    /// Trace logs contain the most verbose diagnostic information including detailed execution paths,
+    /// variable states, and fine-grained operational details. These logs are typically only needed
+    /// for immediate debugging sessions and active troubleshooting. The very short retention period
+    /// helps manage storage costs for extremely high-volume trace logging.
+    /// </para>
+    /// <para>
+    /// This value follows the same three-tier decision cascade as other retention periods.
+    /// See <see cref="DefaultRetentionPeriodForFatal"/> for detailed cascade behavior documentation.
+    /// </para>
+    /// <para>
+    /// <strong>Usage Patterns:</strong>
+    /// </para>
+    /// <list type="bullet">
+    /// <item><strong>Production:</strong> Trace logging should be disabled or limited to critical components with very short retention</item>
+    /// <item><strong>Staging/Testing:</strong> Can use longer retention (hours to days) for integration testing scenarios</item>
+    /// <item><strong>Development:</strong> May use extended retention for active debugging sessions</item>
+    /// <item><strong>Troubleshooting:</strong> Enable temporarily with immediate analysis, then disable</item>
+    /// </list>
+    /// <para>
+    /// <strong>Storage and Performance Considerations:</strong>
+    /// </para>
+    /// <para>
+    /// Trace logs can generate enormous volumes of data and severely impact system performance:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>Can generate thousands of log entries per second in busy applications</item>
+    /// <item>May require frequent purging (multiple times per day) to manage storage</item>
+    /// <item>Consider using separate trace-specific retention policies for different components</item>
+    /// <item>Monitor database size and query performance when using trace logging</item>
+    /// </list>
+    /// <para>
+    /// <strong>Configuration Examples for Different Scenarios:</strong>
+    /// </para>
+    /// <code>
+    /// // Development environment - longer retention for active debugging
+    /// {
+    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///     "DefaultRetentionPeriodForTrace": "24:00:00"  // 24 hours
+    ///   }
+    /// }
+    /// 
+    /// // Production environment - minimal retention
+    /// {
+    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///     "DefaultRetentionPeriodForTrace": "00:10:00"  // 10 minutes
+    ///   }
+    /// }
+    /// 
+    /// // Testing/CI environment - very short retention
+    /// {
+    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///     "DefaultRetentionPeriodForTrace": "00:00:30"  // 30 seconds
+    ///   }
+    /// }
+    /// </code>
+    /// </remarks>
+    public TimeSpan DefaultRetentionPeriodForTrace { get; set; } = TimeSpan.FromHours(1);
 }

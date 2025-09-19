@@ -1,62 +1,87 @@
 # pvNugsLoggerNc9MsSql
 
-A robust Microsoft SQL Server logging implementation for .NET 9+ applications, providing structured, contextual logging with automatic table management and comprehensive error handling.
+A robust Microsoft SQL Server logging implementation for .NET 9+ applications, providing structured, contextual logging with automatic table management, advanced configuration, and comprehensive error handling.
 
 ## 🚀 Features
 
-- **Secure SQL Server Integration** - Parameterized queries prevent SQL injection attacks
-- **Automatic Table Management** - Optional table creation and schema validation
-- **Thread-Safe Lazy Initialization** - Efficient startup with concurrent access support
-- **Contextual Logging** - Track user, company, topic, and detailed source information
-- **Log Purging** - Built-in retention policy management with configurable purge operations
-- **Flexible Configuration** - Customizable table structure, column names, and column lengths
-- **Rich Metadata** - Machine name, method context, file path, and line number tracking
-- **Multiple Interface Support** - Works with generic `ILoggerService` or specific `IMsSqlLoggerService`
-- **Enterprise Ready** - Production-tested with comprehensive error handling
+- **Secure SQL Server Integration** – Parameterized queries prevent SQL injection
+- **Automatic Table Management** – Optional table creation and schema validation
+- **Thread-Safe Lazy Initialization** – Efficient startup with concurrent access support
+- **Contextual Logging** – Track user, company, topic, and detailed source information
+- **Log Purging** – Built-in retention policy management with configurable purge operations
+- **Flexible Configuration** – Customizable table structure, column names, and column lengths
+- **Rich Metadata** – Machine name, method context, file path, and line number tracking
+- **Advanced Indexing** – Configurable indexes for performance and query optimization
+- **Multiple Interface Support** – Works with generic `ILoggerService` or specific `IMsSqlLoggerService`
+- **Enterprise Ready** – Production-tested with comprehensive error handling
 
 ## 📦 Installation
-```
-shell
+```shell
 dotnet add package pvNugsLoggerNc9MsSql
 ```
+
 ## 🔧 Quick Start
 
 ### 1. Configure in `appsettings.json`
-```
-json
+```json
 {
-"PvNugsMsSqlLogWriterConfig": {
-"TableName": "ApplicationLogs",
-"SchemaName": "dbo",
-"CreateTableAtFirstUse": true,
-"CheckTableAtFirstUse": true,
-"UserIdColumnLength": 128,
-"CompanyIdColumnLength": 128,
-"TopicColumnLength": 128,
-"ContextColumnLength": 1024
-},
-"PvNugsLoggerConfig": {
-"MinLevel": "Info"
-}
+  "PvNugsMsSqlLogWriterConfig": {
+    "TableName": "ApplicationLogs",
+    "SchemaName": "dbo",
+    "CreateTableAtFirstUse": true,
+    "CheckTableAtFirstUse": true,
+    "UserIdColumnName": "UserId",
+    "UserIdColumnLength": 128,
+    "CompanyIdColumnName": "CompanyId",
+    "CompanyIdColumnLength": 128,
+    "SeverityCodeColumnName": "SeverityCode",
+    "MessageColumnName": "Message",
+    "MachineNameColumnName": "MachineName",
+    "MachineNameColumnLength": 128,
+    "TopicColumnName": "Topic",
+    "TopicColumnLength": 128,
+    "ContextColumnName": "Context",
+    "ContextColumnLength": 1024,
+    "CreateDateUtcColumnName": "CreateDateUtc",
+    "IncludeDateIndex": true,
+    "IncludePurgeIndex": true,
+    "IncludeUserIndex": false,
+    "IncludeTopicIndex": false,
+    "DefaultRetentionPeriodForFatal": "730.00:00:00",
+    "DefaultRetentionPeriodForError": "180.00:00:00",
+    "DefaultRetentionPeriodForWarning": "60.00:00:00",
+    "DefaultRetentionPeriodForInfo": "14.00:00:00",
+    "DefaultRetentionPeriodForDebug": "1.00:00:00",
+    "DefaultRetentionPeriodForTrace": "01:00:00"
+  },
+  "PvNugsLoggerConfig": {
+    "MinLevel": "Info"
+  }
 }
 ```
+
 ### 2. Register Services in `Program.cs`
-```
-csharp
+```csharp
 using pvNugsLoggerNc9MsSql;
+using pvNugsLoggerNc9Seri;
+using pvNugsCsProviderNc9MsSql;
 
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
-// Register your connection string provider (implement IPvNugsMsSqlCsProvider)
-builder.Services.AddSingleton<IPvNugsMsSqlCsProvider, YourConnectionProvider>();
+// Register SeriLog logger service
+builder.Services.TryAddPvNugsLoggerSeriService(config);
+
+// Register MsSql connection string provider
+builder.Services.TryAddPvNugsCsProviderMsSql(config);
 
 // Register SQL Server logging services
-builder.Services.TryAddPvNugsMsSqlLogger(builder.Configuration);
+builder.Services.TryAddPvNugsMsSqlLogger(config);
 
 var app = builder.Build();
 ```
-### 3. Use in Your Services
 
+### 3. Use in Your Services
 ```csharp
 public class OrderService
 {
@@ -69,16 +94,13 @@ public class OrderService
 
     public async Task ProcessOrderAsync(int orderId, string userId)
     {
-        // Set contextual information
         _logger.SetUser(userId, "company123");
         _logger.SetTopic("OrderProcessing");
 
         try
         {
             _logger.Log($"Processing order {orderId}", SeverityEnu.Info);
-            
             // Your business logic here...
-            
             await _logger.LogAsync("Order processed successfully", SeverityEnu.Info);
         }
         catch (Exception ex)
@@ -89,8 +111,6 @@ public class OrderService
     }
 }
 ```
-```
-
 
 ## 📊 Database Schema
 
@@ -109,11 +129,9 @@ CREATE TABLE [dbo].[ApplicationLogs] (
 )
 ```
 
-
 ## ⚙️ Advanced Configuration
 
 ### Custom Table Structure with Column Lengths
-
 ```json
 {
   "PvNugsMsSqlLogWriterConfig": {
@@ -125,15 +143,21 @@ CREATE TABLE [dbo].[ApplicationLogs] (
     "CompanyIdColumnLength": 64,
     "SeverityCodeColumnName": "LogLevel",
     "MessageColumnName": "LogMessage",
+    "MachineNameColumnName": "HostName",
     "MachineNameColumnLength": 200,
+    "TopicColumnName": "Module",
     "TopicColumnLength": 100,
+    "ContextColumnName": "SourceContext",
     "ContextColumnLength": 2048,
     "CreateTableAtFirstUse": false,
-    "CheckTableAtFirstUse": true
+    "CheckTableAtFirstUse": true,
+    "IncludeDateIndex": true,
+    "IncludePurgeIndex": true,
+    "IncludeUserIndex": true,
+    "IncludeTopicIndex": true
   }
 }
 ```
-
 
 ### Column Length Guidelines
 
@@ -148,7 +172,6 @@ Configure column lengths based on your application needs:
 Values exceeding column lengths are automatically truncated with "..." suffix.
 
 ### Log Purging
-
 ```csharp
 public class MaintenanceService
 {
@@ -158,11 +181,12 @@ public class MaintenanceService
     {
         var retentionPolicies = new Dictionary<SeverityEnu, TimeSpan>
         {
-            { SeverityEnu.Critical, TimeSpan.FromDays(365) },
-            { SeverityEnu.Error, TimeSpan.FromDays(90) },
-            { SeverityEnu.Warning, TimeSpan.FromDays(30) },
-            { SeverityEnu.Info, TimeSpan.FromDays(7) },
-            { SeverityEnu.Debug, TimeSpan.FromDays(1) }
+            { SeverityEnu.Fatal, TimeSpan.FromDays(730) },
+            { SeverityEnu.Error, TimeSpan.FromDays(180) },
+            { SeverityEnu.Warning, TimeSpan.FromDays(60) },
+            { SeverityEnu.Info, TimeSpan.FromDays(14) },
+            { SeverityEnu.Debug, TimeSpan.FromDays(1) },
+            { SeverityEnu.Trace, TimeSpan.FromHours(1) }
         };
 
         int deletedRows = await _logger.PurgeLogsAsync(retentionPolicies);
@@ -171,109 +195,56 @@ public class MaintenanceService
 }
 ```
 
+### Service Registration Order
+
+Register the following services in your DI container for full functionality:
+
+```csharp
+services.TryAddPvNugsLoggerSeriService(config); // Console/SeriLog logging
+services.TryAddPvNugsCsProviderMsSql(config);   // Connection string provider for MsSql
+services.TryAddPvNugsMsSqlLogger(config);       // Main MsSql logger service
+```
+
+This ensures:
+- Console and SeriLog logging is available for diagnostics and fallback.
+- The MsSql connection string provider is available for secure database access.
+- The MsSql logger service is fully configured and ready for use.
 
 ## 🏗️ Architecture
 
 This package is part of the **pvNugsLogger** ecosystem:
 
-- **pvNugsLoggerNc9Abstractions** - Core interfaces and base functionality
-- **pvNugsLoggerNc9MsSql** - SQL Server implementation (this package)
-- **pvNugsLoggerNc9Console** - Console logging implementation
-- **pvNugsCsProviderNc9** - Connection string provider abstractions
+- **pvNugsLoggerNc9Abstractions** – Core interfaces and base functionality
+- **pvNugsLoggerNc9MsSql** – SQL Server implementation (this package)
+- **pvNugsLoggerNc9Console** – Console logging implementation
+- **pvNugsCsProviderNc9** – Connection string provider abstractions
 
 ## 🔒 Security Features
 
-- **SQL Injection Protection** - All database operations use parameterized queries
-- **Configurable Permissions** - Separate connection strings for read/write/admin operations
-- **Input Validation** - Comprehensive validation with automatic string truncation
-- **Error Isolation** - Logging failures don't crash your application
+- **SQL Injection Protection** – All database operations use parameterized queries
+- **Configurable Permissions** – Separate connection strings for read/write/admin operations
+- **Input Validation** – Comprehensive validation with automatic string truncation
+- **Error Isolation** – Logging failures don't crash your application
 
 ## 📈 Performance
 
-- **Singleton Lifetime** - Efficient resource usage with shared instances
-- **Lazy Initialization** - Tables created/validated only when needed
-- **Connection Pooling** - Leverages SQL Server connection pooling
-- **Async Operations** - Non-blocking logging operations
-- **Optimized Column Sizing** - Configurable lengths prevent over-allocation
+- **Singleton Lifetime** – Efficient resource usage with shared instances
+- **Lazy Initialization** – Tables created/validated only when needed
+- **Connection Pooling** – Leverages SQL Server connection pooling
+- **Async Operations** – Non-blocking logging operations
+- **Optimized Column Sizing** – Configurable lengths prevent over-allocation
+- **Advanced Indexing** – Date, purge, user, and topic indexes for query optimization
 
 ## 🧪 Testing Support
 
-The package integrates seamlessly with testing frameworks:
+- Mockable interfaces for unit testing
+- Supports integration testing with in-memory or test SQL Server instances
+- Comprehensive error reporting for diagnostics
 
-```csharp
-[Fact]
-public async Task ShouldLogUserAction()
-{
-    // Arrange
-    var services = new ServiceCollection();
-    services.AddSingleton<IPvNugsMsSqlCsProvider, MockCsProvider>();
-    services.TryAddPvNugsMsSqlLogger(configuration);
-    
-    var provider = services.BuildServiceProvider();
-    var logger = provider.GetRequiredService<IMsSqlLoggerService>();
-    
-    // Act
-    await logger.LogAsync("Test message", SeverityEnu.Info);
-    
-    // Assert - verify in test database
-}
-```
+## 📅 Migration Notes
 
-
-## 📋 Requirements
-
-- **.NET 9.0** or later
-- **SQL Server 2016** or later (including Azure SQL Database)
-- **Microsoft.Data.SqlClient** (automatically included)
-- **Microsoft.Extensions.DependencyInjection** (automatically included)
-
-## 🤝 Dependencies
-
-- `pvNugsLoggerNc9Abstractions` - Core logging interfaces
-- `pvNugsCsProviderNc9Abstractions` - Connection string provider interfaces
-- `Microsoft.Extensions.Configuration.Abstractions`
-- `Microsoft.Extensions.DependencyInjection.Abstractions`
-- `Microsoft.Extensions.Options`
-
-## 📚 Documentation
-
-Comprehensive XML documentation is included for IntelliSense support. Key interfaces:
-
-- `IMsSqlLoggerService` - Main logging service interface
-- `IMsSqlLogWriter` - Direct log writer interface
-- `PvNugsMsSqlLogWriterConfig` - Configuration options class
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Table Creation Fails**
-- Ensure your connection string has CREATE TABLE permissions
-- Verify the schema exists in your database
-- Check that configured column lengths are reasonable
-
-**Schema Validation Errors**
-- Check that column names in configuration match your existing table
-- Verify data types and lengths match expected schema (see documentation)
-- Ensure existing table column lengths match configured values
-
-**Connection Issues**
-- Implement `IPvNugsMsSqlCsProvider` to provide valid connection strings
-- Ensure SQL Server is accessible and user has appropriate permissions
-
-**Data Truncation Warnings**
-- Review your column length configuration if log data is being truncated
-- Consider increasing column lengths for frequently truncated fields
-
-## 📄 License
-
-This package is part of the pvNugs toolkit. See the license file for details.
-
-## 🔗 Related Packages
-
-- [pvNugsLoggerNc9Abstractions](https://www.nuget.org/packages/pvNugsLoggerNc9Abstractions) - Core interfaces
-- [pvNugsCsProviderNc9Abstractions](https://www.nuget.org/packages/pvNugsCsProviderNc9Abstractions) - Connection providers
+If upgrading from a previous version, review configuration keys and schema changes. Ensure new properties (e.g., index options, column names) are set as needed. See the XML documentation for full details.
 
 ---
 
-**Questions or Issues?** Please open an issue on the project repository or contact the maintainers.
+For more details, see the XML documentation in the source code or contact the package maintainer.
