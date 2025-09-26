@@ -238,33 +238,146 @@ public static class PvNugsCsProviderPgSqlDi
     public static IServiceCollection TryAddPvNugsCsProviderPgSql(
         this IServiceCollection services, IConfiguration config)
     {
-        services.Configure<PvNugsCsProviderPgSqlConfig>(
-            config.GetSection(PvNugsCsProviderPgSqlConfig.Section));
-        
-        // Use a factory pattern to resolve the constructor ambiguity
+        // Configure options with validation
+        services.Configure<PvNugsCsProviderPgSqlConfig>(configSection =>
+        {
+            config.GetSection(PvNugsCsProviderPgSqlConfig.Section)
+                .Bind(configSection);
+            var configRows = configSection.Rows ?? [];
+            foreach (var configRow in configRows)
+            {
+                ValidateConfiguration(configRow);
+            }
+        });
+
+        // Factory-based registration for mode-specific constructor selection
         services.TryAddSingleton<IPvNugsCsProvider>(serviceProvider =>
         {
-            var logger = serviceProvider.GetRequiredService<IConsoleLoggerService>();
-            var options = serviceProvider.GetRequiredService<IOptions<PvNugsCsProviderPgSqlConfig>>();
-            
-            // Check for dynamic secret manager first (highest priority)
-            var dynamicSecretManager = serviceProvider.GetService<IPvNugsDynamicSecretManager>();
-            if (dynamicSecretManager != null)
+            try
             {
-                return new CsProvider(logger, options, dynamicSecretManager);
+                return CreateProvider(serviceProvider);
             }
-            
-            // Then check for static secret manager (medium priority)
-            var staticSecretManager = serviceProvider.GetService<IPvNugsStaticSecretManager>();
-            if (staticSecretManager != null)
+            catch (Exception ex)
             {
-                return new CsProvider(logger, options, staticSecretManager);
+                throw new InvalidOperationException(
+                    "Failed to create PostgreSQL connection string provider. " +
+                    "Ensure all required dependencies are registered and configuration is valid.", ex);
             }
-            
-            // Fall back to config-only mode (default priority)
-            return new CsProvider(logger, options);
         });
-        
+
+        // Register specific interface
+        services.TryAddSingleton<IPvNugsPgSqlCsProvider>(serviceProvider =>
+            (CsProvider)serviceProvider.GetRequiredService<IPvNugsCsProvider>());
+
         return services;
+    }
+
+    private static CsProvider CreateProvider(IServiceProvider serviceProvider)
+    {
+        var logger = serviceProvider.GetRequiredService<IConsoleLoggerService>();
+        var options = serviceProvider.GetRequiredService<IOptions<PvNugsCsProviderPgSqlConfig>>();
+        var config = options.Value;
+
+        // Mode-specific factory logic
+        return config.Mode switch
+        {
+            CsProviderModeEnu.Config =>
+                new CsProvider(logger, options),
+
+            CsProviderModeEnu.StaticSecret => CreateStaticSecretProvider(
+                serviceProvider, logger, options),
+
+            CsProviderModeEnu.DynamicSecret => CreateDynamicSecretProvider(
+                serviceProvider, logger, options),
+
+            _ => throw new ArgumentOutOfRangeException(
+                $"Unsupported authentication mode: {config.Mode}")
+        };
+    }
+
+    private static CsProvider CreateStaticSecretProvider(
+        IServiceProvider serviceProvider,
+        IConsoleLoggerService logger,
+        IOptions<PvNugsCsProviderPgSqlConfig> options)
+    {
+        var secretManager = serviceProvider.GetService<IPvNugsStaticSecretManager>();
+        if (secretManager == null)
+        {
+            throw new InvalidOperationException(
+                "StaticSecret mode requires IPvNugsStaticSecretManager to be registered. " +
+                "Register it with: services.AddSingleton<IPvNugsStaticSecretManager, YourImplementation>()");
+        }
+        return new CsProvider(logger, options, secretManager);
+    }
+
+    private static CsProvider CreateDynamicSecretProvider(
+        IServiceProvider serviceProvider,
+        IConsoleLoggerService logger,
+        IOptions<PvNugsCsProviderPgSqlConfig> options)
+    {
+        var secretManager = serviceProvider.GetService<IPvNugsDynamicSecretManager>();
+        if (secretManager == null)
+        {
+            throw new InvalidOperationException(
+                "DynamicSecret mode requires IPvNugsDynamicSecretManager to be registered. " +
+                "Register it with: services.AddSingleton<IPvNugsDynamicSecretManager, YourImplementation>()");
+        }
+        return new CsProvider(logger, options, secretManager);
+    }
+
+    private static void ValidateConfiguration(PvNugsCsProviderPgSqlConfigRow configRow)
+    {
+        if (string.IsNullOrWhiteSpace(configRow.Name))
+            throw new OptionsValidationException(
+                "Name is required for each configuration row.", 
+                typeof(PvNugsCsProviderPgSqlConfigRow), ["Name"]);
+        if (string.IsNullOrWhiteSpace(configRow.Server))
+            throw new OptionsValidationException(
+                "Server is required for each configuration row.", 
+                typeof(PvNugsCsProviderPgSqlConfigRow), ["Server"]);
+        if (string.IsNullOrWhiteSpace(configRow.Database))
+            throw new OptionsValidationException(
+                "Database is required for each configuration row.", 
+                typeof(PvNugsCsProviderPgSqlConfigRow), ["Database"]);
+        if (string.IsNullOrWhiteSpace(configRow.Schema))
+            throw new OptionsValidationException(
+                "Schema is required for each configuration row.", 
+                typeof(PvNugsCsProviderPgSqlConfigRow), ["Schema"]);
+        switch (configRow.Mode)
+        {
+            case CsProviderModeEnu.Config:
+                if (string.IsNullOrWhiteSpace(configRow.Username))
+                    throw new OptionsValidationException(
+                        "Username is required in Config mode.", 
+                        typeof(PvNugsCsProviderPgSqlConfigRow),
+                        ["Username"]);
+                // Password is optional
+                break;
+            case CsProviderModeEnu.StaticSecret:
+                if (string.IsNullOrWhiteSpace(configRow.Username))
+                    throw new OptionsValidationException(
+                        "Username is required in StaticSecret mode.", 
+                        typeof(PvNugsCsProviderPgSqlConfigRow),
+                        ["Username"]);
+                if (string.IsNullOrWhiteSpace(configRow.SecretName))
+                    throw new OptionsValidationException(
+                        "SecretName is required in StaticSecret mode.", 
+                        typeof(PvNugsCsProviderPgSqlConfigRow),
+                        ["SecretName"]);
+                break;
+            case CsProviderModeEnu.DynamicSecret:
+                if (string.IsNullOrWhiteSpace(configRow.SecretName))
+                    throw new OptionsValidationException(
+                        "SecretName is required in DynamicSecret mode.", 
+                        typeof(PvNugsCsProviderPgSqlConfigRow),
+                        ["SecretName"]);
+                // Username is ignored
+                break;
+            default:
+                throw new OptionsValidationException(
+                    $"Unsupported mode: {configRow.Mode}", 
+                    typeof(PvNugsCsProviderPgSqlConfigRow),
+                    ["Mode"]);
+        }
     }
 }

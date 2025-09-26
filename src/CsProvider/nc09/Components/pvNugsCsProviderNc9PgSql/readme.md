@@ -114,10 +114,73 @@ services.TryAddPvNugsDynamicSecretManager(configuration); // your dynamic secret
 services.TryAddPvNugsCsProviderPgSql(configuration);
 
 // Expected dynamic secrets (with expiration):
-// - MyAppDynamicDb-Owner { Username, Password, ExpirationDateUtc }
-// - MyAppDynamicDb-Application { Username, Password, ExpirationDateUtc }
-// - MyAppDynamicDb-Reader { Username, Password, ExpirationDateUtc }
+// - MyAppDynamicDb-Owner__Username, MyAppDynamicDb-Owner__Password, MyAppDynamicDb-Owner__ExpirationDateUtc
+// - MyAppDynamicDb-Application__Username, ...
+// - MyAppDynamicDb-Reader__Username, ...
 ```
+
+### 4. Multi-Database / Named Row Support
+
+You can define multiple connection configurations and retrieve them by name:
+
+```
+csharp
+// appsettings.json
+{
+  "PvNugsCsProviderPgSqlConfig": {
+    "Rows": [
+      {
+        "Name": "MainDb",
+        "Mode": "Config",
+        "Server": "localhost",
+        "Database": "main_db",
+        "Schema": "main_schema",
+        "Port": 5432,
+        "Username": "main_user",
+        "Password": "main_password"
+      },
+      {
+        "Name": "AltDb",
+        "Mode": "Config",
+        "Server": "localhost",
+        "Database": "alt_db",
+        "Schema": "alt_schema",
+        "Port": 5432,
+        "Username": "alt_user",
+        "Password": "alt_password"
+      }
+    ]
+  }
+}
+
+// Usage
+var mainCs = await csProvider.GetConnectionStringAsync("MainDb");
+var altCs = await csProvider.GetConnectionStringAsync("AltDb");
+```
+
+## 🧪 Integration Testing
+
+See the `src/CsProvider/nc09/Testing/intTesting/pvNugsCsProviderNc9PgSql.it/` folder for real integration tests covering:
+- Config mode
+- StaticSecret mode
+- DynamicSecret mode
+- Multi-row/named configuration
+
+These tests show in-memory configuration, environment variable setup, and real connection attempts.
+
+#### Environment Variable Patterns
+
+For StaticSecret mode, set environment variables like:
+- `MyAppDatabase-Reader`
+- `MyAppDatabase-Application`
+- `MyAppDatabase-Owner`
+
+For DynamicSecret mode, set:
+- `MyAppDynamicDb-Reader__Username`
+- `MyAppDynamicDb-Reader__Password`
+- `MyAppDynamicDb-Reader__ExpirationDateUtc`
+(and similarly for Application/Owner roles)
+
 ## 🎯 Role-Based Access Patterns
 
 ### Principle of Least Privilege
@@ -284,6 +347,9 @@ var config = new ConfigurationBuilder()
 services.TryAddPvNugsSecretManagerEnvVariables(config);
 services.TryAddPvNugsCsProviderPgSql(config);
 ```
+
+See the `src/CsProvider/nc09/Testing/intTesting/pvNugsCsProviderNc9PgSql.it/` folder for real integration tests covering all modes and multi-row scenarios.
+
 ## 📊 Monitoring and Logging
 
 The provider integrates with structured logging:
