@@ -187,10 +187,14 @@ public static class PvNugsCsProviderMsSqlDi
         // Configure options with validation
         services.Configure<PvNugsCsProviderMsSqlConfig>(configSection =>
         {
-            config.GetSection(PvNugsCsProviderMsSqlConfig.Section).Bind(configSection);
-            
-            // Early validation
-            ValidateConfiguration(configSection);
+            config.GetSection(PvNugsCsProviderMsSqlConfig.Section)
+                .Bind(configSection);
+
+            var configRows = configSection.Rows ?? [];
+            foreach (var configRow in configRows)
+            {
+                ValidateConfiguration(configRow);                
+            }
         });
         
         // Factory-based registration for mode-specific constructor selection
@@ -382,29 +386,39 @@ public static class PvNugsCsProviderMsSqlDi
     /// Thrown when required configuration properties are missing or invalid for the specified mode.
     /// The exception message indicates which property is missing and for which mode.
     /// </exception>
-    private static void ValidateConfiguration(PvNugsCsProviderMsSqlConfig config)
+    private static void ValidateConfiguration(PvNugsCsProviderMsSqlConfigRow config)
     {
         if (string.IsNullOrWhiteSpace(config.Server))
-            throw new ArgumentException("Server is required in configuration");
+            throw new ArgumentException(
+                $"Server is required in configuration for {config.Name}");
             
         if (string.IsNullOrWhiteSpace(config.Database))
-            throw new ArgumentException("Database is required in configuration");
+            throw new ArgumentException(
+                $"Database is required in configuration for {config.Name}");
             
         // Mode-specific validation
         switch (config.Mode)
         {
             case CsProviderModeEnu.Config when !config.UseIntegratedSecurity 
                                              && string.IsNullOrWhiteSpace(config.Username):
-                throw new ArgumentException("Username is required for Config mode without integrated security");
+                throw new ArgumentException(
+                    "Username is required for 'Config' mode " +
+                    $"without integrated security for {config.Name}");
                 
             case CsProviderModeEnu.StaticSecret when string.IsNullOrWhiteSpace(config.Username):
-                throw new ArgumentException("Username is required for StaticSecret mode");
+                throw new ArgumentException(
+                    "Username is required for 'StaticSecret' mode " +
+                    $"for {config.Name}");
                 
             case CsProviderModeEnu.StaticSecret when string.IsNullOrWhiteSpace(config.SecretName):
-                throw new ArgumentException("SecretName is required for StaticSecret mode");
+                throw new ArgumentException(
+                    "SecretName is required for 'StaticSecret' mode " +
+                    $"for {config.Name}");
                 
             case CsProviderModeEnu.DynamicSecret when string.IsNullOrWhiteSpace(config.SecretName):
-                throw new ArgumentException("SecretName is required for DynamicSecret mode");
+                throw new ArgumentException(
+                    "SecretName is required for 'DynamicSecret' mode " +
+                    $"for {config.Name}");
         }
     }
 }

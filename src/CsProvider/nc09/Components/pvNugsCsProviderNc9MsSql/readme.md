@@ -1,6 +1,6 @@
 # pvNugsCsProviderNc9MsSql
 
-**Enterprise-grade SQL Server connection string provider with multiple authentication modes and secret management integration for .NET 9+**
+**Enterprise-grade SQL Server connection string provider with multiple authentication modes, secret management integration, and multi-database support for .NET 9+**
 
 [![NuGet Version](https://img.shields.io/nuget/v/pvNugsCsProviderNc9MsSql)](https://www.nuget.org/packages/pvNugsCsProviderNc9MsSql)
 [![.NET 9](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
@@ -8,7 +8,12 @@
 
 ## 🚀 **What is pvNugsCsProviderNc9MsSql?**
 
-A robust, production-ready SQL Server connection string provider that seamlessly integrates with dependency injection and supports multiple authentication modes. Whether you need simple configuration-based connections, static secret management, or dynamic credential rotation, this provider has you covered.
+A robust, production-ready SQL Server connection string provider that seamlessly integrates with dependency injection and supports multiple authentication modes. Whether you need simple configuration-based connections, static secret management, dynamic credential rotation, or multi-database/named connection support, this provider has you covered.
+
+> **New in vNext:**
+> - **Multi-database/named connection support** via the `Rows` property in config
+> - **Full backward compatibility** with legacy single-row config
+> - **IOptions pattern compliance** for named/multi-tenant scenarios
 
 ## ✨ **Key Features**
 
@@ -28,6 +33,7 @@ A robust, production-ready SQL Server connection string provider that seamlessly
 - **Async/Await** - Full async support for high-performance applications
 - **Automatic Renewal** - Dynamic credentials refresh before expiration
 - **Comprehensive Logging** - Built-in diagnostic and error logging
+- **Multi-Database/Named Connection Support** - Configure and use multiple named connection rows in a single config
 
 ## 📦 **Installation**
 
@@ -38,7 +44,7 @@ dotnet add package pvNugsCsProviderNc9MsSql
 
 ## 🛠️ **Quick Start**
 
-### 1. **Basic Configuration Mode**
+### 1. **Basic Configuration Mode (Single Row)**
 
 ```csharp
 // Program.cs or Startup.cs
@@ -58,8 +64,45 @@ services.TryAddPvNugsCsProviderMsSql(configuration);
 }
 ```
 
+### 2. **Multi-Database & Named Connection Support**
 
-### 2. **Usage in Your Services**
+You can now configure multiple named connection rows for multi-tenant or multi-database scenarios:
+
+```json
+{
+  "PvNugsCsProviderMsSqlConfig": {
+    "Rows": [
+      {
+        "Name": "Default",
+        "Mode": "Config",
+        "Server": "myserver.database.windows.net",
+        "Database": "MyDatabase",
+        "Username": "myuser",
+        "Password": "mypassword"
+      },
+      {
+        "Name": "Reporting",
+        "Mode": "Reader",
+        "Server": "reporting.database.windows.net",
+        "Database": "ReportingDb",
+        "Username": "reportuser",
+        "Password": "reportpass"
+      }
+    ]
+  }
+}
+```
+
+**Usage Example:**
+
+```csharp
+// Get connection string for a named row
+var reportingCs = await csProvider.GetConnectionStringAsync("Reporting", SqlRoleEnu.Reader);
+```
+
+> **Note:** The provider is fully backward compatible. If you use the old flat config style, it will be mapped to a single row named "Default".
+
+### 3. **Usage in Your Services**
 
 ```csharp
 public class DataService
@@ -162,6 +205,7 @@ var ownerCs = await csProvider.GetConnectionStringAsync(SqlRoleEnu.Owner);
 
 | Property | Required | Description |
 |----------|----------|-------------|
+| `Rows` | ❌ | List of named connection rows (multi-database support) |
 | `Mode` | ✅ | Authentication mode: `Config`, `StaticSecret`, or `DynamicSecret` |
 | `Server` | ✅ | SQL Server hostname or IP address |
 | `Database` | ✅ | Target database name |
@@ -177,6 +221,10 @@ var ownerCs = await csProvider.GetConnectionStringAsync(SqlRoleEnu.Owner);
 - **Config Mode**: Username required when not using integrated security
 - **StaticSecret Mode**: Username and SecretName required
 - **DynamicSecret Mode**: SecretName required
+
+> **Backward Compatibility:**
+> - If you use the old flat config style, it is automatically mapped to a single row named "Default".
+> - The provider is fully compliant with the IOptions pattern and supports named options for multi-tenant/multi-db scenarios.
 
 ## 🏢 **Enterprise Scenarios**
 

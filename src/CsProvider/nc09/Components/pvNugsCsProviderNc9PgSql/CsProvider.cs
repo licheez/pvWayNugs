@@ -9,7 +9,7 @@ namespace pvNugsCsProviderNc9PgSql;
 
 /// <summary>
 /// Provides PostgreSQL connection strings with role-based access control and multiple credential management modes.
-/// This class supports three operational modes: Config (configuration-based), StaticSecret (secret manager with static secrets), 
+/// This class supports three operational modes: Config (configuration-based), StaticSecret (secret manager with static secrets),
 /// and DynamicSecret (secret manager with time-limited credentials).
 /// Connection strings are cached per role and automatically refreshed when dynamic credentials expire.
 /// </summary>
@@ -45,7 +45,7 @@ namespace pvNugsCsProviderNc9PgSql;
 /// <para><strong>Config Mode Usage:</strong></para>
 /// <code>
 /// var services = new ServiceCollection();
-/// services.Configure&lt;PvNugsCsProviderPgSqlConfig&gt;(config =&gt; 
+/// services.Configure&lt;PvNugsCsProviderPgSqlConfig&gt;(config =&gt;
 /// {
 ///     config.Mode = CsProviderModeEnu.Config;
 ///     config.Server = "localhost";
@@ -56,15 +56,15 @@ namespace pvNugsCsProviderNc9PgSql;
 /// });
 /// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLogger&gt;();
 /// services.AddSingleton&lt;IPvNugsCsProvider, CsProvider&gt;();
-/// 
+///
 /// var provider = serviceProvider.GetService&lt;IPvNugsCsProvider&gt;();
 /// var connectionString = await provider.GetConnectionStringAsync(SqlRoleEnu.Reader);
 /// </code>
-/// 
+///
 /// <para><strong>DynamicSecret Mode Usage:</strong></para>
 /// <code>
 /// var services = new ServiceCollection();
-/// services.Configure&lt;PvNugsCsProviderPgSqlConfig&gt;(config =&gt; 
+/// services.Configure&lt;PvNugsCsProviderPgSqlConfig&gt;(config =&gt;
 /// {
 ///     config.Mode = CsProviderModeEnu.DynamicSecret;
 ///     config.Server = "localhost";
@@ -77,7 +77,7 @@ namespace pvNugsCsProviderNc9PgSql;
 /// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLogger&gt;();
 /// services.AddSingleton&lt;IPvNugsDynamicSecretManager, VaultDynamicSecretManager&gt;();
 /// services.AddSingleton&lt;IPvNugsCsProvider, CsProvider&gt;();
-/// 
+///
 /// var provider = serviceProvider.GetService&lt;IPvNugsCsProvider&gt;();
 /// var connectionString = await provider.GetConnectionStringAsync(SqlRoleEnu.Application);
 /// // Credentials will be automatically refreshed before expiration

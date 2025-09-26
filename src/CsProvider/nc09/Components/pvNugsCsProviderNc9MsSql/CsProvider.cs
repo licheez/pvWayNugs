@@ -9,7 +9,7 @@ namespace pvNugsCsProviderNc9MsSql;
 
 /// <summary>
 /// Provides MsSQL connection strings with role-based access control and multiple credential management modes.
-/// This class supports three operational modes: Config (configuration-based), StaticSecret (secret manager with static secrets), 
+/// This class supports three operational modes: Config (configuration-based), StaticSecret (secret manager with static secrets),
 /// and DynamicSecret (secret manager with time-limited credentials).
 /// Connection strings are cached per role and automatically refreshed when dynamic credentials expire.
 /// </summary>
@@ -25,10 +25,13 @@ namespace pvNugsCsProviderNc9MsSql;
 /// <para>Where SecretName comes from configuration and Role is the SQL role (Owner, Application, or Reader).</para>
 /// <para>Example: If SecretName is "myapp-db" and role is "Application", the secret manager will query for "myapp-db-Application".</para>
 /// </remarks>
+/// <seealso cref="IPvNugsMsSqlCsProvider"/>
 public class CsProvider(
     IConsoleLoggerService logger,
     IOptions<PvNugsCsProviderMsSqlConfig> options) : IPvNugsMsSqlCsProvider
 {
+    private const string DefaultCsName = "Default";
+    
     /// <summary>
     /// Represents a cached connection string entry with optional expiration support.
     /// Used internally to cache connection strings and track their validity for dynamic credentials.
@@ -67,24 +70,58 @@ public class CsProvider(
         }
     }
 
-    private readonly PvNugsCsProviderMsSqlConfig _config = options.Value;
-
     private readonly IPvNugsStaticSecretManager? _staticSecretManager;
     private readonly IPvNugsDynamicSecretManager? _dynamicSecretManager;
 
-    private readonly ConcurrentDictionary<SqlRoleEnu, CsEntry> _csEntries = new();
-    private readonly ConcurrentDictionary<SqlRoleEnu, SemaphoreSlim> _locks = new();
+    private readonly ConcurrentDictionary<string, CsEntry> _csEntries = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
 
+    private readonly IEnumerable<PvNugsCsProviderMsSqlConfigRow> 
+        _configRows = options.Value.Rows??[];
+
+    private PvNugsCsProviderMsSqlConfigRow GetConfigRow(string connectionStringName)
+    {
+        var row = _configRows.FirstOrDefault(x =>
+            string.Compare(x.Name, connectionStringName, StringComparison.InvariantCultureIgnoreCase) == 0);
+        if (row != null) return row;
+        var err = $"Connection string name '{connectionStringName}' not found in configuration";
+        logger.Log(err, SeverityEnu.Error);
+        throw new PvNugsCsProviderException(err);
+    }
+    
     /// <summary>
     /// <inheritdoc cref="IPvNugsMsSqlCsProvider.UseTrustedConnection"/>
     /// </summary>
-    public bool UseTrustedConnection => _config.UseIntegratedSecurity;
+    public bool UseTrustedConnection => IsTrustedConnection(DefaultCsName);
+
+    /// <summary>
+    /// Determines if the specified connection string uses Windows Integrated Security (Trusted Connection).
+    /// </summary>
+    /// <param name="connectionStringName">The name of the connection string configuration row.</param>
+    /// <returns>True if integrated security is enabled; otherwise, false.</returns>
+    public bool IsTrustedConnection(string connectionStringName)
+    {
+        var row = GetConfigRow(connectionStringName);
+        return row.UseIntegratedSecurity;
+    }
 
     /// <summary>
     /// Gets a value indicating whether this provider uses dynamic credentials with expiration times.
     /// Returns true when configured for DynamicSecret mode, false for Config or StaticSecret modes.
     /// </summary>
-    public bool UseDynamicCredentials => _config.Mode == CsProviderModeEnu.DynamicSecret;
+    /// <inheritdoc cref="IPvNugsMsSqlCsProvider.UseDynamicCredentials"/>
+    public bool UseDynamicCredentials => IsDynamicCredentials(DefaultCsName);
+
+    /// <summary>
+    /// Determines if the specified connection string uses dynamic credentials (DynamicSecret mode).
+    /// </summary>
+    /// <param name="connectionStringName">The name of the connection string configuration row.</param>
+    /// <returns>True if dynamic credentials are used; otherwise, false.</returns>
+    public bool IsDynamicCredentials(string connectionStringName)
+    {
+        var row = GetConfigRow(connectionStringName);
+        return row.Mode == CsProviderModeEnu.DynamicSecret;
+    }
 
     /// <summary>
     /// Gets the username for the specified database role from the current cache.
@@ -96,9 +133,18 @@ public class CsProvider(
     /// For Config and StaticSecret modes, this will be the configured username.
     /// For DynamicSecret mode, this will be the dynamically generated username from the last credential fetch.
     /// </remarks>
-    public string GetUsername(SqlRoleEnu role)
+    public string GetUsername(SqlRoleEnu role) => GetUsername(DefaultCsName, role);
+
+    /// <summary>
+    /// Gets the username for the specified connection string and database role from the current cache.
+    /// </summary>
+    /// <param name="connectionStringName">The name of the connection string configuration row.</param>
+    /// <param name="role">The database role to get the username for.</param>
+    /// <returns>The cached username for the role, or an empty string if no cached entry exists.</returns>
+    public string GetUsername(string connectionStringName, SqlRoleEnu role)
     {
-        var exists = _csEntries.TryGetValue(role, out var csEntry);
+        var csEntryKey = $"{connectionStringName}-{role}";
+        var exists = _csEntries.TryGetValue(csEntryKey, out var csEntry);
         return exists ? csEntry!.UserName : string.Empty;
     }
 
@@ -110,7 +156,7 @@ public class CsProvider(
     /// <param name="options">Configuration options containing database connection parameters and secret settings.</param>
     /// <param name="staticSecretManager">The static secret manager for retrieving passwords from secure storage.</param>
     /// <remarks>
-    /// In StaticSecret mode, the provider will query the secret manager for passwords using the pattern: 
+    /// In StaticSecret mode, the provider will query the secret manager for passwords using the pattern:
     /// <c>{config.SecretName}-{role}</c> where role is Owner, Application, or Reader.
     /// The username comes from configuration and remains constant.
     /// </remarks>
@@ -130,17 +176,14 @@ public class CsProvider(
     /// <param name="options">Configuration options containing database connection parameters and secret settings.</param>
     /// <param name="dynamicSecretManager">The dynamic secret manager for generating temporary database credentials.</param>
     /// <remarks>
-    /// In DynamicSecret mode, the provider will request new credentials from the secret manager using the pattern:
-    /// <c>{config.SecretName}-{role}</c> where role is Owner, Application, or Reader.
-    /// Both username and password are dynamically generated and will expire based on the secret manager's policy.
-    /// Credentials are automatically refreshed when they expire.
+    /// In DynamicSecret mode, the provider will use the dynamic secret manager to generate username/password pairs
+    /// with expiration times. Connection strings are automatically refreshed when credentials expire.
     /// </remarks>
     public CsProvider(
         IConsoleLoggerService logger,
         IOptions<PvNugsCsProviderMsSqlConfig> options,
         IPvNugsDynamicSecretManager dynamicSecretManager) : this(logger, options)
     {
-        _staticSecretManager = dynamicSecretManager;
         _dynamicSecretManager = dynamicSecretManager;
     }
 
@@ -167,21 +210,53 @@ public class CsProvider(
         SqlRoleEnu role = SqlRoleEnu.Reader,
         CancellationToken cancellationToken = default)
     {
-        var entry = _csEntries.GetValueOrDefault(role);
+        return await GetConnectionStringAsync(DefaultCsName, role, cancellationToken);
+    }
+
+    /// <summary>
+    /// Asynchronously retrieves a MsSQL connection string for the specified database role.
+    /// Connection strings are cached per role and automatically refreshed when credentials expire (DynamicSecret mode only).
+    /// </summary>
+    /// <param name="connectionStringName">The name of the connection string configuration row.</param>
+    /// <param name="role">The database role to get the connection string for. Defaults to Reader for least-privilege access.</param>
+    /// <param name="cancellationToken">Token to monitor for cancellation requests during credential retrieval.</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the complete MsSQL connection string
+    /// configured for the specified role, including server, database, credentials, schema, and other connection parameters.
+    /// </returns>
+    /// <exception cref="PvNugsCsProviderException">
+    /// Thrown when credential retrieval fails, configuration is invalid, or required secret managers are not provisioned.
+    /// The inner exception contains the original error details.
+    /// </exception>
+    /// <remarks>
+    /// <para>This method implements double-checked locking per role to ensure thread-safe credential caching and refresh.</para>
+    /// <para>For expired credentials (DynamicSecret mode), the method will automatically fetch fresh credentials before returning.</para>
+    /// <para>The secret name used for credential retrieval follows the pattern: <c>{config.SecretName}-{role}</c></para>
+    /// </remarks>
+    public async Task<string> GetConnectionStringAsync(
+        string connectionStringName,
+        SqlRoleEnu role = SqlRoleEnu.Reader,
+        CancellationToken cancellationToken = default)
+    {
+        var configRow = GetConfigRow(connectionStringName);
+        
+        var csEntryKey = $"{connectionStringName}-{role}";
+        var entry = _csEntries.GetValueOrDefault(csEntryKey);
         if (entry is not null && !entry.IsExpired) return entry.ConnectionString;
 
         var gate = _locks.GetOrAdd(
-            role, _ => new SemaphoreSlim(1, 1));
+            csEntryKey, _ => new SemaphoreSlim(1, 1));
         await gate.WaitAsync(cancellationToken)
             .ConfigureAwait(false);
         try
         {
-            entry = _csEntries.GetValueOrDefault(role);
+            entry = _csEntries.GetValueOrDefault(csEntryKey);
             if (entry is not null && !entry.IsExpired) return entry.ConnectionString;
 
-            var fresh = await FetchCredentials(role, cancellationToken)
+            var fresh = 
+                await FetchCredentials(configRow, role, cancellationToken)
                 .ConfigureAwait(false);
-            _csEntries[role] = fresh;
+            _csEntries[csEntryKey] = fresh;
             return fresh.ConnectionString;
         }
         catch (Exception e)
@@ -198,44 +273,52 @@ public class CsProvider(
     /// <summary>
     /// Fetches database credentials based on the configured mode (Config, StaticSecret, or DynamicSecret).
     /// </summary>
+    /// <param name="configRow">The configuration for a given connectionStringName</param>
     /// <param name="role">The database role to fetch credentials for.</param>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous credential fetch operation.</returns>
     private async Task<CsEntry> FetchCredentials(
+        PvNugsCsProviderMsSqlConfigRow configRow,
         SqlRoleEnu role,
         CancellationToken cancellationToken = default)
     {
-        if (_config.UseIntegratedSecurity)
+        if (configRow.UseIntegratedSecurity)
         {
-            return await FetchIntegratedSecurityCredentialsAsync(role);
+            return 
+                await FetchIntegratedSecurityCredentialsAsync(configRow, role);
         }
 
-        await logger.LogAsync("using SQL authentication", SeverityEnu.Info);
-        return _config.Mode switch
+        await logger.LogAsync(
+            $"using SQL authentication for config '{configRow.Name}' " +
+            $"with mode '{configRow.Mode}' " +
+            $"and role '{role}'", SeverityEnu.Info);
+        return configRow.Mode switch
         {
             CsProviderModeEnu.Config =>
-                await FetchConfigCredentialsAsync(role),
+                await FetchConfigCredentialsAsync(configRow, role),
             CsProviderModeEnu.StaticSecret =>
-                await FetchStaticCredentialsAsync(role, cancellationToken),
+                await FetchStaticCredentialsAsync(configRow, role, cancellationToken),
             CsProviderModeEnu.DynamicSecret =>
-                await FetchDynamicCredentialsAsync(role, cancellationToken),
+                await FetchDynamicCredentialsAsync(configRow, role, cancellationToken),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
 
-    private async Task<CsEntry> FetchIntegratedSecurityCredentialsAsync(SqlRoleEnu role)
+    private async Task<CsEntry> FetchIntegratedSecurityCredentialsAsync(
+        PvNugsCsProviderMsSqlConfigRow configRow,
+        SqlRoleEnu role)
     {
         // Windows Auth - username/password in config are optional/ignored
         await logger.LogAsync(
-            $"Using Windows Authentication for role {role}",
+            $"Using Windows Authentication for config '{configRow.Name}' and role '{role}'",
             SeverityEnu.Info);
         
         var cs = BuildConnectionString(
-            _config.Server, _config.Database,
+            configRow.Server, configRow.Database,
             true, role,
-            _config.Port,
-            null, _config.ApplicationName, null,
-            _config.TimeoutInSeconds);
+            configRow.Port,
+            null, configRow.ApplicationName, null,
+            configRow.TimeoutInSeconds);
         
         var effectiveUsername = GetCurrentUsername();
         
@@ -278,9 +361,11 @@ public class CsProvider(
     /// Uses static username and password from the configuration file.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation with cached credentials.</returns>
-    private async Task<CsEntry> FetchConfigCredentialsAsync(SqlRoleEnu role)
+    private async Task<CsEntry> FetchConfigCredentialsAsync(
+        PvNugsCsProviderMsSqlConfigRow configRow,
+        SqlRoleEnu role)
     {
-        if (string.IsNullOrWhiteSpace(_config.Username))
+        if (string.IsNullOrWhiteSpace(configRow.Username))
         {
             const string err = "Username is required when not using integrated security";
             await logger.LogAsync(err, SeverityEnu.Error);
@@ -288,19 +373,19 @@ public class CsProvider(
         }
 
         // Password is technically optional (could be empty password)
-        if (string.IsNullOrEmpty(_config.Password))
+        if (string.IsNullOrEmpty(configRow.Password))
         {
             await logger.LogAsync(
-                $"No password specified for SQL authentication user: {_config.Username}",
+                $"No password specified for SQL authentication user: {configRow.Username}",
                 SeverityEnu.Warning);
         }
 
-        var username = _config.Username!;
+        var username = configRow.Username!;
         var cs = BuildConnectionString(
-            _config.Server, _config.Database,
+            configRow.Server, configRow.Database,
             false, role,
-            _config.Port, username, _config.ApplicationName,
-            _config.Password, _config.TimeoutInSeconds);
+            configRow.Port, username, configRow.ApplicationName,
+            configRow.Password, configRow.TimeoutInSeconds);
 
         return new CsEntry(
             username, cs, null);
@@ -310,10 +395,12 @@ public class CsProvider(
     /// Fetches credentials from static secret manager (StaticSecret mode).
     /// Retrieves password from secret manager using the role-specific secret name pattern.
     /// </summary>
+    /// <param name="configRow">The configuration for a given connectionStringName</param>
     /// <param name="role">The database role to fetch credentials for.</param>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous operation with cached credentials.</returns>
     private async Task<CsEntry> FetchStaticCredentialsAsync(
+        PvNugsCsProviderMsSqlConfigRow configRow,
         SqlRoleEnu role,
         CancellationToken cancellationToken = default)
     {
@@ -324,7 +411,7 @@ public class CsProvider(
             throw new PvNugsCsProviderException(err);
         }
 
-        if (string.IsNullOrEmpty(_config.Username))
+        if (string.IsNullOrEmpty(configRow.Username))
         {
             const string err = "Username not found in configuration";
             await logger.LogAsync(err, SeverityEnu.Error);
@@ -332,7 +419,7 @@ public class CsProvider(
         }
         
         // Add validation for SecretName
-        if (string.IsNullOrWhiteSpace(_config.SecretName))
+        if (string.IsNullOrWhiteSpace(configRow.SecretName))
         {
             const string err = "SecretName not found in configuration for StaticSecret mode";
             await logger.LogAsync(err, SeverityEnu.Error);
@@ -340,10 +427,10 @@ public class CsProvider(
         }
 
 
-        var username = _config.Username;
+        var username = configRow.Username;
         try
         {
-            var secretName = $"{_config.SecretName}-{role}";
+            var secretName = $"{configRow.SecretName}-{role}";
             var password = await
                 _staticSecretManager.GetStaticSecretAsync(
                     secretName, cancellationToken);
@@ -355,12 +442,12 @@ public class CsProvider(
             }
 
             var cs = BuildConnectionString(
-                _config.Server, _config.Database,
+                configRow.Server, configRow.Database,
                 false, role,
-                _config.Port,
-                username, _config.ApplicationName,
+                configRow.Port,
+                username, configRow.ApplicationName,
                 password,
-                _config.TimeoutInSeconds);
+                configRow.TimeoutInSeconds);
 
             return new CsEntry(
                 username, cs, null);
@@ -376,10 +463,12 @@ public class CsProvider(
     /// Fetches dynamic credentials from secret manager (DynamicSecret mode).
     /// Retrieves temporary username/password pairs with expiration times using the role-specific secret name pattern.
     /// </summary>
+    /// <param name="configRow">The configuration for a given connectionStringName</param>
     /// <param name="role">The database role to fetch credentials for.</param>
     /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous operation with cached credentials including expiration.</returns>
     private async Task<CsEntry> FetchDynamicCredentialsAsync(
+        PvNugsCsProviderMsSqlConfigRow configRow,
         SqlRoleEnu role,
         CancellationToken cancellationToken = default)
     {
@@ -391,7 +480,7 @@ public class CsProvider(
         }
 
         // Add validation for SecretName
-        if (string.IsNullOrWhiteSpace(_config.SecretName))
+        if (string.IsNullOrWhiteSpace(configRow.SecretName))
         {
             const string err = "SecretName not found in configuration for DynamicSecret mode";
             await logger.LogAsync(err, SeverityEnu.Error);
@@ -400,7 +489,7 @@ public class CsProvider(
 
         try
         {
-            var secretName = $"{_config.SecretName}-{role}";
+            var secretName = $"{configRow.SecretName}-{role}";
             var dbSecret = await
                 _dynamicSecretManager.GetDynamicSecretAsync(
                     secretName, cancellationToken);
@@ -413,11 +502,11 @@ public class CsProvider(
 
             var username = dbSecret.Username;
             var cs = BuildConnectionString(
-                _config.Server, _config.Database,
+                configRow.Server, configRow.Database,
                 false, role,
-                _config.Port, username, _config.ApplicationName,
+                configRow.Port, username, configRow.ApplicationName,
                 dbSecret.Password,
-                _config.TimeoutInSeconds);
+                configRow.TimeoutInSeconds);
             var csExpirationDateUtc = dbSecret.ExpirationDateUtc;
 
             return new CsEntry(
