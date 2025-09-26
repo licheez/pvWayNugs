@@ -14,15 +14,17 @@ var inMemSettings = new Dictionary<string, string>
     
     // CS PROVIDER in Config mode
     // Here we mount a Docker container running postgres on port 5433
-    { "PvNugsCsProviderMsSqlConfig:Mode", "Config" },
-    { "PvNugsCsProviderMsSqlConfig:Server", "Localhost" },
-    { "PvNugsCsProviderMsSqlConfig:Schema", "dbo" },
-    { "PvNugsCsProviderMsSqlConfig:Database", "IntTestingDb" },
-    { "PvNugsCsProviderMsSqlConfig:Port", "1433" },
-    { "PvNugsCsProviderMsSqlConfig:TimeoutInSeconds", "300" },
-    { "PvNugsCsProviderMsSqlConfig:UseIntegratedSecurity", "true" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Name", "LoggingDb" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Mode", "Config" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Server", "Localhost" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Schema", "dbo" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Database", "IntTestingDb" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Port", "1433" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:TimeoutInSeconds", "300" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:UseIntegratedSecurity", "true" },
     
     // MS SQL LOG WRITER CONFIG
+    { "PvNugsMsSqlLogWriterConfig:ConnectionStringName", "LoggingDb" },
     { "PvNugsMsSqlLogWriterConfig:DefaultRetentionPeriodForTrace", "00:00:01" },
     
 };

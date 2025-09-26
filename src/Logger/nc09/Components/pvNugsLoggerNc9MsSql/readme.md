@@ -10,6 +10,7 @@ A robust Microsoft SQL Server logging implementation for .NET 9+ applications, p
 - **Contextual Logging** – Track user, company, topic, and detailed source information
 - **Log Purging** – Built-in retention policy management with configurable purge operations
 - **Flexible Configuration** – Customizable table structure, column names, and column lengths
+- **Multi-Database Support** – Use `ConnectionStringName` to select which connection string to use for logging
 - **Rich Metadata** – Machine name, method context, file path, and line number tracking
 - **Advanced Indexing** – Configurable indexes for performance and query optimization
 - **Multiple Interface Support** – Works with generic `ILoggerService` or specific `IMsSqlLoggerService`
@@ -26,6 +27,7 @@ dotnet add package pvNugsLoggerNc9MsSql
 ```json
 {
   "PvNugsMsSqlLogWriterConfig": {
+    "ConnectionStringName": "Default", // Name of the connection string to use for logging
     "TableName": "ApplicationLogs",
     "SchemaName": "dbo",
     "CreateTableAtFirstUse": true,
@@ -135,6 +137,7 @@ CREATE TABLE [dbo].[ApplicationLogs] (
 ```json
 {
   "PvNugsMsSqlLogWriterConfig": {
+    "ConnectionStringName": "LoggingDb", // Use a named connection string for logging
     "TableName": "CustomLogs",
     "SchemaName": "audit",
     "UserIdColumnName": "UserName",
@@ -158,6 +161,10 @@ CREATE TABLE [dbo].[ApplicationLogs] (
   }
 }
 ```
+
+#### ConnectionStringName
+
+- **ConnectionStringName**: Specifies which connection string from your configuration (e.g., `appsettings.json` or environment variables) should be used for logging. This enables scenarios where your application uses multiple databases and you want to direct logs to a specific one. If not set, defaults to `Default`.
 
 ### Column Length Guidelines
 
@@ -241,9 +248,71 @@ This package is part of the **pvNugsLogger** ecosystem:
 - Supports integration testing with in-memory or test SQL Server instances
 - Comprehensive error reporting for diagnostics
 
+## 🧪 Integration Test Example
+
+This example demonstrates how to configure and test the MsSqlLoggerService using in-memory configuration. It is ideal for integration testing or as a quick reference for setting up the logger with a specific connection string provider.
+
+> **Note:** This sample assumes you have a SQL Server instance available (e.g., via Docker) and the appropriate connection string settings.
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using pvNugsCsProviderNc9MsSql;
+using pvNugsLoggerNc9Abstractions;
+using pvNugsLoggerNc9MsSql;
+using pvNugsLoggerNc9Seri;
+
+Console.WriteLine("Integration testing console for pvNugsLoggerNc9MsSql");
+
+var inMemSettings = new Dictionary<string, string>
+{
+    // SERILOG
+    { "PvNugsLoggerConfig:MinLogLevel", "trace" },
+    
+    // CS PROVIDER in Config mode
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Name", "LoggingDb" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Mode", "Config" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Server", "Localhost" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Schema", "dbo" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Database", "IntTestingDb" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:Port", "1433" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:TimeoutInSeconds", "300" },
+    { "PvNugsCsProviderMsSqlConfig:Rows:0:UseIntegratedSecurity", "true" },
+    
+    // MS SQL LOG WRITER CONFIG
+    { "PvNugsMsSqlLogWriterConfig:ConnectionStringName", "LoggingDb" },
+    { "PvNugsMsSqlLogWriterConfig:DefaultRetentionPeriodForTrace", "00:00:01" },
+};
+
+var config = new ConfigurationBuilder()
+    .AddInMemoryCollection(inMemSettings!)
+    .Build();
+
+var services = new ServiceCollection();
+
+services.TryAddPvNugsLoggerSeriService(config);
+services.TryAddPvNugsCsProviderMsSql(config);
+services.TryAddPvNugsMsSqlLogger(config);
+
+var sp = services.BuildServiceProvider();
+var logger = sp.GetRequiredService<IConsoleLoggerService>();
+var svc = sp.GetRequiredService<IMsSqlLoggerService>();
+
+await logger.LogAsync("Logging into the Db", SeverityEnu.Trace);
+await svc.LogAsync("Hello World", SeverityEnu.Trace);
+await logger.LogAsync("Done", SeverityEnu.Trace);
+
+await logger.LogAsync("Sleeping 1 second", SeverityEnu.Trace);
+await Task.Delay(1000);
+
+await logger.LogAsync("Purging", SeverityEnu.Trace);
+var nbRowsPurged = await svc.PurgeLogsAsync();
+await logger.LogAsync($"{nbRowsPurged} rows() purged", SeverityEnu.Trace);
+```
+
 ## 📅 Migration Notes
 
-If upgrading from a previous version, review configuration keys and schema changes. Ensure new properties (e.g., index options, column names) are set as needed. See the XML documentation for full details.
+If upgrading from a previous version, review configuration keys and schema changes. Ensure new properties (e.g., index options, column names, `ConnectionStringName`) are set as needed. See the XML documentation for full details.
 
 ---
 

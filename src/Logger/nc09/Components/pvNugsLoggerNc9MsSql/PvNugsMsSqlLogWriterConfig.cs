@@ -90,6 +90,14 @@ public class PvNugsMsSqlLogWriterConfig
     /// </example>
     public const string Section = nameof(PvNugsMsSqlLogWriterConfig);
 
+    ///<summary>
+    /// Gets or sets the name of the connection string configuration to use for the Logging database.
+    /// </summary>
+    /// <remarks> This property allows specifying which connection string from the configuration should be used
+    /// when writing logs, supporting scenarios with multiple database connections.
+    /// </remarks>
+    public string ConnectionStringName { get; set; } = "Default";
+    
     /// <summary>
     /// Gets or sets the name of the database table used for storing log entries.
     /// </summary>

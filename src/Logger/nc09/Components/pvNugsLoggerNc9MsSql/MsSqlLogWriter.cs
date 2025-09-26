@@ -322,7 +322,8 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         string appCs;
         try
         {
-            appCs = await _csp.GetConnectionStringAsync(SqlRoleEnu.Application);
+            appCs = await _csp.GetConnectionStringAsync(
+                _config.ConnectionStringName, SqlRoleEnu.Application);
         }
         catch (Exception e)
         {
@@ -539,7 +540,9 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         string appCs;
         try
         {
-            appCs = await _csp.GetConnectionStringAsync(SqlRoleEnu.Application);
+            appCs = await _csp.GetConnectionStringAsync(
+                _config.ConnectionStringName,
+                SqlRoleEnu.Application);
         }
         catch (Exception e)
         {
@@ -631,7 +634,8 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         try
         {
             await LogActivityAsync($"Checking table '{_tableName}' existence");
-            var readerCs = await _csp.GetConnectionStringAsync();
+            var readerCs = 
+                await _csp.GetConnectionStringAsync(_config.ConnectionStringName);
             await using var readerCn = new SqlConnection(readerCs);
             await readerCn.OpenAsync();
             // Use parameters for table/schema names in queries where possible
@@ -780,7 +784,8 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         await LogActivityAsync($"Checking table {_tableName}");
         try
         {
-            var readerCs = await _csp.GetConnectionStringAsync();
+            var readerCs = 
+                await _csp.GetConnectionStringAsync(_config.ConnectionStringName);
             await using var readerCn = new SqlConnection(readerCs);
 
             await readerCn.OpenAsync();
