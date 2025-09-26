@@ -29,7 +29,7 @@ public class PvNugsCsProviderPgSqlConfig
     /// </code>
     /// </example>
     public const string Section = nameof(PvNugsCsProviderPgSqlConfig);
-    
+
     /// <summary>
     /// Gets or sets the operational mode for credential management.
     /// This property determines which other configuration properties are required and how credentials are retrieved.
@@ -40,7 +40,7 @@ public class PvNugsCsProviderPgSqlConfig
     /// <para>This setting determines the provider's behavior and which constructor to use when creating the provider instance.</para>
     /// </remarks>
     public CsProviderModeEnu Mode { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the PostgreSQL server hostname or IP address.
     /// </summary>
@@ -50,7 +50,7 @@ public class PvNugsCsProviderPgSqlConfig
     /// <para>This value is used directly in the PostgreSQL connection string as the Server parameter.</para>
     /// </remarks>
     public string Server { get; set; } = null!;
-    
+
     /// <summary>
     /// Gets or sets the PostgreSQL schema name for database operations.
     /// This schema is automatically added to the connection string's Search Path parameter.
@@ -61,7 +61,7 @@ public class PvNugsCsProviderPgSqlConfig
     /// <para>The schema is automatically included in the PostgreSQL Search Path, making it the default schema for unqualified table references.</para>
     /// </remarks>
     public string Schema { get; set; }= null!;
-    
+
     /// <summary>
     /// Gets or sets the PostgreSQL database name to connect to.
     /// </summary>
@@ -71,7 +71,7 @@ public class PvNugsCsProviderPgSqlConfig
     /// <para>This value is used directly in the PostgreSQL connection string as the Database parameter.</para>
     /// </remarks>
     public string Database { get; set; }= null!;
-    
+
     /// <summary>
     /// Gets or sets the optional PostgreSQL server port number.
     /// If not specified, the PostgreSQL default port (5432) will be used.
@@ -170,3 +170,4 @@ public class PvNugsCsProviderPgSqlConfig
     public int? ExpirationErrorToleranceInMinutes { get; set; }
 
 }
+

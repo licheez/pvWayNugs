@@ -4,9 +4,9 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.0.2</Version>
+        <Version>9.0.3</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>Added MsSql connection string provider contract</PackageReleaseNotes>
+        <PackageReleaseNotes>Added multi databases configurations support</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
@@ -15,7 +15,7 @@
         <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Copyright>pvWay Ltd</Copyright>
-        <PackageTags>Connection string provider abstraction</PackageTags>
+        <PackageTags>connection-string, provider, abstraction, database, sql, postgresql, mssql, .net, dependency-injection, security, multi-database, role-based, configuration, pvway, pvwaynugs</PackageTags>
         <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
 

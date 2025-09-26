@@ -7,21 +7,41 @@ namespace pvNugsCsProviderNc9Abstractions;
 public interface IPvNugsMsSqlCsProvider: IPvNugsCsProvider
 {
     /// <summary>
-    /// Uses Active Directory Trusted Connection
+    /// Gets a value indicating whether the default database configuration uses Active Directory Trusted Connection.
     /// </summary>
     bool UseTrustedConnection { get; }
-    
+
     /// <summary>
-    /// Gets a value indicating whether the provider uses dynamic credentials
-    /// for database connections.
+    /// Determines whether the specified database configuration uses Active Directory Trusted Connection.
+    /// </summary>
+    /// <param name="connectionStringName">The unique name of the database configuration to check.</param>
+    /// <returns>True if the specified configuration uses trusted connection; otherwise, false.</returns>
+    bool IsTrustedConnection(string connectionStringName);
+
+    /// <summary>
+    /// Gets a value indicating whether the default database configuration uses dynamic credentials.
     /// </summary>
     bool UseDynamicCredentials { get; }
 
     /// <summary>
-    /// Retrieves the username associated with the specified SQL role.
+    /// Determines whether the specified database configuration uses dynamic credentials.
+    /// </summary>
+    /// <param name="connectionStringName">The unique name of the database configuration to check.</param>
+    /// <returns>True if the specified configuration uses dynamic credentials; otherwise, false.</returns>
+    bool IsDynamicCredentials(string connectionStringName);
+
+    /// <summary>
+    /// Retrieves the username associated with the specified SQL role for the default database configuration.
     /// </summary>
     /// <param name="role">The SQL role for which the username is requested.</param>
-    /// <returns>The username associated with the specified SQL role.
-    /// Returns an empty string if the role does not exist.</returns>
+    /// <returns>The username associated with the specified SQL role. Returns an empty string if the role does not exist.</returns>
     string GetUsername(SqlRoleEnu role);
+
+    /// <summary>
+    /// Retrieves the username associated with the specified SQL role and database configuration.
+    /// </summary>
+    /// <param name="connectionStringName">The unique name of the database configuration to use.</param>
+    /// <param name="role">The SQL role for which the username is requested.</param>
+    /// <returns>The username associated with the specified SQL role and database configuration. Returns an empty string if the role or configuration does not exist.</returns>
+    string GetUsername(string connectionStringName, SqlRoleEnu role);
 }
