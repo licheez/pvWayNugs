@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>9.0.0</Version>
+        <Authors>Pierre Van Wallendael</Authors>
+        <PackageReleaseNotes>initial</PackageReleaseNotes>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageTags>logging, hybrid-logger, multi-target-logging, structured-logging, async-logging, contextual-logging, enterprise-logging, database-logging, sql-server, dependency-injection, thread-safe, retention-policy, net9, dotnet</PackageTags>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9"/>
+        <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.1.3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="readme.md" Pack="true" PackagePath="\"/>
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+            <Pack>True</Pack>
+            <PackagePath>/</PackagePath>
+        </None>
+
+    </ItemGroup>
+</Project>

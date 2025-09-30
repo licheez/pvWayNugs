@@ -88,6 +88,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc9MsSql.it", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsCsProviderNc9MsSql.it", "src\CsProvider\nc09\Testing\intTesting\pvNugsCsProviderNc9MsSql.it\pvNugsCsProviderNc9MsSql.it.csproj", "{B115A611-46B3-412A-9B2E-B9E05DB5C1A8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc9Hybrid", "src\Logger\nc09\Components\pvNugsLoggerNc9Hybrid\pvNugsLoggerNc9Hybrid.csproj", "{E751F369-0A22-46ED-835E-DCC48667B7A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc9Hybrid.it", "src\Logger\nc09\Testing\intTesting\pvNugsLoggerNc9Hybrid.it\pvNugsLoggerNc9Hybrid.it.csproj", "{8A454B4E-BEB3-421F-A4E0-4D6E7970D9D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -133,6 +137,8 @@ Global
 		{03147CCA-76A2-4210-AA41-CAA4F62ADDD9} = {E33A9AA4-047A-4530-AD07-18D1CC251DCC}
 		{31ECC0D9-594B-452C-BC21-1EB2F50CDADC} = {EFAD7BFD-7495-4A37-BB66-82394026893C}
 		{B115A611-46B3-412A-9B2E-B9E05DB5C1A8} = {9A1AE67B-B2FE-4E9B-848A-C6B96D145C0B}
+		{E751F369-0A22-46ED-835E-DCC48667B7A3} = {3B7DB1E3-C1FA-4A69-8F21-24F014AE2366}
+		{8A454B4E-BEB3-421F-A4E0-4D6E7970D9D4} = {EFAD7BFD-7495-4A37-BB66-82394026893C}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -219,5 +225,13 @@ Global
 		{B115A611-46B3-412A-9B2E-B9E05DB5C1A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B115A611-46B3-412A-9B2E-B9E05DB5C1A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B115A611-46B3-412A-9B2E-B9E05DB5C1A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E751F369-0A22-46ED-835E-DCC48667B7A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E751F369-0A22-46ED-835E-DCC48667B7A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E751F369-0A22-46ED-835E-DCC48667B7A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E751F369-0A22-46ED-835E-DCC48667B7A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A454B4E-BEB3-421F-A4E0-4D6E7970D9D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A454B4E-BEB3-421F-A4E0-4D6E7970D9D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A454B4E-BEB3-421F-A4E0-4D6E7970D9D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A454B4E-BEB3-421F-A4E0-4D6E7970D9D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

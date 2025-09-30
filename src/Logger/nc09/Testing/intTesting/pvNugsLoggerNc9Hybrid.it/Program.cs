@@ -2,10 +2,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using pvNugsCsProviderNc9MsSql;
 using pvNugsLoggerNc9Abstractions;
+using pvNugsLoggerNc9Hybrid;
 using pvNugsLoggerNc9MsSql;
 using pvNugsLoggerNc9Seri;
 
-Console.WriteLine("Integration testing console for pvNugsLoggerNc9MsSql");
+Console.WriteLine("Integration console for pvNugsLoggerNc9Hybrid");
 
 var inMemSettings = new Dictionary<string, string>
 {
@@ -37,19 +38,20 @@ var services = new ServiceCollection();
 services.TryAddPvNugsLoggerSeriService(config);
 services.TryAddPvNugsCsProviderMsSql(config);
 services.TryAddPvNugsMsSqlLogger(config);
+services.TryAddPvNugsHybridLogger(config);
 
 var sp = services.BuildServiceProvider();
-var logger = sp.GetRequiredService<IConsoleLoggerService>();
+var cLogger = sp.GetRequiredService<IConsoleLoggerService>();
+var hLogger = sp.GetRequiredService<ILoggerService>();
+var sLogger = sp.GetRequiredService<IMsSqlLoggerService>();
 
-var svc = sp.GetRequiredService<IMsSqlLoggerService>();
+await cLogger.LogAsync("Logging to both the console and the db ", SeverityEnu.Trace);
+await hLogger.LogAsync("Hello World", SeverityEnu.Trace);
+await cLogger.LogAsync("Done", SeverityEnu.Trace);
 
-await logger.LogAsync("Logging into the Db", SeverityEnu.Trace);
-await svc.LogAsync("Hello World", SeverityEnu.Trace);
-await logger.LogAsync("Done", SeverityEnu.Trace);
-
-await logger.LogAsync("Sleeping 1 second", SeverityEnu.Trace);
+await cLogger.LogAsync("Sleeping 1 second", SeverityEnu.Trace);
 await Task.Delay(1000);
 
-await logger.LogAsync("Purging", SeverityEnu.Trace);
-var nbRowsPurged = await svc.PurgeLogsAsync();
-await logger.LogAsync($"{nbRowsPurged} rows() purged", SeverityEnu.Trace);
+await cLogger.LogAsync("Purging", SeverityEnu.Trace);
+var nbRowsPurged = await sLogger.PurgeLogsAsync();
+await cLogger.LogAsync($"{nbRowsPurged} rows() purged", SeverityEnu.Trace);
