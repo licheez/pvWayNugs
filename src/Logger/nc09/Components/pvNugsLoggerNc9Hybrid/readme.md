@@ -1,31 +1,30 @@
-# HybridLoggerService for .NET
+# 🚦 HybridLoggerService for .NET
 
 A flexible, dependency-injected hybrid logger for .NET applications. The HybridLoggerService aggregates multiple log writers (console, file, SQL, etc.) and routes log messages to all configured destinations. Designed for extensibility, testability, and seamless integration with Microsoft.Extensions.DependencyInjection.
 
-## Features
-- Aggregate multiple log writers (console, file, SQL, etc.)
-- Configure minimum log level and log writer options via appsettings or code
-- Fully async logging API
-- Integrates with .NET dependency injection
-- Easily extensible with custom log writers
+## ✨ Features
 
-## Installation
+- **Aggregate Multiple Log Writers** – Console, file, SQL, and more
+- **Configurable** – Set minimum log level and writer options via config or code
+- **Async Logging API** – Non-blocking, scalable logging
+- **Dependency Injection Ready** – Integrates with .NET DI
+- **Easily Extensible** – Add custom log writers
 
-Install via NuGet:
+## 📦 Installation
 
-```
-Install-Package pvNugsLoggerNc9Hybrid
-```
-
-Or with .NET CLI:
-
-```
+```shell
 dotnet add package pvNugsLoggerNc9Hybrid
 ```
 
-## Quick Start
+or
 
-### 1. Configure Logging
+```shell
+Install-Package pvNugsLoggerNc9Hybrid
+```
+
+## ⚡ Quick Start
+
+### 1️⃣ Configure Logging
 
 Add logger settings to your configuration (e.g., `appsettings.json`):
 
@@ -37,7 +36,7 @@ Add logger settings to your configuration (e.g., `appsettings.json`):
 }
 ```
 
-### 2. Register Services
+### 2️⃣ Register Services
 
 ```csharp
 using Microsoft.Extensions.Configuration;
@@ -45,7 +44,6 @@ using Microsoft.Extensions.DependencyInjection;
 using pvNugsLoggerNc9Abstractions;
 using pvNugsLoggerNc9Hybrid;
 
-// Build configuration (from appsettings.json or in-memory for demo)
 var inMemSettings = new Dictionary<string, string>
 {
     { "PvNugsLoggerConfig:MinLogLevel", "trace" }
@@ -63,15 +61,15 @@ var sp = services.BuildServiceProvider();
 var logger = sp.GetRequiredService<ILoggerService>();
 ```
 
-### 3. Log Messages
+### 3️⃣ Log Messages
 
 ```csharp
 await logger.LogAsync("Hello World from HybridLogger!", SeverityEnu.Trace);
 ```
 
-## Example: Integration Test
+## 🧪 Integration Test Example
 
-Below is a real integration test console example using the HybridLoggerService with multiple log writers and configuration:
+A real integration test console using HybridLoggerService with multiple log writers and configuration:
 
 ```csharp
 using Microsoft.Extensions.Configuration;
@@ -123,12 +121,24 @@ await hLogger.LogAsync("Hello World", SeverityEnu.Trace);
 await cLogger.LogAsync("Done", SeverityEnu.Trace);
 ```
 
-## Configuration
+## ⚙️ Configuration
+
 - Configure minimum log level and log writer options via configuration.
 - Register any combination of log writers (console, file, SQL, etc.) before calling `TryAddPvNugsHybridLogger`.
 - The hybrid logger will automatically aggregate all registered log writers.
 
-## License
+## 🏗️ Architecture
+
+- **pvNugsLoggerNc9Abstractions** – Core interfaces and base functionality
+- **pvNugsLoggerNc9Hybrid** – Hybrid logger (this package)
+- **pvNugsLoggerNc9Console**, **pvNugsLoggerNc9MsSql**, etc. – Pluggable log writers
+
+## 🧪 Testing Support
+
+- Mockable interfaces for unit testing
+- Supports integration testing with in-memory or test log writers
+
+## 📄 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
 
