@@ -13,20 +13,14 @@ public enum SemaphoreStatusEnu
     Acquired,
 
     /// <summary>
-    /// The semaphore was acquired, but has been released by another process
-    /// or due to timeout before the requester could complete its work.
-    /// </summary>
-    ReleasedInTheMeanTime,
-
-    /// <summary>
     /// The semaphore is currently owned by another requester and cannot be
     /// acquired at this time.
     /// </summary>
     OwnedBySomeoneElse,
 
     /// <summary>
-    /// The semaphore was forcefully released, typically due to expiration
-    /// or administrative intervention.
+    /// The semaphore was forcefully acquired (stolen) by the requester because
+    /// the previous lock timed out and expired.
     /// </summary>
-    ForcedReleased
+    ForcedAcquired
 }

@@ -33,9 +33,8 @@ The semaphore state machine is represented by the `SemaphoreStatusEnu` enum:
 | State                  | Description                                                                 |
 |------------------------|-----------------------------------------------------------------------------|
 | 🟢 `Acquired`          | The semaphore is successfully acquired and exclusive access is granted.      |
-| 🔄 `ReleasedInTheMeanTime` | The semaphore was acquired, but released (by another process or timeout) before the requester finished. |
 | 🟡 `OwnedBySomeoneElse`| The semaphore is currently held by another requester and cannot be acquired. |
-| 🔴 `ForcedReleased`    | The semaphore was forcefully released, usually due to expiration or admin.   |
+| 🔴 `ForcedAcquired`    | The semaphore was forcefully acquired (stolen) by the requester because the previous lock timed out and expired.   |
 
 ---
 
