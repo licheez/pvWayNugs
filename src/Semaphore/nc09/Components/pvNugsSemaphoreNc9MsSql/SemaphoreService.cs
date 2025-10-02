@@ -21,7 +21,7 @@ internal sealed class SemaphoreService(
     private const string SqlVarChar = "varchar";
     private const string SqlInt = "int";
     private const string SqlDateTime = "datetime";
-
+    
     private const string NameField = "Name";
     private const string OwnerField = "Owner";
     private const string TimeoutInSecondsField = "TimeoutInSeconds";
@@ -70,13 +70,16 @@ internal sealed class SemaphoreService(
                                     $"[{CreateDateUtcField}], " +
                                     $"[{UpdateDateUtcField}]) " +
                                     "VALUES (" +
-                                    "@Name, @Owner, @TimeoutInSeconds, " +
-                                    "@CreateDateUtc, @UpdateDateUtc )";
-            insertCmd.Parameters.Add("@Name", SqlDbType.VarChar, 128).Value = name;
-            insertCmd.Parameters.Add("@Owner", SqlDbType.VarChar, 128).Value = requester;
-            insertCmd.Parameters.Add("@TimeoutInSeconds", SqlDbType.Int).Value = (int)timeout.TotalSeconds;
-            insertCmd.Parameters.Add("@CreateDateUtc", SqlDbType.DateTime).Value = now;
-            insertCmd.Parameters.Add("@UpdateDateUtc", SqlDbType.DateTime).Value = now;
+                                    $"@{NameField}, " +
+                                    $"@{OwnerField}, " +
+                                    $"@{TimeoutInSecondsField}, " +
+                                    $"@{CreateDateUtcField}, " +
+                                    $"@{UpdateDateUtcField} )";
+            insertCmd.Parameters.Add($"@{NameField}", SqlDbType.VarChar, 128).Value = name;
+            insertCmd.Parameters.Add($"@{OwnerField}", SqlDbType.VarChar, 128).Value = requester;
+            insertCmd.Parameters.Add($"@{TimeoutInSecondsField}", SqlDbType.Int).Value = (int)timeout.TotalSeconds;
+            insertCmd.Parameters.Add($"@{CreateDateUtcField}", SqlDbType.DateTime).Value = now;
+            insertCmd.Parameters.Add($"@{UpdateDateUtcField}", SqlDbType.DateTime).Value = now;
             try
             {
                 await insertCmd.ExecuteNonQueryAsync(ct);
@@ -98,8 +101,8 @@ internal sealed class SemaphoreService(
                                         $"[{CreateDateUtcField}] " +
                                         $"FROM " +
                                         $"[{_schemaName}].[{_tableName}] " +
-                                        $"WHERE [{NameField}] = @Name ";
-                selectCmd.Parameters.Add("@Name", SqlDbType.VarChar, 128).Value = name;
+                                        $"WHERE [{NameField}] = @{NameField} ";
+                selectCmd.Parameters.Add($"@{NameField}", SqlDbType.VarChar, 128).Value = name;
                 await using var reader = await selectCmd.ExecuteReaderAsync(ct);
                 if (!await reader.ReadAsync(ct))
                 {
@@ -124,17 +127,17 @@ internal sealed class SemaphoreService(
                     updateCmd.Transaction = (SqlTransaction)tx;
                     updateCmd.CommandText = $"UPDATE [{_schemaName}].[{_tableName}] " +
                                             $"SET " +
-                                            $"[{OwnerField}]=@Owner, " +
-                                            $"[{TimeoutInSecondsField}]=@TimeoutInSeconds, " +
-                                            $"[{CreateDateUtcField}]=@CreateDateUtc, " +
-                                            $"[{UpdateDateUtcField}]=@UpdateDateUtc " +
-                                            $"WHERE [{NameField}]=@Name " +
+                                            $"[{OwnerField}]=@{OwnerField}, " +
+                                            $"[{TimeoutInSecondsField}]=@{TimeoutInSecondsField}, " +
+                                            $"[{CreateDateUtcField}]=@{CreateDateUtcField}, " +
+                                            $"[{UpdateDateUtcField}]=@{UpdateDateUtcField} " +
+                                            $"WHERE [{NameField}]=@{NameField} " +
                                             $"AND [{UpdateDateUtcField}]=@OldUpdateDateUtc";
-                    updateCmd.Parameters.Add("@Owner", SqlDbType.VarChar, 128).Value = requester;
-                    updateCmd.Parameters.Add("@TimeoutInSeconds", SqlDbType.Int).Value = (int)timeout.TotalSeconds;
-                    updateCmd.Parameters.Add("@CreateDateUtc", SqlDbType.DateTime).Value = now;
-                    updateCmd.Parameters.Add("@UpdateDateUtc", SqlDbType.DateTime).Value = now;
-                    updateCmd.Parameters.Add("@Name", SqlDbType.VarChar, 128).Value = name;
+                    updateCmd.Parameters.Add($"@{OwnerField}", SqlDbType.VarChar, 128).Value = requester;
+                    updateCmd.Parameters.Add($"@{TimeoutInSecondsField}", SqlDbType.Int).Value = (int)timeout.TotalSeconds;
+                    updateCmd.Parameters.Add($"@{CreateDateUtcField}", SqlDbType.DateTime).Value = now;
+                    updateCmd.Parameters.Add($"@{UpdateDateUtcField}", SqlDbType.DateTime).Value = now;
+                    updateCmd.Parameters.Add($"@{NameField}", SqlDbType.VarChar, 128).Value = name;
                     updateCmd.Parameters.Add("@OldUpdateDateUtc", SqlDbType.DateTime).Value = rowUpdateDateUtc;
                     var rows = await updateCmd.ExecuteNonQueryAsync(ct);
                     if (rows == 1)
@@ -185,10 +188,10 @@ internal sealed class SemaphoreService(
             await cn.OpenAsync(ct);
             var cmd = cn.CreateCommand();
             cmd.CommandText = $"UPDATE [{_schemaName}].[{_tableName}] " +
-                              $"SET [{UpdateDateUtcField}]=@UpdateDateUtc " +
-                              $"WHERE [{NameField}]=@Name";
-            cmd.Parameters.Add("@UpdateDateUtc", SqlDbType.DateTime).Value = now;
-            cmd.Parameters.Add("@Name", SqlDbType.VarChar, 128).Value = name;
+                              $"SET [{UpdateDateUtcField}]=@{UpdateDateUtcField} " +
+                              $"WHERE [{NameField}]=@{NameField}";
+            cmd.Parameters.Add($"@{UpdateDateUtcField}", SqlDbType.DateTime).Value = now;
+            cmd.Parameters.Add($"@{NameField}", SqlDbType.VarChar, 128).Value = name;
             await cmd.ExecuteNonQueryAsync(ct);
         }
         catch (Exception e)
@@ -215,8 +218,8 @@ internal sealed class SemaphoreService(
             await cn.OpenAsync(ct);
             var cmd = cn.CreateCommand();
             cmd.CommandText = $"DELETE FROM [{_schemaName}].[{_tableName}] " +
-                              $"WHERE [{NameField}]=@Name ";
-            cmd.Parameters.Add("@Name", SqlDbType.VarChar, 128).Value = name;
+                              $"WHERE [{NameField}]=@{NameField} ";
+            cmd.Parameters.Add($"@{NameField}", SqlDbType.VarChar, 128).Value = name;
             await cmd.ExecuteNonQueryAsync(ct);
         }
         catch (Exception e)
@@ -252,8 +255,8 @@ internal sealed class SemaphoreService(
                               $"[{CreateDateUtcField}] " +
                               $"FROM " +
                               $"[{_schemaName}].[{_tableName}] " +
-                              $"WHERE [{NameField}] = @Name ";
-            cmd.Parameters.Add("@Name", SqlDbType.VarChar, 128).Value = name;
+                              $"WHERE [{NameField}] = @{NameField} ";
+            cmd.Parameters.Add($"@{NameField}", SqlDbType.VarChar, 128).Value = name;
             await using var reader = await cmd.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct)) return null;
         
