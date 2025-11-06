@@ -114,6 +114,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc6Abstractions", "src\SecretManager\nc06\Components\pvNugsSecretManagerNc6Abstractions\pvNugsSecretManagerNc6Abstractions.csproj", "{F5F41A55-D147-40D8-B258-1C2A11503035}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc6Azure", "src\SecretManager\nc06\Components\pvNugsSecretManagerNc6Azure\pvNugsSecretManagerNc6Azure.csproj", "{DC8BCBE4-4C1B-41C7-BDF4-EACC5CA89D6B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,7 @@ Global
 		{D6E1060E-8B94-431D-8EAA-2A221E9F3AAD} = {2AF6E8D4-9FA5-4A59-B35D-9A4BF916A22F}
 		{CA804B59-6E25-4529-B4A9-2F248341CBE2} = {D6E1060E-8B94-431D-8EAA-2A221E9F3AAD}
 		{F5F41A55-D147-40D8-B258-1C2A11503035} = {CA804B59-6E25-4529-B4A9-2F248341CBE2}
+		{DC8BCBE4-4C1B-41C7-BDF4-EACC5CA89D6B} = {CA804B59-6E25-4529-B4A9-2F248341CBE2}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -281,5 +284,9 @@ Global
 		{F5F41A55-D147-40D8-B258-1C2A11503035}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5F41A55-D147-40D8-B258-1C2A11503035}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5F41A55-D147-40D8-B258-1C2A11503035}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC8BCBE4-4C1B-41C7-BDF4-EACC5CA89D6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC8BCBE4-4C1B-41C7-BDF4-EACC5CA89D6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC8BCBE4-4C1B-41C7-BDF4-EACC5CA89D6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC8BCBE4-4C1B-41C7-BDF4-EACC5CA89D6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
