@@ -6,6 +6,10 @@ namespace pvNugsSemaphoreNc9MsSql;
 /// </summary>
 public class PvNugsMsSqlSemaphoreConfig
 {
+    /// <summary>
+    /// The configuration section name for binding <see cref="PvNugsMsSqlSemaphoreConfig"/> from appsettings or other configuration sources.
+    /// Use this constant when registering or retrieving configuration for the semaphore service.
+    /// </summary>
     public const string Section = nameof(PvNugsMsSqlSemaphoreConfig);
     
     /// <summary>
