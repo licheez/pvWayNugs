@@ -1,0 +1,54 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using pvNugsLoggerNc6Abstractions;
+
+namespace pvNugsLoggerNc6Seri;
+
+/// <summary>
+/// Provides a factory for creating Serilog-based console loggers.
+/// Implements <see cref="ILoggerProvider"/> to integrate with the Microsoft.Extensions.Logging framework.
+/// </summary>
+public sealed class SerilogConsoleLoggerProvider : ILoggerProvider
+{
+    private readonly SeverityEnu _minLogLevel;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerilogConsoleLoggerProvider"/> class
+    /// with default Debug severity level.
+    /// </summary>
+    public SerilogConsoleLoggerProvider(): this(SeverityEnu.Debug)
+    {
+    }
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerilogConsoleLoggerProvider"/> class
+    /// using configuration settings.
+    /// </summary>
+    /// <param name="config">The configuration options containing logging settings.</param>
+    public SerilogConsoleLoggerProvider(
+        IOptions<PvNugsLoggerConfig> config) : this(config.Value.MinLevel)
+    {
+    }
+
+    /// <summary>
+    /// Provides a factory for creating Serilog-based console loggers.
+    /// Implements <see cref="ILoggerProvider"/> to integrate with the Microsoft.Extensions.Logging framework.
+    /// </summary>
+    public SerilogConsoleLoggerProvider(SeverityEnu minLogLevel)
+    {
+        _minLogLevel = minLogLevel;
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        // nop
+    }
+
+    /// <inheritdoc/>
+    public ILogger CreateLogger(string categoryName)
+    {
+        var lw = new SerilogConsoleWriter();
+        return new SerilogConsoleService(_minLogLevel, lw);
+    }
+}
