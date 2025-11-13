@@ -2,8 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using pvNugsCsProviderNc9Abstractions;
-using Microsoft.Extensions.Options;
-using pvNugsLoggerNc9Abstractions;
 using pvNugsSecretManagerNc9Abstractions;
 
 namespace pvNugsCsProviderNc9MsSql;
@@ -197,151 +195,10 @@ public static class PvNugsCsProviderMsSqlDi
             }
         });
         
-        // Factory-based registration for mode-specific constructor selection
-        services.TryAddSingleton<IPvNugsCsProvider>(serviceProvider =>
-        {
-            try 
-            {
-                return CreateProvider(serviceProvider);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Failed to create SQL Server connection string provider. " +
-                    "Ensure all required dependencies are registered and configuration is valid.", ex);
-            }
-        });
-        
-        // Register specific interface
-        services.TryAddSingleton<IPvNugsMsSqlCsProvider>(serviceProvider => 
-            (CsProvider)serviceProvider.GetRequiredService<IPvNugsCsProvider>());
+        services.TryAddSingleton<IPvNugsCsProvider, CsProvider>();
+        services.TryAddSingleton<IPvNugsMsSqlCsProvider, CsProvider>();
         
         return services;
-    }
-    
-    /// <summary>
-    /// Creates a new instance of <see cref="CsProvider"/> using the appropriate constructor based on configuration mode and available services.
-    /// This method acts as a factory that examines the configuration and registered services to select the correct operational mode.
-    /// </summary>
-    /// <param name="serviceProvider">The service provider to resolve dependencies from.</param>
-    /// <returns>A fully configured <see cref="CsProvider"/> instance ready for use.</returns>
-    /// <remarks>
-    /// <para><c>Constructor Selection Logic:</c></para>
-    /// <list type="bullet">
-    /// <item><description><c>Config Mode:</c> Uses primary constructor when mode is Config, regardless of registered secret managers.</description></item>
-    /// <item><description><c>StaticSecret Mode:</c> Uses StaticSecret constructor when mode is StaticSecret and <see cref="IPvNugsStaticSecretManager"/> is registered.</description></item>
-    /// <item><description><c>DynamicSecret Mode:</c> Uses DynamicSecret constructor when mode is DynamicSecret and <see cref="IPvNugsDynamicSecretManager"/> is registered.</description></item>
-    /// </list>
-    /// 
-    /// <para><c>Error Conditions:</c></para>
-    /// <para>This method will throw exceptions if the configuration mode requires services that are not registered in the container.</para>
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when required dependencies are missing for the configured mode, or when an unsupported mode is specified.
-    /// </exception>
-    private static CsProvider CreateProvider(IServiceProvider serviceProvider)
-    {
-        var logger = serviceProvider.GetRequiredService<IConsoleLoggerService>();
-        var options = serviceProvider.GetRequiredService<IOptions<PvNugsCsProviderMsSqlConfig>>();
-        var config = options.Value;
-        
-        // Mode-specific factory logic
-        return config.Mode switch
-        {
-            CsProviderModeEnu.Config => 
-                new CsProvider(logger, options),
-                
-            CsProviderModeEnu.StaticSecret => CreateStaticSecretProvider(
-                serviceProvider, logger, options),
-                
-            CsProviderModeEnu.DynamicSecret => CreateDynamicSecretProvider(
-                serviceProvider, logger, options),
-                
-            _ => throw new ArgumentOutOfRangeException(
-                $"Unsupported authentication mode: {config.Mode}")
-        };
-    }
-    
-    /// <summary>
-    /// Creates a <see cref="CsProvider"/> instance configured for StaticSecret mode.
-    /// This method validates that the required <see cref="IPvNugsStaticSecretManager"/> is registered
-    /// and creates the provider using the StaticSecret constructor overload.
-    /// </summary>
-    /// <param name="serviceProvider">The service provider to resolve dependencies from.</param>
-    /// <param name="logger">The console logger service for error and diagnostic logging.</param>
-    /// <param name="options">Configuration options containing database connection parameters and secret settings.</param>
-    /// <returns>A <see cref="CsProvider"/> instance configured for StaticSecret operations.</returns>
-    /// <remarks>
-    /// <para>StaticSecret mode requires the following services to be registered:</para>
-    /// <list type="bullet">
-    /// <item><description><see cref="IConsoleLoggerService"/> - Required for all modes.</description></item>
-    /// <item><description><see cref="IPvNugsStaticSecretManager"/> - Required specifically for StaticSecret mode to retrieve passwords from secure storage.</description></item>
-    /// </list>
-    /// 
-    /// <para>In StaticSecret mode, the provider retrieves passwords from the secret manager using role-specific secret names
-    /// following the pattern: <c>{config.SecretName}-{role}</c>, while usernames come from configuration.</para>
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when <see cref="IPvNugsStaticSecretManager"/> is not registered in the service container.
-    /// The exception message provides guidance on how to register the missing service.
-    /// </exception>
-    private static CsProvider CreateStaticSecretProvider(
-        IServiceProvider serviceProvider,
-        IConsoleLoggerService logger,
-        IOptions<PvNugsCsProviderMsSqlConfig> options)
-    {
-        var secretManager = serviceProvider.GetService<IPvNugsStaticSecretManager>();
-        if (secretManager == null)
-        {
-            throw new InvalidOperationException(
-                "StaticSecret mode requires IPvNugsStaticSecretManager to be registered. " +
-                "Register it with: services.AddSingleton<IPvNugsStaticSecretManager, YourImplementation>()");
-        }
-        
-        return new CsProvider(logger, options, secretManager);
-    }
-    
-    /// <summary>
-    /// Creates a <see cref="CsProvider"/> instance configured for DynamicSecret mode.
-    /// This method validates that the required <see cref="IPvNugsDynamicSecretManager"/> is registered
-    /// and creates the provider using the DynamicSecret constructor overload.
-    /// </summary>
-    /// <param name="serviceProvider">The service provider to resolve dependencies from.</param>
-    /// <param name="logger">The console logger service for error and diagnostic logging.</param>
-    /// <param name="options">Configuration options containing database connection parameters and secret settings.</param>
-    /// <returns>A <see cref="CsProvider"/> instance configured for DynamicSecret operations with automatic credential renewal.</returns>
-    /// <remarks>
-    /// <para>DynamicSecret mode requires the following services to be registered:</para>
-    /// <list type="bullet">
-    /// <item><description><see cref="IConsoleLoggerService"/> - Required for all modes.</description></item>
-    /// <item><description><see cref="IPvNugsDynamicSecretManager"/> - Required specifically for DynamicSecret mode to generate temporary database credentials.</description></item>
-    /// </list>
-    /// 
-    /// <para>In DynamicSecret mode, the provider requests fresh credentials from the secret manager using role-specific secret names
-    /// following the pattern: <c>{config.SecretName}-{role}</c>. Both username and password are dynamically generated
-    /// and include expiration times for automatic renewal.</para>
-    /// 
-    /// <para>The provider automatically handles credential expiration and renewal, ensuring applications always have valid credentials
-    /// without manual intervention or service restarts.</para>
-    /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when <see cref="IPvNugsDynamicSecretManager"/> is not registered in the service container.
-    /// The exception message provides guidance on how to register the missing service.
-    /// </exception>
-    private static CsProvider CreateDynamicSecretProvider(
-        IServiceProvider serviceProvider,
-        IConsoleLoggerService logger,
-        IOptions<PvNugsCsProviderMsSqlConfig> options)
-    {
-        var secretManager = serviceProvider.GetService<IPvNugsDynamicSecretManager>();
-        if (secretManager == null)
-        {
-            throw new InvalidOperationException(
-                "DynamicSecret mode requires IPvNugsDynamicSecretManager to be registered. " +
-                "Register it with: services.AddSingleton<IPvNugsDynamicSecretManager, YourImplementation>()");
-        }
-        
-        return new CsProvider(logger, options, secretManager);
     }
     
     /// <summary>

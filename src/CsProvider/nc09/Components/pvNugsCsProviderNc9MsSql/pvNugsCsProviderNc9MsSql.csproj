@@ -4,9 +4,9 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.0.1</Version>
+        <Version>9.0.2</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>introducing multi config feature</PackageReleaseNotes>
+        <PackageReleaseNotes>simplyting injection</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
