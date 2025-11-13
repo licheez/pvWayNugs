@@ -21,9 +21,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\pvNugsCacheNc9Abstractions\pvNugsCacheNc9Abstractions.csproj"/>
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8"/>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.8"/>
+        <PackageReference Include="pvNugsCacheNc9Abstractions" Version="9.0.1" />
 
         <None Include="readme.md" Pack="true" PackagePath="\"/>
         <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
