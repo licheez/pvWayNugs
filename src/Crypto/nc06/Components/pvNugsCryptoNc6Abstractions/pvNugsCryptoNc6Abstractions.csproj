@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>6.0.0</Version>
+        <Authors>Pierre Van Wallendael</Authors>
+        <PackageReleaseNotes>Initial</PackageReleaseNotes>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <Description>Lightweight .NET 6 abstractions for encryption and ephemeral payload handling used across the pvNugs libraries. Provides async-friendly APIs to encrypt/decrypt strings and serializable objects and supports time-limited (ephemeral) ciphertexts.</Description>
+        <PackageTags>cryptography;encryption;data-protection;ephemeral;security;pvNugs;async;abstractions;dotnet6</PackageTags>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="readme.md" Pack="true" PackagePath="\"/>
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+            <Pack>True</Pack>
+            <PackagePath>/</PackagePath>
+        </None>
+    </ItemGroup>
+
+</Project>
