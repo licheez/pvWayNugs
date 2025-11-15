@@ -1,4 +1,4 @@
-﻿namespace pvNugsCryptoNc6Abstractions;
+﻿namespace pvNugsCryptoNc6Aes;
 
 /// <summary>
 /// Represents an ephemeral encrypted payload wrapper that contains

@@ -4,9 +4,10 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>6.0.1</Version>
+        <Version>6.0.0</Version>
+        <PackageId>pvNugsCryptoNc6Aes</PackageId>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>ICryptoEphemera moved to impl. Interface name changed</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
@@ -15,10 +16,16 @@
         <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Copyright>pvWay Ltd</Copyright>
-        <Description>Lightweight .NET 6 abstractions for encryption and ephemeral payload handling used across the pvNugs libraries. Provides async-friendly APIs to encrypt/decrypt strings and serializable objects and supports time-limited (ephemeral) ciphertexts.</Description>
-        <PackageTags>cryptography;encryption;data-protection;ephemeral;security;pvNugs;async;abstractions;dotnet6</PackageTags>
+        <Description>AES-based implementation of the pvNugs IPvNugsCrypto abstraction for .NET 6; provides AES encryption/decryption with support for ephemeral (time-limited) payloads, JSON serialization, and DI-friendly APIs.</Description>
+        <PackageTags>cryptography;encryption;aes;aes-256;ephemeral;data-protection;pvNugs;security;dotnet6</PackageTags>
         <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.1" />
+      <PackageReference Include="pvNugsCryptoNc6Abstractions" Version="6.0.1" />
+      <PackageReference Include="pvNugsLoggerNc6Abstractions" Version="6.0.0" />
+    </ItemGroup>
 
     <ItemGroup>
         <None Include="readme.md" Pack="true" PackagePath="\"/>

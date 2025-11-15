@@ -9,13 +9,13 @@ A small, dependency-light abstraction for cryptographic helpers used across the 
 Why this package?
 
 - Secure, easy-to-use abstraction for encryption needs.
-- Ephemeral payloads with optional validity.
+- Ephemeral payloads with optional validity (ephemeral wrapper type moved to the implementation; see note below).
 - Minimal surface area — ideal for injecting into DI containers.
 
 Icons / Quick Feature List
 
 - 🔐 Encryption & Decryption
-- ⏳ Ephemeral (time-limited) payloads
+- ⏳ Ephemeral (time-limited) payloads (public API exposes methods; internal ephemeral wrapper type moved to impl)
 - ⚡ Async / Task-based API
 - ♻️ Supports IDisposable and IAsyncDisposable for resource cleanup
 
@@ -32,8 +32,8 @@ Usage (minimal example)
 ```csharp
 using pvNugsCryptoNc6Abstractions;
 
-// Resolve ICrypto from your DI container, or create your implementation.
-public async Task ExampleAsync(ICrypto crypto)
+// Resolve the public interface IPvNugsCrypto from your DI container, or create your implementation.
+public async Task ExampleAsync(IPvNugsCrypto crypto)
 {
     // Encrypt a string
     string encrypted = await crypto.EncryptStringAsync("Hello world");
@@ -51,36 +51,11 @@ public async Task ExampleAsync(ICrypto crypto)
 
 API summary
 
-- ICrypto — primary abstraction. Methods:
+- `IPvNugsCrypto` — primary public abstraction. Methods:
   - EncryptStringAsync, EncryptObjectAsync<T>
   - EncryptEphemeralStringAsync, EncryptEphemeralObjectAsync<T>
   - DecryptStringAsync, DecryptObjectAsync<T>
   - DecryptEphemeralStringAsync, DecryptEphemeralObjectAsync<T>
-
-Packaging notes (suggested csproj additions)
-
-To include this readme on nuget.org and provide a package icon, add the following to your component's .csproj:
-
-```xml
-<!-- Add inside a PropertyGroup -->
-<PackageId>pvNugsCryptoNc6Abstractions</PackageId>
-<Description>Lightweight abstractions for encryption and ephemeral payloads used by pvNugs components.</Description>
-<Authors>pvWay</Authors>
-<PackageTags>cryptography;encryption;ephemeral;data-protection;pvNugs</PackageTags>
-<PackageLicenseExpression>MIT</PackageLicenseExpression>
-<!-- Include a package icon file (add the file to the project and set <Include> to pack it) -->
-<PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
-<PackageReadmeFile>readme.md</PackageReadmeFile>
-<RepositoryUrl>https://github.com/pvWay/pvNugs</RepositoryUrl>
-```
-
-Make sure the package icon file is included in the project and marked to be packed. Example ItemGroup:
-
-```xml
-<ItemGroup>
-  <None Include="..\..\..\..\..\pvwayLogoTextLess256.png" Pack="true" PackagePath="" />
-</ItemGroup>
-```
 
 Suggested nuget tags
 

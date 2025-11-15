@@ -15,7 +15,7 @@
 /// implementation. Callers should consult the concrete implementation
 /// documentation for exact behavior.
 /// </remarks>
-public interface ICrypto: IAsyncDisposable, IDisposable
+public interface IPvNugsCrypto: IAsyncDisposable, IDisposable
 {
     /// <summary>
     /// Encrypts a plain text string and returns the encrypted payload as a
