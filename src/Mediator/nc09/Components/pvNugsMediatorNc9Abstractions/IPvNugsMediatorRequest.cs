@@ -1,0 +1,3 @@
+namespace pvNugsMediatorNc9Abstractions;
+
+public interface IPvNugsMediatorRequest<TResponse>;
