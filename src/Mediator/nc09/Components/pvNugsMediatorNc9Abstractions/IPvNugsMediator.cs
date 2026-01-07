@@ -12,12 +12,12 @@ public interface IPvNugsMediator
         IPvNugsMediatorRequest<TResponse> request, 
         CancellationToken cancellationToken = default);
     
-    Task Publish<TNotification>(
+    Task PublishAsync<TNotification>(
         IPvNugsMediatorNotification notification, 
         CancellationToken cancellationToken = default)
         where TNotification : IPvNugsMediatorNotification;
     
-    Task Publish(
+    Task PublishAsync(
         object notification, 
         CancellationToken cancellationToken = default);
 }

@@ -89,7 +89,7 @@ public class Mediator(
         }
     }
 
-    public Task Publish<TNotification>(
+    public Task PublishAsync<TNotification>(
         IPvNugsMediatorNotification notification,
         CancellationToken cancellationToken = default)
         where TNotification : IPvNugsMediatorNotification
@@ -97,7 +97,7 @@ public class Mediator(
         throw new NotImplementedException();
     }
 
-    public Task Publish(
+    public Task PublishAsync(
         object notification,
         CancellationToken cancellationToken = default)
     {
