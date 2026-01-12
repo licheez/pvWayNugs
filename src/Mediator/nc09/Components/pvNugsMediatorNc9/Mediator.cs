@@ -9,6 +9,8 @@ public class Mediator(
     IServiceProvider sp,
     IConsoleLoggerService logger) : IPvNugsMediator
 {
+    private const string HandleMethodName = "HandleAsync";
+    
     public async Task<TResponse> SendAsync<TResponse>(
         IPvNugsMediatorRequest<TResponse> request,
         CancellationToken cancellationToken = default)
@@ -29,11 +31,11 @@ public class Mediator(
             throw new PvNugsMediatorException(err);
         }
 
-        var handleMethod = handlerType.GetMethod("HandleAsync");
+        var handleMethod = handlerType.GetMethod(HandleMethodName);
         if (handleMethod == null)
         {
             var err = $"Handler for request type {requestType.FullName} " +
-                      $"does not have a 'HandleAsync' method";
+                      $"does not have a '{HandleMethodName}' method";
             await logger.LogAsync(err, SeverityEnu.Error);
             throw new PvNugsMediatorException(err);
         }
@@ -49,10 +51,13 @@ public class Mediator(
         var nbPipelines = pipelines.Length;
 
         // Get the Handle method once outside the loop
-        var handleMethodPipeline = nbPipelines > 0 ? pipelineType.GetMethod("Handle") : null;
+        var handleMethodPipeline = nbPipelines > 0 
+            ? pipelineType.GetMethod(HandleMethodName) 
+            : null;
         if (nbPipelines > 0 && handleMethodPipeline == null)
         {
-            var err = $"Pipeline for request type {requestType.FullName} does not have a Handle method";
+            var err = $"Pipeline for request type {requestType.FullName} " +
+                      $"does not have a '{HandleMethodName}' method";
             await logger.LogAsync(err, SeverityEnu.Error);
             throw new PvNugsMediatorException(err);
         }
@@ -125,11 +130,11 @@ public class Mediator(
             return;
         }
 
-        var handleMethod = handlerType.GetMethod("HandleAsync");
+        var handleMethod = handlerType.GetMethod(HandleMethodName);
         if (handleMethod == null)
         {
             var err = $"Handler for notification type {notificationType.FullName} " +
-                      $"does not have a 'HandleAsync' method";
+                      $"does not have a '{HandleMethodName}' method";
             await logger.LogAsync(err, SeverityEnu.Error);
             throw new PvNugsMediatorException(err);
         }

@@ -32,6 +32,14 @@ services.AddTransient<
     IPvNugsPipelineMediator<UserCreationRequest, Guid>, 
     ValidationPipeline>();
 
+services.AddTransient<
+    IPvNugsMediatorNotificationHandler<Notification>, 
+    MainNotificationHandler>();
+
+services.AddTransient<
+    IPvNugsMediatorNotificationHandler<Notification>, 
+    AlternateNotificationHandler>();
+
 services.TryAddPvNugsMediator();
 
 var sp = services.BuildServiceProvider();
@@ -45,11 +53,26 @@ var userCreationRequest = new UserCreationRequest(
 
 var mediator = sp.GetRequiredService<IPvNugsMediator>();
 
-await logger.LogAsync("calling mediator.Send()", SeverityEnu.Trace);
+await logger.LogAsync("calling mediator.SendAsync()", SeverityEnu.Trace);
 
 var userId = await mediator.SendAsync(userCreationRequest);
 
 await logger.LogAsync(
     $"User created with Id = {userId}", 
     SeverityEnu.Trace);
-        
+
+if (userId == Guid.Empty)
+{
+    await logger.LogAsync("ERROR: Invalid userId returned", SeverityEnu.Error);
+}
+
+var notification = new Notification("Some notification");
+
+await logger.LogAsync("Testing generic PublishAsync<T>", SeverityEnu.Trace);
+await mediator.PublishAsync<Notification>(notification);
+
+await logger.LogAsync("Testing non-generic PublishAsync", SeverityEnu.Trace);
+await mediator.PublishAsync(notification);
+
+await logger.LogAsync("All tests completed successfully", SeverityEnu.Trace);
+
