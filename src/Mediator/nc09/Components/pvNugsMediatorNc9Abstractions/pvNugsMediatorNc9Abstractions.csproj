@@ -4,6 +4,32 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Version>9.0.0</Version>
+        <Authors>Pierre Van Wallendael</Authors>
+        <Description>Lightweight mediator pattern abstractions for .NET 9 providing request/response and publish/subscribe messaging with pipeline behaviors for cross-cutting concerns. Supports CQRS, clean architecture, and testable designs with comprehensive XML documentation.</Description>
+        <PackageReleaseNotes>Initial release with full mediator pattern support including request handlers, notification handlers, pipeline behaviors, and Unit type for void-like operations.</PackageReleaseNotes>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageTags>mediator;cqrs;command-query;messaging;pipeline;publish-subscribe;request-response;clean-architecture;domain-driven-design;ddd;abstractions;dependency-injection;async;dotnet9</PackageTags>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="readme.md" Pack="true" PackagePath="\"/>
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml" >
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+      <None Update="pvwayLogoTextLess256.png">
+        <Pack>True</Pack>
+        <PackagePath>/</PackagePath>
+      </None>
+    </ItemGroup>
 
 </Project>
