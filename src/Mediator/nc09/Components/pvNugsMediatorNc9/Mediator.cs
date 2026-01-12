@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using pvNugsLoggerNc9Abstractions;
 using pvNugsMediatorNc9Abstractions;
@@ -30,10 +29,11 @@ public class Mediator(
             throw new PvNugsMediatorException(err);
         }
 
-        var handleMethod = handlerType.GetMethod("Handle");
+        var handleMethod = handlerType.GetMethod("HandleAsync");
         if (handleMethod == null)
         {
-            var err = $"Handler for request type {requestType.FullName} does not have a Handle method";
+            var err = $"Handler for request type {requestType.FullName} " +
+                      $"does not have a 'HandleAsync' method";
             await logger.LogAsync(err, SeverityEnu.Error);
             throw new PvNugsMediatorException(err);
         }
@@ -89,18 +89,67 @@ public class Mediator(
         }
     }
 
-    public Task PublishAsync<TNotification>(
+    public async Task PublishAsync<TNotification>(
         IPvNugsMediatorNotification notification,
         CancellationToken cancellationToken = default)
         where TNotification : IPvNugsMediatorNotification
     {
-        throw new NotImplementedException();
+        await PublishAsyncInternal(notification, cancellationToken);
     }
 
-    public Task PublishAsync(
+    public async Task PublishAsync(
         object notification,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await PublishAsyncInternal(notification, cancellationToken);
+    }
+    
+    private async Task PublishAsyncInternal(
+        object notification,
+        CancellationToken cancellationToken = default)
+    {
+        var notificationType = notification.GetType();
+        await logger.LogAsync(
+            $"Handling notification of type {notificationType.FullName}",
+            SeverityEnu.Trace);
+        
+        var handlerType = typeof(IPvNugsMediatorNotificationHandler<>)
+            .MakeGenericType(notificationType);
+        var handlers = sp.GetServices(handlerType).ToArray();
+        
+        if (handlers.Length == 0)
+        {
+            await logger.LogAsync(
+                $"No handlers registered for notification type {notificationType.FullName}",
+                SeverityEnu.Warning);
+            return;
+        }
+
+        var handleMethod = handlerType.GetMethod("HandleAsync");
+        if (handleMethod == null)
+        {
+            var err = $"Handler for notification type {notificationType.FullName} " +
+                      $"does not have a 'HandleAsync' method";
+            await logger.LogAsync(err, SeverityEnu.Error);
+            throw new PvNugsMediatorException(err);
+        }
+
+        foreach (var handler in handlers)
+        {
+            try
+            {
+                await (Task)handleMethod.Invoke(handler, [notification, cancellationToken])!;
+            }
+            catch (TargetInvocationException tie)
+            {
+                await logger.LogAsync(tie, SeverityEnu.Error);
+                throw new PvNugsMediatorException(tie.InnerException ?? tie);
+            }
+            catch (Exception e)
+            {
+                await logger.LogAsync(e, SeverityEnu.Error);
+                throw new PvNugsMediatorException(e);
+            }
+        }   
     }
 }

@@ -15,7 +15,7 @@ public class UserCreationHandler(
     IPvNugsMediatorRequestHandler<IPvNugsMediatorRequest<Guid>, Guid>
 {
     
-    public async Task<Guid> Handle(
+    public async Task<Guid> HandleAsync(
         IPvNugsMediatorRequest<Guid> request, 
         CancellationToken cancellationToken = default)
     {

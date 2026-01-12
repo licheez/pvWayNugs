@@ -6,7 +6,7 @@ namespace pvNugsMediatorNc9.it;
 public class ValidationPipeline(IConsoleLoggerService logger): 
     IPvNugsPipelineMediator<UserCreationRequest, Guid>
 {
-    public async Task<Guid> Handle(
+    public async Task<Guid> HandleAsync(
         UserCreationRequest request, 
         RequestHandlerDelegate<Guid> next, 
         CancellationToken cancellationToken = default)
