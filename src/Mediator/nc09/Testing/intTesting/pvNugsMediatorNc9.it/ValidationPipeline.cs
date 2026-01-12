@@ -16,7 +16,7 @@ public class ValidationPipeline(IConsoleLoggerService logger):
             $"'{request.Username}' with email '{request.Email}'", 
             SeverityEnu.Trace);
         
-        var result = await (Task<Guid>) next();
+        var result = await next();
         
         await logger.LogAsync(
             "ValidationPipeline: After handling request." +
