@@ -22,6 +22,7 @@ var services = new ServiceCollection();
 
 services.TryAddPvNugsLoggerSeriService(config);
 
+// Register handler with pipelines (for pipeline testing)
 services.AddTransient<
     IPvNugsMediatorRequestHandler<UserCreationRequest, Guid>, 
     UserCreationHandler>();
@@ -31,6 +32,11 @@ services.AddTransient<
 services.AddTransient<
     IPvNugsPipelineMediator<UserCreationRequest, Guid>, 
     ValidationPipeline>();
+
+// Register handler WITHOUT pipelines (for non-pipeline testing)
+services.AddTransient<
+    IPvNugsMediatorRequestHandler<ProductQueryRequest, string>, 
+    ProductQueryHandler>();
 
 services.AddTransient<
     IPvNugsMediatorNotificationHandler<Notification>, 
@@ -44,14 +50,41 @@ services.TryAddPvNugsMediator();
 
 var sp = services.BuildServiceProvider();
 var logger = sp.GetRequiredService<IConsoleLoggerService>();
+var mediator = sp.GetRequiredService<IPvNugsMediator>();
 
 await logger.LogAsync("pvNugsMediatorNc9 Integration Testing setup complete", 
     SeverityEnu.Trace);
 
+const string testSeparator = "========================================";
+
+// ========================================
+// Test 1: NON-PIPELINE Request Handling
+// ========================================
+await logger.LogAsync(testSeparator, SeverityEnu.Trace);
+await logger.LogAsync(
+    "TEST 1: NON-PIPELINE Request (Direct Handler)", 
+    SeverityEnu.Trace);
+await logger.LogAsync(testSeparator, SeverityEnu.Trace);
+
+var productQuery = new ProductQueryRequest(42);
+var productInfo = await mediator.SendAsync(productQuery);
+
+await logger.LogAsync(
+    $"Product query result: {productInfo}", 
+    SeverityEnu.Trace);
+
+// ========================================
+// Test 2: PIPELINE Request Handling
+// ========================================
+await logger.LogAsync(testSeparator, SeverityEnu.Trace);
+await logger.LogAsync(
+    "TEST 2: PIPELINE Request (With Logging & Validation)", 
+    SeverityEnu.Trace);
+await logger.LogAsync(testSeparator, SeverityEnu.Trace);
+
 var userCreationRequest = new UserCreationRequest(
     "testUser", "test@gmail.com");
 
-var mediator = sp.GetRequiredService<IPvNugsMediator>();
 
 await logger.LogAsync("calling mediator.SendAsync()", SeverityEnu.Trace);
 
@@ -65,6 +98,15 @@ if (userId == Guid.Empty)
 {
     await logger.LogAsync("ERROR: Invalid userId returned", SeverityEnu.Error);
 }
+
+// ========================================
+// Test 3: Notification Publishing
+// ========================================
+await logger.LogAsync(testSeparator, SeverityEnu.Trace);
+await logger.LogAsync(
+    "TEST 3: Notification Publishing", 
+    SeverityEnu.Trace);
+await logger.LogAsync(testSeparator, SeverityEnu.Trace);
 
 var notification = new Notification("Some notification");
 
