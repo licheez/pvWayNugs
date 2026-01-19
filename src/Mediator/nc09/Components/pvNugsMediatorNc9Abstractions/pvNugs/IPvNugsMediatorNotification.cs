@@ -14,7 +14,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// <para>
 /// Notifications implementing this interface can be published using 
 /// <see cref="IMediator.Publish{TNotification}"/> and will be handled by all registered
-/// <see cref="IPvNugsNotificationHandler{TNotification}"/> or <see cref="INotificationHandler{TNotification}"/> instances.
+/// <see cref="IPvNugsMediatorNotificationHandler{TNotification}"/> or <see cref="INotificationHandler{TNotification}"/> instances.
 /// </para>
 /// <para>
 /// Unlike requests, notifications follow a publish/subscribe pattern and can have zero or more handlers.
@@ -30,7 +30,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// }
 /// 
 /// // Multiple handlers can respond to the same notification
-/// public class SendWelcomeEmailHandler : IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;
+/// public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;
 /// {
 ///     public async Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
 ///     {

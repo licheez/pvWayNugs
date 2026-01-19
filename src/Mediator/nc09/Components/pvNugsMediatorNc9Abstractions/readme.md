@@ -121,7 +121,7 @@ dotnet add package pvNugsMediatorNc9Abstractions
 
 **PvNugs Interfaces:**
 - **`IPvNugsMediatorNotification`**: PvNugs-branded notification interface
-- **`IPvNugsNotificationHandler<TNotification>`**: PvNugs-branded notification handler
+- **`IPvNugsMediatorNotificationHandler<TNotification>`**: PvNugs-branded notification handler
 
 ### 🔄 Pipeline Behaviors
 
@@ -237,7 +237,7 @@ public class UserCreatedNotification : IPvNugsMediatorNotification
 }
 
 // First Handler - Send Welcome Email
-public class SendWelcomeEmailHandler : IPvNugsNotificationHandler<UserCreatedNotification>
+public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
 {
     private readonly IEmailService _emailService;
     
@@ -260,7 +260,7 @@ public class SendWelcomeEmailHandler : IPvNugsNotificationHandler<UserCreatedNot
 }
 ```
 // Second Handler - Log Event
-public class LogUserCreationHandler : IPvNugsNotificationHandler<UserCreatedNotification>
+public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
 {
     private readonly ILogger _logger;
     
@@ -388,8 +388,8 @@ services.AddTransient<IPvNugsMediatorRequestHandler<GetUserByIdRequest, User>, G
 services.AddTransient<IPvNugsMediatorRequestHandler<DeleteUserRequest>, DeleteUserHandler>();
 
 // Register notification handlers (can have multiple for same notification)
-services.AddTransient<IPvNugsNotificationHandler<UserCreatedNotification>, SendWelcomeEmailHandler>();
-services.AddTransient<IPvNugsNotificationHandler<UserCreatedNotification>, LogUserCreationHandler>();
+services.AddTransient<IPvNugsMediatorNotificationHandler<UserCreatedNotification>, SendWelcomeEmailHandler>();
+services.AddTransient<IPvNugsMediatorNotificationHandler<UserCreatedNotification>, LogUserCreationHandler>();
 
 // Register pipeline behaviors (executed in order)
 services.AddTransient<IPvNugsMediatorPipelineRequestHandler<GetUserByIdRequest, User>, LoggingPipeline<GetUserByIdRequest, User>>();
@@ -822,14 +822,17 @@ public class GetUserHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User
     }
 }
 
-public class SendEmailHandler : IPvNugsNotificationHandler<UserCreatedNotification>
+public class SendEmailHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
 {
-    public async Task HandleAsync(UserCreatedNotification notification, CancellationToken ct)
+    public async Task Handle(UserCreatedNotification notification, CancellationToken ct)
     {
         await _emailService.SendWelcomeEmailAsync(notification.Email, ct);
     }
+    
+    public Task HandleAsync(UserCreatedNotification notification, CancellationToken ct)
+        => Handle(notification, ct);
 }
-
+```
 // Both handlers above are automatically registered!
 ```
 

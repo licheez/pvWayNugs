@@ -1,3 +1,5 @@
+using pvNugsMediatorNc9Abstractions.pvNugs;
+
 namespace pvNugsMediatorNc9Abstractions;
 
 /// <summary>
@@ -150,7 +152,7 @@ public enum DiscoveryMode
     /// <para>
     /// In FullScan mode, the mediator uses reflection to scan all loaded assemblies and automatically
     /// registers any class that implements handler interfaces (<see cref="pvNugs.IPvNugsMediatorRequestHandler{TRequest,TResponse}"/>,
-    /// <see cref="pvNugs.IPvNugsNotificationHandler{TNotification}"/>, etc.). No explicit registration
+    /// <see cref="IPvNugsMediatorNotificationHandler{TNotification}"/>, etc.). No explicit registration
     /// or decoration is required.
     /// </para>
     /// <para>
@@ -204,9 +206,9 @@ public enum DiscoveryMode
     ///     }
     /// }
     /// 
-    /// public class SendEmailHandler : IPvNugsNotificationHandler&lt;UserCreated&gt;
+    /// public class SendEmailHandler : IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;
     /// {
-    ///     public async Task HandleAsync(UserCreated notification, CancellationToken ct)
+    ///     public async Task Handle(UserCreatedNotification notification, CancellationToken ct)
     ///     {
     ///         await _emailService.SendWelcomeEmailAsync(notification.Email, ct);
     ///     }

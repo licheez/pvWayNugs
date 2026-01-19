@@ -31,7 +31,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// <example>
 /// <code>
 /// // Define a PvNugs notification handler
-/// public class SendWelcomeEmailHandler : IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;
+/// public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;
 /// {
 ///     private readonly IEmailService _emailService;
 ///     
@@ -54,14 +54,14 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// }
 /// 
 /// // Register in DI (multiple handlers can be registered for the same notification)
-/// services.AddTransient&lt;IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;, SendWelcomeEmailHandler&gt;();
-/// services.AddTransient&lt;IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
+/// services.AddTransient&lt;IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;, SendWelcomeEmailHandler&gt;();
+/// services.AddTransient&lt;IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
 /// 
 /// // Publish the notification (both handlers will execute)
 /// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
-public interface IPvNugsNotificationHandler<in TNotification> : 
+public interface IPvNugsMediatorNotificationHandler<in TNotification> : 
     INotificationHandler<TNotification>
     where TNotification : INotification
 {
@@ -93,29 +93,17 @@ public interface IPvNugsNotificationHandler<in TNotification> :
     /// </remarks>
     /// <example>
     /// <code>
-    /// // Option 1: Implement HandleAsync only
-    /// public class MyNotificationHandler : IPvNugsNotificationHandler&lt;MyNotification&gt;
+    /// public class MyNotificationHandler : IPvNugsMediatorNotificationHandler&lt;MyNotification&gt;
     /// {
+    ///     // Implement HandleAsync with your logic
     ///     public async Task HandleAsync(MyNotification notification, CancellationToken ct)
     ///     {
-    ///         // Your implementation
     ///         await _service.ProcessAsync(notification);
     ///     }
     ///     
-    ///     // Handle calls HandleAsync
+    ///     // Delegate Handle to HandleAsync for MediatR compatibility
     ///     public Task Handle(MyNotification notification, CancellationToken ct)
     ///         => HandleAsync(notification, ct);
-    /// }
-    /// 
-    /// // Option 2: Implement Handle only (MediatR compatible)
-    /// public class MyNotificationHandler : IPvNugsNotificationHandler&lt;MyNotification&gt;
-    /// {
-    ///     public async Task Handle(MyNotification notification, CancellationToken ct)
-    ///     {
-    ///         // Your implementation
-    ///         await _service.ProcessAsync(notification);
-    ///     }
-    ///     // HandleAsync calls Handle automatically (default implementation)
     /// }
     /// </code>
     /// </example>

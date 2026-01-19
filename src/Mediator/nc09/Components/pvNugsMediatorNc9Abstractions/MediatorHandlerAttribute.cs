@@ -1,3 +1,5 @@
+using pvNugsMediatorNc9Abstractions.pvNugs;
+
 namespace pvNugsMediatorNc9Abstractions;
 
 /// <summary>
@@ -16,7 +18,7 @@ namespace pvNugsMediatorNc9Abstractions;
 /// <list type="bullet">
 /// <item><description><see cref="pvNugs.IPvNugsMediatorRequestHandler{TRequest,TResponse}"/></description></item>
 /// <item><description><see cref="pvNugs.IPvNugsMediatorRequestHandler{TRequest}"/></description></item>
-/// <item><description><see cref="pvNugs.IPvNugsNotificationHandler{TNotification}"/></description></item>
+/// <item><description><see cref="IPvNugsMediatorNotificationHandler{TNotification}"/></description></item>
 /// <item><description><see cref="pvNugs.IPvNugsMediatorPipelineRequestHandler{TRequest,TResponse}"/></description></item>
 /// <item><description>Or their base interface equivalents</description></item>
 /// </list>
@@ -40,7 +42,7 @@ namespace pvNugsMediatorNc9Abstractions;
 /// 
 /// // Notification handler with Scoped lifetime
 /// [MediatorHandler(Lifetime = ServiceLifetime.Scoped)]
-/// public class UserCreatedEmailHandler : IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;
+/// public class UserCreatedEmailHandler : IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;
 /// {
 ///     private readonly IEmailService _emailService;
 ///     
