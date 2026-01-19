@@ -107,7 +107,7 @@ public interface IPvNugsMediatorRequestHandler<in TRequest, TResponse>:
 /// </para>
 /// <para>
 /// Handlers implementing this interface should return <see cref="Unit.Value"/> 
-/// from their <see cref="IRequestHandler{TRequest,TResponse}.HandleAsync"/> method.
+/// from their <see cref="IRequestHandler{TRequest,TResponse}.Handle"/> method.
 /// </para>
 /// </remarks>
 /// <example>

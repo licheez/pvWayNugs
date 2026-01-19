@@ -13,7 +13,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// </para>
 /// <para>
 /// Notifications implementing this interface can be published using 
-/// <see cref="IMediator.PublishAsync{TNotification}"/> and will be handled by all registered
+/// <see cref="IMediator.Publish{TNotification}"/> and will be handled by all registered
 /// <see cref="IPvNugsNotificationHandler{TNotification}"/> or <see cref="INotificationHandler{TNotification}"/> instances.
 /// </para>
 /// <para>
