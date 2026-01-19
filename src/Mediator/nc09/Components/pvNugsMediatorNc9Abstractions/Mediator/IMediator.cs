@@ -1,31 +1,5 @@
-﻿namespace pvNugsMediatorNc9Abstractions;
+﻿namespace pvNugsMediatorNc9Abstractions.Mediator;
 
-/// <summary>
-/// Represents a mediator request that performs an action without returning a meaningful value.
-/// </summary>
-/// <remarks>
-/// This is a convenience interface that inherits from <see cref="IPvNugsMediatorRequest{TResponse}"/>
-/// with <see cref="Unit"/> as the response type. Use this for requests that perform operations
-/// but don't need to return data (similar to void methods).
-/// </remarks>
-/// <example>
-/// <code>
-/// public class DeleteUserRequest : IPvNugsMediatorRequest
-/// {
-///     public int UserId { get; init; }
-/// }
-/// 
-/// public class DeleteUserHandler : IPvNugsMediatorRequestHandler&lt;DeleteUserRequest&gt;
-/// {
-///     public async Task&lt;Unit&gt; HandleAsync(DeleteUserRequest request, CancellationToken cancellationToken)
-///     {
-///         await _userRepository.DeleteAsync(request.UserId, cancellationToken);
-///         return Unit.Value;
-///     }
-/// }
-/// </code>
-/// </example>
-public interface IPvNugsMediatorRequest : IPvNugsMediatorRequest<Unit>;
 
 /// <summary>
 /// Defines the mediator that routes requests to their handlers and publishes notifications to subscribers.
@@ -54,9 +28,9 @@ public interface IPvNugsMediatorRequest : IPvNugsMediatorRequest<Unit>;
 /// <code>
 /// public class UserService
 /// {
-///     private readonly IPvNugsMediator _mediator;
+///     private readonly IMediator _mediator;
 ///     
-///     public UserService(IPvNugsMediator mediator)
+///     public UserService(IMediator mediator)
 ///     {
 ///         _mediator = mediator;
 ///     }
@@ -79,7 +53,7 @@ public interface IPvNugsMediatorRequest : IPvNugsMediatorRequest<Unit>;
 /// }
 /// </code>
 /// </example>
-public interface IPvNugsMediator
+public interface IMediator
 {
     /// <summary>
     /// Sends a request to its handler and returns the response.
@@ -88,7 +62,7 @@ public interface IPvNugsMediator
     /// The type of response expected from the request handler.
     /// </typeparam>
     /// <param name="request">
-    /// The request instance to be handled. Must implement <see cref="IPvNugsMediatorRequest{TResponse}"/>.
+    /// The request instance to be handled. Must implement <see cref="IRequest{TResponse}"/>.
     /// </param>
     /// <param name="cancellationToken">
     /// A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None"/>.
@@ -119,14 +93,14 @@ public interface IPvNugsMediator
     /// </code>
     /// </example>
     Task<TResponse> SendAsync<TResponse>(
-        IPvNugsMediatorRequest<TResponse> request, 
+        IRequest<TResponse> request, 
         CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Publishes a notification to all registered handlers.
     /// </summary>
     /// <typeparam name="TNotification">
-    /// The type of notification being published. Must implement <see cref="IPvNugsMediatorNotification"/>.
+    /// The type of notification being published. Must implement <see cref="INotification"/>.
     /// </typeparam>
     /// <param name="notification">
     /// The notification instance to be published to all handlers.
@@ -155,9 +129,9 @@ public interface IPvNugsMediator
     /// </code>
     /// </example>
     Task PublishAsync<TNotification>(
-        IPvNugsMediatorNotification notification, 
+        INotification notification, 
         CancellationToken cancellationToken = default)
-        where TNotification : IPvNugsMediatorNotification;
+        where TNotification : INotification;
     
     /// <summary>
     /// Publishes a notification object to all registered handlers.

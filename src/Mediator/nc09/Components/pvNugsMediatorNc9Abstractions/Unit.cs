@@ -1,3 +1,5 @@
+using pvNugsMediatorNc9Abstractions.Mediator;
+
 namespace pvNugsMediatorNc9Abstractions;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace pvNugsMediatorNc9Abstractions;
 /// no meaningful data is being returned.
 /// </para>
 /// <para>
-/// Use <see cref="Unit"/> as the response type for <see cref="IPvNugsMediatorRequest{TResponse}"/>
+/// Use <see cref="Unit"/> as the response type for <see cref="IRequest{TResponse}"/>
 /// when the request performs an action but doesn't need to return data. This is similar to
 /// using <c>void</c> in synchronous methods, but works with generic type constraints.
 /// </para>
@@ -22,12 +24,12 @@ namespace pvNugsMediatorNc9Abstractions;
 /// <example>
 /// <code>
 /// // Request that returns Unit (no meaningful value)
-/// public class DeleteUserRequest : IPvNugsMediatorRequest&lt;Unit&gt;
+/// public class DeleteUserRequest : IRequest&lt;Unit&gt;
 /// {
 ///     public int UserId { get; init; }
 /// }
 /// 
-/// public class DeleteUserHandler : IPvNugsMediatorRequestHandler&lt;DeleteUserRequest, Unit&gt;
+/// public class DeleteUserHandler : IRequestHandler&lt;DeleteUserRequest, Unit&gt;
 /// {
 ///     public async Task&lt;Unit&gt; HandleAsync(
 ///         DeleteUserRequest request, 

@@ -1,4 +1,4 @@
-namespace pvNugsMediatorNc9Abstractions;
+namespace pvNugsMediatorNc9Abstractions.Mediator;
 
 /// <summary>
 /// Represents a delegate that invokes the next handler in the mediator pipeline.
@@ -21,20 +21,20 @@ public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 /// as they flow through the request handling pipeline.
 /// </summary>
 /// <typeparam name="TRequest">
-/// The type of request being processed. Must implement <see cref="IPvNugsMediatorRequest{TResponse}"/>.
+/// The type of request being processed. Must implement <see cref="IRequest{TResponse}"/>.
 /// </typeparam>
 /// <typeparam name="TResponse">
 /// The type of response that will be returned after handling the request.
 /// </typeparam>
 /// <remarks>
 /// <para>
-/// Pipeline mediators implement cross-cutting concerns such as logging, validation,
+/// Pipeline behaviors implement cross-cutting concerns such as logging, validation,
 /// caching, exception handling, or performance monitoring. They wrap around the actual
 /// request handler, executing before and/or after the handler processes the request.
 /// </para>
 /// <para>
-/// Multiple pipeline mediators can be registered and will be executed in order,
-/// forming a chain of responsibility. Each pipeline mediator must call the <c>next</c>
+/// Multiple pipeline behaviors can be registered and will be executed in order,
+/// forming a chain of responsibility. Each pipeline behavior must call the <c>next</c>
 /// delegate to continue the pipeline, or short-circuit by returning early.
 /// </para>
 /// <para>
@@ -45,13 +45,13 @@ public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 /// <example>
 /// <code>
 /// // Logging pipeline
-/// public class LoggingPipelineMediator&lt;TRequest, TResponse&gt; 
-///     : IPvNugsPipelineMediator&lt;TRequest, TResponse&gt;
-///     where TRequest : IPvNugsMediatorRequest&lt;TResponse&gt;
+/// public class LoggingPipelineBehavior&lt;TRequest, TResponse&gt; 
+///     : IPipelineBehavior&lt;TRequest, TResponse&gt;
+///     where TRequest : IRequest&lt;TResponse&gt;
 /// {
 ///     private readonly ILogger _logger;
 ///     
-///     public LoggingPipelineMediator(ILogger logger)
+///     public LoggingPipelineBehavior(ILogger logger)
 ///     {
 ///         _logger = logger;
 ///     }
@@ -79,9 +79,9 @@ public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 /// }
 /// 
 /// // Validation pipeline that short-circuits
-/// public class ValidationPipelineMediator&lt;TRequest, TResponse&gt; 
-///     : IPvNugsPipelineMediator&lt;TRequest, TResponse&gt;
-///     where TRequest : IPvNugsMediatorRequest&lt;TResponse&gt;
+/// public class ValidationPipelineBehavior&lt;TRequest, TResponse&gt; 
+///     : IPipelineBehavior&lt;TRequest, TResponse&gt;
+///     where TRequest : IRequest&lt;TResponse&gt;
 /// {
 ///     public async Task&lt;TResponse&gt; HandleAsync(
 ///         TRequest request,
@@ -100,8 +100,8 @@ public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 /// }
 /// </code>
 /// </example>
-public interface IPvNugsPipelineMediator<in TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse>
+public interface IPipelineBehavior<in TRequest, TResponse>
+    where TRequest : IRequest<TResponse>
 {
     /// <summary>
     /// Handles the request within the pipeline, optionally executing logic before and/or after

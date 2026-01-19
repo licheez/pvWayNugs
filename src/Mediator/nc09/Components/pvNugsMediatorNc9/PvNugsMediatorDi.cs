@@ -10,7 +10,7 @@ namespace pvNugsMediatorNc9;
 public static class PvNugsMediatorDi
 {
     /// <summary>
-    /// Registers the <see cref="IPvNugsMediator"/> implementation as a singleton service if not already registered.
+    /// Registers the <see cref="pvNugsMediatorNc9Abstractions.IMediator"/> implementation as a singleton service if not already registered.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add the service to.</param>
     /// <returns>The same service collection so that multiple calls can be chained.</returns>

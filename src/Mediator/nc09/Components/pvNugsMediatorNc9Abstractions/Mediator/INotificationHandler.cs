@@ -1,10 +1,10 @@
-namespace pvNugsMediatorNc9Abstractions;
+namespace pvNugsMediatorNc9Abstractions.Mediator;
 
 /// <summary>
 /// Defines a handler for processing a specific type of mediator notification.
 /// </summary>
 /// <typeparam name="TNotification">
-/// The type of notification to be handled. Must implement <see cref="IPvNugsMediatorNotification"/>.
+/// The type of notification to be handled. Must implement <see cref="INotification"/>.
 /// </typeparam>
 /// <remarks>
 /// <para>
@@ -19,20 +19,20 @@ namespace pvNugsMediatorNc9Abstractions;
 /// </para>
 /// <para>
 /// Handlers are automatically discovered and invoked by 
-/// <see cref="IPvNugsMediator.PublishAsync{TNotification}"/> when a notification
+/// <see cref="IMediator.PublishAsync{TNotification}"/> when a notification
 /// is published through the mediator. Handlers typically execute concurrently.
 /// </para>
 /// </remarks>
 /// <example>
 /// <code>
-/// public class UserCreatedNotification : IPvNugsMediatorNotification
+/// public class UserCreatedNotification : INotification
 /// {
 ///     public int UserId { get; init; }
 ///     public string Email { get; init; }
 /// }
 /// 
 /// // First handler - sends welcome email
-/// public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;
+/// public class SendWelcomeEmailHandler : INotificationHandler&lt;UserCreatedNotification&gt;
 /// {
 ///     private readonly IEmailService _emailService;
 ///     
@@ -50,7 +50,7 @@ namespace pvNugsMediatorNc9Abstractions;
 /// }
 /// 
 /// // Second handler - logs the event
-/// public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;
+/// public class LogUserCreationHandler : INotificationHandler&lt;UserCreatedNotification&gt;
 /// {
 ///     private readonly ILogger _logger;
 ///     
@@ -69,15 +69,15 @@ namespace pvNugsMediatorNc9Abstractions;
 /// }
 /// 
 /// // Registration in DI:
-/// services.AddTransient&lt;IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;, SendWelcomeEmailHandler&gt;();
-/// services.AddTransient&lt;IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
+/// services.AddTransient&lt;INotificationHandler&lt;UserCreatedNotification&gt;, SendWelcomeEmailHandler&gt;();
+/// services.AddTransient&lt;INotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
 /// 
 /// // Usage - both handlers will execute:
 /// await _mediator.PublishAsync(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
-public interface IPvNugsMediatorNotificationHandler<in TNotification>
-    where TNotification : IPvNugsMediatorNotification
+public interface INotificationHandler<in TNotification>
+    where TNotification : INotification
 {
     /// <summary>
     /// Handles the specified notification.
@@ -94,7 +94,7 @@ public interface IPvNugsMediatorNotificationHandler<in TNotification>
     /// <remarks>
     /// <para>
     /// This method should contain the logic for responding to the notification.
-    /// It is invoked automatically by the mediator when <see cref="IPvNugsMediator.PublishAsync{TNotification}"/>
+    /// It is invoked automatically by the mediator when <see cref="IMediator.PublishAsync{TNotification}"/>
     /// is called with a matching notification type.
     /// </para>
     /// <para>
@@ -111,4 +111,3 @@ public interface IPvNugsMediatorNotificationHandler<in TNotification>
         TNotification notification, 
         CancellationToken cancellationToken = default);
 }
-

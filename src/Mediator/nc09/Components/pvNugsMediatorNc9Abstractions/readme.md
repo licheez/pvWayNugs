@@ -12,6 +12,72 @@
 📝 **Fully Documented**: Comprehensive XML documentation with IntelliSense support  
 🧪 **Testable**: Design promotes clean architecture and testability  
 ⚡ **Async First**: Built for modern asynchronous programming patterns  
+🔁 **Backward Compatible**: PvNugs interfaces extend base interfaces for maximum flexibility  
+🔍 **Handler Introspection**: Discover and validate registered handlers at runtime (PvNugs exclusive)
+
+## Architecture & Backward Compatibility
+
+This package provides **two layers of interfaces** for maximum flexibility:
+
+### Base Interfaces (`Mediator` namespace)
+Framework-agnostic interfaces that define the core mediator pattern:
+- `IMediator`, `IRequest<TResponse>`, `IRequestHandler<TRequest, TResponse>`
+- `INotification`, `INotificationHandler<TNotification>`
+- `IPipelineBehavior<TRequest, TResponse>`
+
+### PvNugs Interfaces (`pvNugs` namespace)
+Branded interfaces that extend the base interfaces:
+- `IPvNugsMediator : IMediator`
+- `IPvNugsMediatorRequest<TResponse> : IRequest<TResponse>`
+- `IPvNugsMediatorRequestHandler<TRequest, TResponse> : IRequestHandler<TRequest, TResponse>`
+- And all other PvNugs-branded equivalents
+
+### Why This Dual Design?
+
+**Backward Compatibility** 🔁
+```csharp
+// Register a PvNugs implementation
+services.AddScoped<IPvNugsMediator, PvNugsMediatorImplementation>();
+
+// Can be injected as IPvNugsMediator
+public class NewService(IPvNugsMediator mediator) { }
+
+// Or as IMediator for backward compatibility with existing code
+public class LegacyService(IMediator mediator) { } // Same implementation works!
+```
+
+**Flexibility** 🎯
+- Use **PvNugs interfaces** in your new code for branding
+- Use **base interfaces** for library-agnostic code
+- Mix and match as needed - they're fully compatible!
+
+**PvNugs Exclusive Features** 🌟
+```csharp
+// IPvNugsMediator adds value beyond IMediator
+var pvNugsMediator = app.Services.GetRequiredService<IPvNugsMediator>();
+
+// Handler introspection (not available in base IMediator)
+var handlers = pvNugsMediator.GetRegisteredHandlers();
+foreach (var handler in handlers)
+{
+    Console.WriteLine($"{handler.RegistrationType}: {handler.ImplementationType.Name}");
+}
+```
+
+**Type Safety** ✅
+```csharp
+// PvNugs pipeline only accepts PvNugs requests (stronger typing)
+public class MyPipeline<TRequest, TResponse> 
+    : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
+    where TRequest : IPvNugsMediatorRequest<TResponse> // PvNugs constraint
+{ }
+
+// Base pipeline accepts any request
+public class GenericPipeline<TRequest, TResponse> 
+    : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : IRequest<TResponse> // Base constraint
+{ }
+```
 
 ## Installation
 
@@ -27,26 +93,43 @@ dotnet add package pvNugsMediatorNc9Abstractions
 
 ## Core Components
 
-### 🎯 Mediator Interface
+### 🎯 Mediator Interfaces
 
-- **`IPvNugsMediator`**: The main mediator interface for routing requests and publishing notifications
+- **`IMediator`**: Base mediator interface for routing requests and publishing notifications
+- **`IPvNugsMediator`**: PvNugs-branded mediator that extends `IMediator` for backward compatibility
 
 ### 📨 Request/Response
 
-- **`IPvNugsMediatorRequest<TResponse>`**: Marker interface for requests expecting a response
-- **`IPvNugsMediatorRequest`**: Convenience interface for requests returning `Unit` (void-like)
-- **`IPvNugsMediatorRequestHandler<TRequest, TResponse>`**: Handler for processing requests
-- **`IPvNugsMediatorRequestHandler<TRequest>`**: Handler for void-like requests
+**Base Interfaces:**
+- **`IRequest<TResponse>`**: Base marker interface for requests expecting a response
+- **`IRequest`**: Base convenience interface for requests returning `Unit` (void-like)
+- **`IRequestHandler<TRequest, TResponse>`**: Base handler for processing requests
+- **`IRequestHandler<TRequest>`**: Base handler for void-like requests
+
+**PvNugs Interfaces:**
+- **`IPvNugsMediatorRequest<TResponse>`**: PvNugs-branded request interface
+- **`IPvNugsMediatorRequest`**: PvNugs-branded void-like request interface
+- **`IPvNugsMediatorRequestHandler<TRequest, TResponse>`**: PvNugs-branded request handler
+- **`IPvNugsMediatorRequestHandler<TRequest>`**: PvNugs-branded void-like request handler
 
 ### 📢 Publish/Subscribe
 
-- **`IPvNugsMediatorNotification`**: Marker interface for notifications
-- **`IPvNugsMediatorNotificationHandler<TNotification>`**: Handler for processing notifications
+**Base Interfaces:**
+- **`INotification`**: Base marker interface for notifications
+- **`INotificationHandler<TNotification>`**: Base handler for processing notifications
+
+**PvNugs Interfaces:**
+- **`IPvNugsMediatorNotification`**: PvNugs-branded notification interface
+- **`IPvNugsNotificationHandler<TNotification>`**: PvNugs-branded notification handler
 
 ### 🔄 Pipeline Behaviors
 
-- **`IPvNugsPipelineMediator<TRequest, TResponse>`**: Interface for pipeline behaviors
+**Base Interfaces:**
+- **`IPipelineBehavior<TRequest, TResponse>`**: Base interface for pipeline behaviors
 - **`RequestHandlerDelegate<TResponse>`**: Delegate for invoking the next handler in the pipeline
+
+**PvNugs Interfaces:**
+- **`IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>`**: PvNugs-branded pipeline behavior
 
 ### 🎭 Unit Type
 
@@ -120,7 +203,7 @@ public class UserCreatedNotification : IPvNugsMediatorNotification
 }
 
 // First Handler - Send Welcome Email
-public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
+public class SendWelcomeEmailHandler : IPvNugsNotificationHandler<UserCreatedNotification>
 {
     private readonly IEmailService _emailService;
     
@@ -138,7 +221,7 @@ public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler<UserCr
 }
 
 // Second Handler - Log Event
-public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
+public class LogUserCreationHandler : IPvNugsNotificationHandler<UserCreatedNotification>
 {
     private readonly ILogger _logger;
     
@@ -161,7 +244,8 @@ public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCre
 
 **Logging Pipeline**
 ```csharp
-public class LoggingPipeline<TRequest, TResponse> : IPvNugsPipelineMediator<TRequest, TResponse>
+public class LoggingPipeline<TRequest, TResponse> 
+    : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
     where TRequest : IPvNugsMediatorRequest<TResponse>
 {
     private readonly ILogger _logger;
@@ -208,7 +292,8 @@ public class LoggingPipeline<TRequest, TResponse> : IPvNugsPipelineMediator<TReq
 
 **Validation Pipeline**
 ```csharp
-public class ValidationPipeline<TRequest, TResponse> : IPvNugsPipelineMediator<TRequest, TResponse>
+public class ValidationPipeline<TRequest, TResponse> 
+    : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
     where TRequest : IPvNugsMediatorRequest<TResponse>
 {
     public async Task<TResponse> HandleAsync(
@@ -243,12 +328,12 @@ services.AddTransient<IPvNugsMediatorRequestHandler<GetUserByIdRequest, User>, G
 services.AddTransient<IPvNugsMediatorRequestHandler<DeleteUserRequest>, DeleteUserHandler>();
 
 // Register notification handlers (can have multiple for same notification)
-services.AddTransient<IPvNugsMediatorNotificationHandler<UserCreatedNotification>, SendWelcomeEmailHandler>();
-services.AddTransient<IPvNugsMediatorNotificationHandler<UserCreatedNotification>, LogUserCreationHandler>();
+services.AddTransient<IPvNugsNotificationHandler<UserCreatedNotification>, SendWelcomeEmailHandler>();
+services.AddTransient<IPvNugsNotificationHandler<UserCreatedNotification>, LogUserCreationHandler>();
 
 // Register pipeline behaviors (executed in order)
-services.AddTransient<IPvNugsPipelineMediator<GetUserByIdRequest, User>, LoggingPipeline<GetUserByIdRequest, User>>();
-services.AddTransient<IPvNugsPipelineMediator<GetUserByIdRequest, User>, ValidationPipeline<GetUserByIdRequest, User>>();
+services.AddTransient<IPvNugsMediatorPipelineRequestHandler<GetUserByIdRequest, User>, LoggingPipeline<GetUserByIdRequest, User>>();
+services.AddTransient<IPvNugsMediatorPipelineRequestHandler<GetUserByIdRequest, User>, ValidationPipeline<GetUserByIdRequest, User>>();
 
 // Register the mediator implementation (from pvNugsMediatorNc9 package)
 services.TryAddPvNugsMediator(); // Requires pvNugsMediatorNc9 package
@@ -292,6 +377,49 @@ public class UserService
     }
 }
 ```
+
+### 6️⃣ Using Base Interfaces (Alternative)
+
+You can also use base interfaces for framework-agnostic code:
+
+```csharp
+using pvNugsMediatorNc9Abstractions.Mediator; // Base interfaces
+
+// Define using base interfaces
+public class GetProductRequest : IRequest<Product>
+{
+    public int ProductId { get; init; }
+}
+
+public class GetProductHandler : IRequestHandler<GetProductRequest, Product>
+{
+    public async Task<Product> HandleAsync(
+        GetProductRequest request, 
+        CancellationToken cancellationToken)
+    {
+        // Implementation
+        return new Product();
+    }
+}
+
+// Inject using base interface
+public class ProductService
+{
+    private readonly IMediator _mediator; // Base interface
+    
+    public ProductService(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
+    
+    public async Task<Product> GetProductAsync(int id)
+    {
+        return await _mediator.SendAsync(new GetProductRequest { ProductId = id });
+    }
+}
+```
+
+**Note**: Both approaches work with the same implementation - choose based on your preference!
 
 ## Design Patterns
 
@@ -349,8 +477,144 @@ var user = await _mediator.SendAsync(
 
 ```csharp
 // This pipeline will be registered for ALL request types
-services.AddTransient(typeof(IPvNugsPipelineMediator<,>), typeof(LoggingPipeline<,>));
+services.AddTransient(typeof(IPvNugsMediatorPipelineRequestHandler<,>), typeof(LoggingPipeline<,>));
 ```
+
+### Handler Introspection (PvNugs Exclusive) 🔍
+
+The `IPvNugsMediator` interface provides a powerful introspection feature to discover all registered handlers in the DI container:
+
+```csharp
+public class Startup
+{
+    public void Configure(IApplicationBuilder app)
+    {
+        var mediator = app.ApplicationServices.GetRequiredService<IPvNugsMediator>();
+        
+        // Get all registered handlers
+        var registrations = mediator.GetRegisteredHandlers();
+        
+        Console.WriteLine($"\n📋 Registered Mediator Components ({registrations.Count()}):\n");
+        
+        // Group by type for better organization
+        var grouped = registrations.GroupBy(r => r.RegistrationType);
+        
+        foreach (var group in grouped)
+        {
+            Console.WriteLine($"  {group.Key}: {group.Count()}");
+            foreach (var reg in group.OrderBy(r => r.ImplementationType.Name))
+            {
+                Console.WriteLine($"    • {reg.ImplementationType.Name}");
+                if (reg.MessageType != null)
+                {
+                    Console.WriteLine($"      Handles: {reg.MessageType.Name}");
+                }
+                if (reg.ResponseType != null)
+                {
+                    Console.WriteLine($"      Returns: {reg.ResponseType.Name}");
+                }
+                Console.WriteLine($"      Lifetime: {reg.Lifetime}");
+            }
+            Console.WriteLine();
+        }
+    }
+}
+```
+
+**Use Cases:**
+
+**1. Validation During Startup**
+```csharp
+// Ensure all expected handlers are registered
+var mediator = services.BuildServiceProvider().GetRequiredService<IPvNugsMediator>();
+var handlers = mediator.GetRegisteredHandlers();
+
+var requiredHandlers = new[] { "GetUserByIdRequest", "CreateUserRequest", "DeleteUserRequest" };
+var registeredRequests = handlers
+    .Where(h => h.MessageType != null)
+    .Select(h => h.MessageType!.Name)
+    .ToHashSet();
+
+foreach (var required in requiredHandlers)
+{
+    if (!registeredRequests.Contains(required))
+    {
+        throw new InvalidOperationException($"Required handler for {required} is not registered!");
+    }
+}
+```
+
+**2. Health Check Endpoint**
+```csharp
+app.MapGet("/health/mediator", (IPvNugsMediator mediator) =>
+{
+    var handlers = mediator.GetRegisteredHandlers();
+    
+    return Results.Ok(new
+    {
+        Status = "Healthy",
+        TotalHandlers = handlers.Count(),
+        RequestHandlers = handlers.Count(r => r.RegistrationType.Contains("Request")),
+        NotificationHandlers = handlers.Count(r => r.RegistrationType.Contains("Notification")),
+        PipelineBehaviors = handlers.Count(r => r.RegistrationType.Contains("Pipeline")),
+        Details = handlers.Select(h => new
+        {
+            h.RegistrationType,
+            Implementation = h.ImplementationType.Name,
+            Message = h.MessageType?.Name,
+            Response = h.ResponseType?.Name,
+            h.Lifetime
+        })
+    });
+});
+```
+
+**3. Generate Documentation**
+```csharp
+// Auto-generate markdown documentation of all handlers
+var mediator = services.BuildServiceProvider().GetRequiredService<IPvNugsMediator>();
+var handlers = mediator.GetRegisteredHandlers();
+
+var markdown = new StringBuilder();
+markdown.AppendLine("# Available Handlers\n");
+
+var requestHandlers = handlers.Where(h => h.RegistrationType.Contains("Request"));
+markdown.AppendLine("## Request Handlers\n");
+foreach (var handler in requestHandlers.OrderBy(h => h.MessageType?.Name))
+{
+    markdown.AppendLine($"- **{handler.MessageType?.Name}**");
+    markdown.AppendLine($"  - Handler: `{handler.ImplementationType.Name}`");
+    markdown.AppendLine($"  - Returns: `{handler.ResponseType?.Name ?? "Unit"}`");
+    markdown.AppendLine();
+}
+
+File.WriteAllText("handlers.md", markdown.ToString());
+```
+
+**4. Development Dashboard**
+```csharp
+#if DEBUG
+// Show registered handlers in console during development
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var mediator = app.Services.GetRequiredService<IPvNugsMediator>();
+    var handlers = mediator.GetRegisteredHandlers();
+    
+    Console.WriteLine("\n" + new string('=', 60));
+    Console.WriteLine("  MEDIATOR CONFIGURATION");
+    Console.WriteLine(new string('=', 60));
+    
+    foreach (var handler in handlers.OrderBy(h => h.RegistrationType).ThenBy(h => h.ImplementationType.Name))
+    {
+        Console.WriteLine(handler); // Uses ToString() for formatted output
+    }
+    
+    Console.WriteLine(new string('=', 60) + "\n");
+});
+#endif
+```
+
+> **💡 Performance Note**: `GetRegisteredHandlers()` uses reflection and should be called during startup/diagnostics only, not in request hot paths.
 
 ## Available Implementations
 
