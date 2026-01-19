@@ -19,7 +19,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// </para>
 /// <para>
 /// Handlers are automatically discovered and invoked by 
-/// <see cref="IMediator.PublishAsync{TNotification}"/> when a notification
+/// <see cref="IMediator.Publish{TNotification}"/> when a notification
 /// is published through the mediator. Handlers typically execute concurrently.
 /// </para>
 /// </remarks>
@@ -41,7 +41,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 ///         _emailService = emailService;
 ///     }
 ///     
-///     public async Task HandleAsync(
+///     public async Task Handle(
 ///         UserCreatedNotification notification, 
 ///         CancellationToken cancellationToken)
 ///     {
@@ -59,7 +59,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 ///         _logger = logger;
 ///     }
 ///     
-///     public async Task HandleAsync(
+///     public async Task Handle(
 ///         UserCreatedNotification notification, 
 ///         CancellationToken cancellationToken)
 ///     {
@@ -73,7 +73,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// services.AddTransient&lt;INotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
 /// 
 /// // Usage - both handlers will execute:
-/// await _mediator.PublishAsync(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
+/// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
 public interface INotificationHandler<in TNotification>
@@ -94,7 +94,7 @@ public interface INotificationHandler<in TNotification>
     /// <remarks>
     /// <para>
     /// This method should contain the logic for responding to the notification.
-    /// It is invoked automatically by the mediator when <see cref="IMediator.PublishAsync{TNotification}"/>
+    /// It is invoked automatically by the mediator when <see cref="IMediator.Publish{TNotification}"/>
     /// is called with a matching notification type.
     /// </para>
     /// <para>
@@ -106,8 +106,11 @@ public interface INotificationHandler<in TNotification>
     /// throws an exception, it may or may not affect other handlers depending on the mediator
     /// implementation.
     /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This method uses the same name as MediatR's <c>Handle</c> method.
+    /// </para>
     /// </remarks>
-    Task HandleAsync(
+    Task Handle(
         TNotification notification, 
         CancellationToken cancellationToken = default);
 }

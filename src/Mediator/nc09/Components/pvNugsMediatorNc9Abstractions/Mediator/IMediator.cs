@@ -12,16 +12,20 @@
 /// <list type="bullet">
 /// <item>
 /// <term>Request/Response</term>
-/// <description>Send a request to exactly one handler and receive a response via <see cref="SendAsync{TResponse}"/>.</description>
+/// <description>Send a request to exactly one handler and receive a response via <see cref="Send{TResponse}"/>.</description>
 /// </item>
 /// <item>
 /// <term>Publish/Subscribe</term>
-/// <description>Publish a notification to zero or more handlers via <see cref="PublishAsync{TNotification}"/> or <see cref="PublishAsync(object, CancellationToken)"/>.</description>
+/// <description>Publish a notification to zero or more handlers via <see cref="Publish{TNotification}"/> or <see cref="Publish(object, CancellationToken)"/>.</description>
 /// </item>
 /// </list>
 /// <para>
 /// The mediator automatically discovers and invokes registered handlers from the dependency injection container.
 /// Handlers are resolved at runtime, allowing for flexible and testable architectures.
+/// </para>
+/// <para>
+/// <b>MediatR Compatibility:</b> This interface uses the same method names (<c>Send</c> and <c>Publish</c>)
+/// as MediatR, making it a drop-in replacement for existing MediatR-based applications.
 /// </para>
 /// </remarks>
 /// <example>
@@ -38,17 +42,17 @@
 ///     public async Task&lt;User&gt; GetUserAsync(int userId)
 ///     {
 ///         // Send request and get response
-///         var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = userId });
+///         var user = await _mediator.Send(new GetUserByIdRequest { UserId = userId });
 ///         return user;
 ///     }
 ///     
 ///     public async Task CreateUserAsync(User user)
 ///     {
 ///         // Send command without meaningful response
-///         await _mediator.SendAsync(new CreateUserRequest { User = user });
+///         await _mediator.Send(new CreateUserRequest { User = user });
 ///         
 ///         // Publish notification to multiple subscribers
-///         await _mediator.PublishAsync(new UserCreatedNotification { UserId = user.Id, Email = user.Email });
+///         await _mediator.Publish(new UserCreatedNotification { UserId = user.Id, Email = user.Email });
 ///     }
 /// }
 /// </code>
@@ -82,17 +86,22 @@ public interface IMediator
     /// actual handler execution. This allows for cross-cutting concerns like logging, validation,
     /// caching, or performance monitoring.
     /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This method uses the same naming convention as MediatR's
+    /// <c>Send</c> method, making it a drop-in replacement for existing MediatR-based code.
+    /// </para>
     /// </remarks>
     /// <exception cref="InvalidOperationException">
     /// Thrown when no handler is registered for the request type.
     /// </exception>
     /// <example>
     /// <code>
-    /// var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = 123 });
-    /// await _mediator.SendAsync(new DeleteUserRequest { UserId = 123 }); // Returns Unit
+    /// // MediatR-compatible syntax
+    /// var user = await _mediator.Send(new GetUserByIdRequest { UserId = 123 });
+    /// await _mediator.Send(new DeleteUserRequest { UserId = 123 }); // Returns Unit
     /// </code>
     /// </example>
-    Task<TResponse> SendAsync<TResponse>(
+    Task<TResponse> Send<TResponse>(
         IRequest<TResponse> request, 
         CancellationToken cancellationToken = default);
     
@@ -121,15 +130,19 @@ public interface IMediator
     /// Notifications are fire-and-forget - they don't return values. This is useful for
     /// broadcasting events or triggering side effects across multiple components.
     /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This method uses the same naming convention as MediatR's
+    /// <c>Publish</c> method, making it a drop-in replacement for existing MediatR-based code.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
-    /// await _mediator.PublishAsync&lt;UserCreatedNotification&gt;(
-    ///     new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
+    /// // MediatR-compatible syntax
+    /// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
     /// </code>
     /// </example>
-    Task PublishAsync<TNotification>(
-        INotification notification, 
+    Task Publish<TNotification>(
+        TNotification notification, 
         CancellationToken cancellationToken = default)
         where TNotification : INotification;
     
@@ -154,14 +167,17 @@ public interface IMediator
     /// This method is useful when the notification type is only known at runtime or when
     /// working with polymorphic notification hierarchies.
     /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This overload matches MediatR's object-based <c>Publish</c> signature.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
     /// object notification = new UserCreatedNotification { UserId = 123, Email = "user@example.com" };
-    /// await _mediator.PublishAsync(notification);
+    /// await _mediator.Publish(notification);
     /// </code>
     /// </example>
-    Task PublishAsync(
+    Task Publish(
         object notification, 
         CancellationToken cancellationToken = default);
 }

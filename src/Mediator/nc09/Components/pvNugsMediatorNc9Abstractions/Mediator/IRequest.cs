@@ -13,7 +13,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// <remarks>
 /// <para>
 /// This interface is a marker interface used to identify request objects in the mediator pattern.
-/// Requests are sent through the <see cref="IMediator.SendAsync{TResponse}"/> method 
+/// Requests are sent through the <see cref="IMediator.Send{TResponse}"/> method 
 /// and are processed by a corresponding <see cref="IRequestHandler{TRequest,TResponse}"/>.
 /// </para>
 /// <para>
@@ -38,7 +38,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// }
 /// 
 /// // Usage:
-/// var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = 123 });
+/// var user = await _mediator.Send(new GetUserByIdRequest { UserId = 123 });
 /// </code>
 /// </example>
 public interface IRequest<TResponse>;
@@ -60,7 +60,7 @@ public interface IRequest<TResponse>;
 /// 
 /// public class DeleteUserHandler : IRequestHandler&lt;DeleteUserRequest&gt;
 /// {
-///     public async Task&lt;Unit&gt; HandleAsync(DeleteUserRequest request, CancellationToken cancellationToken)
+///     public async Task&lt;Unit&gt; Handle(DeleteUserRequest request, CancellationToken cancellationToken)
 ///     {
 ///         await _userRepository.DeleteAsync(request.UserId, cancellationToken);
 ///         return Unit.Value;

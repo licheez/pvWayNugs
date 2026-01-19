@@ -13,7 +13,8 @@
 🧪 **Testable**: Design promotes clean architecture and testability  
 ⚡ **Async First**: Built for modern asynchronous programming patterns  
 🔁 **Backward Compatible**: PvNugs interfaces extend base interfaces for maximum flexibility  
-🔍 **Handler Introspection**: Discover and validate registered handlers at runtime (PvNugs exclusive)
+🔍 **Handler Introspection**: Discover and validate registered handlers at runtime (PvNugs exclusive)  
+⚙️ **Flexible Discovery Modes**: Manual, Decorated, or FullScan handler registration strategies
 
 ## Architecture & Backward Compatibility
 
@@ -135,6 +136,39 @@ dotnet add package pvNugsMediatorNc9Abstractions
 
 - **`Unit`**: Represents a void-like return type for requests that don't return meaningful data
 
+### ⚙️ Discovery & Configuration
+
+- **`DiscoveryMode`**: Enum specifying handler discovery strategy (Manual, Decorated, FullScan)
+- **`MediatorHandlerAttribute`**: Decorator attribute for Decorated mode handler discovery
+- **`ServiceLifetime`**: Enum for specifying DI lifetime (Transient, Scoped, Singleton)
+- **`MediatorRegistrationInfo`**: Information about registered handlers (for introspection)
+
+### 📝 Note on HandleAsync Method
+
+**PvNugs handler interfaces** provide both `Handle` and `HandleAsync` methods:
+- `Handle` - MediatR-compatible naming (required by base interfaces)
+- `HandleAsync` - Explicit async naming (PvNugs enhancement)
+
+**Pattern:** Implement your logic in one method and delegate the other to it:
+
+```csharp
+// Recommended: Implement HandleAsync, delegate Handle to it
+public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+{
+    // Your implementation here
+    return await _repository.GetByIdAsync(request.UserId, ct);
+}
+
+public Task<User> Handle(GetUserRequest request, CancellationToken ct)
+    => HandleAsync(request, ct); // Delegate for MediatR compatibility
+```
+
+This pattern:
+- ✅ Provides explicit async naming for PvNugs users
+- ✅ Maintains MediatR compatibility via `Handle`
+- ✅ Avoids code duplication through delegation
+- ✅ Allows team preference on naming style
+
 ## Quick Start
 
 ### 1️⃣ Request/Response Pattern
@@ -212,14 +246,19 @@ public class SendWelcomeEmailHandler : IPvNugsNotificationHandler<UserCreatedNot
         _emailService = emailService;
     }
     
+    // Implement HandleAsync
     public async Task HandleAsync(
         UserCreatedNotification notification, 
         CancellationToken cancellationToken)
     {
         await _emailService.SendWelcomeEmailAsync(notification.Email, cancellationToken);
     }
+    
+    // Delegate Handle to HandleAsync
+    public Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
+        => HandleAsync(notification, cancellationToken);
 }
-
+```
 // Second Handler - Log Event
 public class LogUserCreationHandler : IPvNugsNotificationHandler<UserCreatedNotification>
 {
@@ -230,6 +269,7 @@ public class LogUserCreationHandler : IPvNugsNotificationHandler<UserCreatedNoti
         _logger = logger;
     }
     
+    // Implement HandleAsync
     public async Task HandleAsync(
         UserCreatedNotification notification, 
         CancellationToken cancellationToken)
@@ -237,6 +277,10 @@ public class LogUserCreationHandler : IPvNugsNotificationHandler<UserCreatedNoti
         _logger.LogInformation("User {UserId} created", notification.UserId);
         await Task.CompletedTask;
     }
+    
+    // Delegate Handle to HandleAsync
+    public Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
+        => HandleAsync(notification, cancellationToken);
 }
 ```
 
@@ -255,6 +299,7 @@ public class LoggingPipeline<TRequest, TResponse>
         _logger = logger;
     }
     
+    // Implement HandleAsync
     public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -287,6 +332,13 @@ public class LoggingPipeline<TRequest, TResponse>
             throw;
         }
     }
+    
+    // Delegate Handle to HandleAsync
+    public Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+        => HandleAsync(request, next, cancellationToken);
 }
 ```
 
@@ -296,6 +348,7 @@ public class ValidationPipeline<TRequest, TResponse>
     : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
     where TRequest : IPvNugsMediatorRequest<TResponse>
 {
+    // Implement HandleAsync
     public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -312,6 +365,13 @@ public class ValidationPipeline<TRequest, TResponse>
         
         return await next();
     }
+    
+    // Delegate Handle to HandleAsync
+    public Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+        => HandleAsync(request, next, cancellationToken);
 }
 ```
 
@@ -354,14 +414,14 @@ public class UserService
     public async Task<User> GetUserAsync(int userId)
     {
         // Send query request and get response
-        var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = userId });
+        var user = await _mediator.Send(new GetUserByIdRequest { UserId = userId });
         return user;
     }
     
     public async Task DeleteUserAsync(int userId)
     {
         // Send command request (returns Unit)
-        await _mediator.SendAsync(new DeleteUserRequest { UserId = userId });
+        await _mediator.Send(new DeleteUserRequest { UserId = userId });
     }
     
     public async Task CreateUserAsync(User user)
@@ -369,7 +429,7 @@ public class UserService
         // Save user...
         
         // Publish notification to all subscribers
-        await _mediator.PublishAsync(new UserCreatedNotification 
+        await _mediator.Publish(new UserCreatedNotification 
         { 
             UserId = user.Id, 
             Email = user.Email 
@@ -393,6 +453,7 @@ public class GetProductRequest : IRequest<Product>
 
 public class GetProductHandler : IRequestHandler<GetProductRequest, Product>
 {
+    // Implement HandleAsync
     public async Task<Product> HandleAsync(
         GetProductRequest request, 
         CancellationToken cancellationToken)
@@ -400,8 +461,12 @@ public class GetProductHandler : IRequestHandler<GetProductRequest, Product>
         // Implementation
         return new Product();
     }
+    
+    // Delegate Handle to HandleAsync
+    public Task<Product> Handle(GetProductRequest request, CancellationToken cancellationToken)
+        => HandleAsync(request, cancellationToken);
 }
-
+```
 // Inject using base interface
 public class ProductService
 {
@@ -414,7 +479,7 @@ public class ProductService
     
     public async Task<Product> GetProductAsync(int id)
     {
-        return await _mediator.SendAsync(new GetProductRequest { ProductId = id });
+        return await _mediator.Send(new GetProductRequest { ProductId = id });
     }
 }
 ```
@@ -468,7 +533,7 @@ await _mediator.PublishAsync(notification); // Uses runtime type resolution
 
 ```csharp
 var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-var user = await _mediator.SendAsync(
+var user = await _mediator.Send(
     new GetUserByIdRequest { UserId = 123 }, 
     cts.Token);
 ```
@@ -615,6 +680,223 @@ app.Lifetime.ApplicationStarted.Register(() =>
 ```
 
 > **💡 Performance Note**: `GetRegisteredHandlers()` uses reflection and should be called during startup/diagnostics only, not in request hot paths.
+
+## Handler Discovery Modes ⚙️
+
+The mediator implementation supports three discovery strategies, allowing you to choose the right balance between performance, convenience, and control:
+
+### Discovery Mode Comparison
+
+| Mode | Registration | Startup Time | Runtime Performance | Best For |
+|------|-------------|--------------|---------------------|----------|
+| **Manual** | Explicit DI registration | ⚡ Fastest | ⚡⚡⚡ Best | Production |
+| **Decorated** | `[MediatorHandler]` attribute | ⚡ Fast | ⚡⚡ Good | Medium apps |
+| **FullScan** | Automatic via reflection | ⏱️ Slower | ⚡⚡ Good | Development |
+
+### 1️⃣ Manual Mode (Recommended for Production)
+
+**Explicit control with best performance**
+
+```csharp
+// Configuration
+services.AddPvNugsMediator(options => 
+{
+    options.DiscoveryMode = DiscoveryMode.Manual;
+});
+
+// Manually register each handler
+services.AddTransient<IPvNugsMediatorRequestHandler<GetUserRequest, User>, GetUserHandler>();
+services.AddTransient<IPvNugsMediatorRequestHandler<CreateUserRequest>, CreateUserHandler>();
+services.AddTransient<IPvNugsNotificationHandler<UserCreatedNotification>, SendEmailHandler>();
+services.AddTransient<IPvNugsNotificationHandler<UserCreatedNotification>, LogEventHandler>();
+```
+
+**Pros:**
+- ⚡ **Best performance**: No reflection, no scanning
+- 🎯 **Explicit control**: You know exactly what's registered
+- 🔒 **Type safety**: Compile-time validation
+- 📦 **Smallest footprint**: No extra metadata
+
+**Cons:**
+- 🔧 **More code**: Each handler needs explicit registration
+- 📝 **Maintenance**: Must update registrations when adding handlers
+
+**Use When:**
+- Production environments where performance matters
+- Large applications with many handlers
+- Explicit configuration is preferred
+- Compile-time safety is important
+
+---
+
+### 2️⃣ Decorated Mode (Balanced Approach)
+
+**Convention-based with selective discovery**
+
+```csharp
+// Configuration
+services.AddPvNugsMediator(options => 
+{
+    options.DiscoveryMode = DiscoveryMode.Decorated;
+});
+
+// Handlers are automatically discovered if decorated
+[MediatorHandler]
+public class GetUserHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User>
+{
+    public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+    {
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
+}
+
+// Specify lifetime if needed (default is Transient)
+[MediatorHandler(Lifetime = ServiceLifetime.Scoped)]
+public class CreateUserHandler : IPvNugsMediatorRequestHandler<CreateUserRequest>
+{
+    private readonly UserDbContext _context;
+    
+    public CreateUserHandler(UserDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<Unit> HandleAsync(CreateUserRequest request, CancellationToken ct)
+    {
+        // Implementation
+        return Unit.Value;
+    }
+}
+
+// This handler is NOT discovered (no attribute)
+public class InternalHelper : IPvNugsMediatorRequestHandler<HelperRequest, Result>
+{
+    // Not registered because it lacks [MediatorHandler]
+}
+```
+
+**Pros:**
+- 🎯 **Selective discovery**: Only decorated handlers are registered
+- ⚡ **Good performance**: Faster than FullScan
+- ✨ **Convention-based**: Simple attribute marks handlers
+- 🔍 **Self-documenting**: Clear which classes are handlers
+- ⏱️ **Lifetime control**: Specify Transient/Scoped/Singleton per handler
+
+**Cons:**
+- 📝 **Requires attributes**: Must decorate every handler
+- 🔍 **Some reflection**: Scans for decorated types
+- 🎓 **Learning curve**: Team needs to understand convention
+
+**Use When:**
+- Medium to large applications
+- You want selective handler registration
+- Convention over configuration is preferred
+- You need per-handler lifetime control
+
+---
+
+### 3️⃣ FullScan Mode (Development Convenience)
+
+**Zero configuration, maximum convenience**
+
+```csharp
+// Configuration
+services.AddPvNugsMediator(options => 
+{
+    options.DiscoveryMode = DiscoveryMode.FullScan;
+    
+    // Optionally limit which assemblies to scan for better performance
+    options.AssembliesToScan = new[] 
+    { 
+        typeof(GetUserHandler).Assembly,    // Your handlers
+        typeof(OrderHandlers).Assembly      // Another assembly
+    };
+});
+
+// Handlers are automatically discovered - no registration or attributes needed!
+public class GetUserHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User>
+{
+    public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+    {
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
+}
+
+public class SendEmailHandler : IPvNugsNotificationHandler<UserCreatedNotification>
+{
+    public async Task HandleAsync(UserCreatedNotification notification, CancellationToken ct)
+    {
+        await _emailService.SendWelcomeEmailAsync(notification.Email, ct);
+    }
+}
+
+// Both handlers above are automatically registered!
+```
+
+**Pros:**
+- 🚀 **Zero configuration**: Just implement the interface
+- ✨ **Maximum convenience**: Perfect for rapid development
+- 🔄 **Automatic**: New handlers are instantly available
+- 🎯 **Simple**: No attributes, no registrations
+
+**Cons:**
+- ⏱️ **Startup overhead**: Reflection scanning takes time
+- 🔍 **Scans all types**: May discover unintended handlers
+- 💾 **More memory**: Keeps handler metadata
+- 🎭 **Less explicit**: Harder to see what's registered
+
+**Use When:**
+- Development and prototyping
+- Small to medium applications
+- Convenience > performance
+- Rapid iteration is important
+- Applications restart infrequently
+
+---
+
+### Choosing the Right Mode
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddPvNugsMediator(options =>
+    {
+        // Production: Use Manual for best performance
+        if (Environment.IsProduction())
+        {
+            options.DiscoveryMode = DiscoveryMode.Manual;
+        }
+        // Development: Use FullScan for convenience
+        else if (Environment.IsDevelopment())
+        {
+            options.DiscoveryMode = DiscoveryMode.FullScan;
+            options.AssembliesToScan = new[] { typeof(Startup).Assembly };
+        }
+        // Staging: Use Decorated for balance
+        else
+        {
+            options.DiscoveryMode = DiscoveryMode.Decorated;
+        }
+    });
+    
+    // Manual mode: Add explicit registrations here
+    if (options.DiscoveryMode == DiscoveryMode.Manual)
+    {
+        services.AddTransient<IPvNugsMediatorRequestHandler<GetUserRequest, User>, GetUserHandler>();
+        // ... more registrations
+    }
+}
+```
+
+**Decision Guide:**
+
+- 📊 **Small app (<20 handlers)** → FullScan for convenience
+- 📈 **Medium app (20-100 handlers)** → Decorated for balance
+- 🏢 **Large app (100+ handlers)** → Manual for control
+- ⚡ **Performance critical** → Manual
+- 🚀 **Rapid prototyping** → FullScan
+- 🔒 **Explicit control needed** → Manual
+- ✨ **Convention preferred** → Decorated
 
 ## Available Implementations
 

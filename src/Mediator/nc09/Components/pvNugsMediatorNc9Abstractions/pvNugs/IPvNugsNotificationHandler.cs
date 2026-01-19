@@ -24,7 +24,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// handler inheritance patterns when needed.
 /// </para>
 /// <para>
-/// Handlers are automatically discovered and invoked by <see cref="IMediator.PublishAsync{TNotification}"/>
+/// Handlers are automatically discovered and invoked by <see cref="IMediator.Publish{TNotification}"/>
 /// when a notification is published through the mediator. Handlers typically execute concurrently.
 /// </para>
 /// </remarks>
@@ -40,12 +40,17 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 ///         _emailService = emailService;
 ///     }
 ///     
+///     // Implement HandleAsync
 ///     public async Task HandleAsync(
 ///         UserCreatedNotification notification, 
 ///         CancellationToken cancellationToken)
 ///     {
 ///         await _emailService.SendWelcomeEmailAsync(notification.Email, cancellationToken);
 ///     }
+///     
+///     // Delegate Handle to HandleAsync for MediatR compatibility
+///     public Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
+///         => HandleAsync(notification, cancellationToken);
 /// }
 /// 
 /// // Register in DI (multiple handlers can be registered for the same notification)
@@ -53,9 +58,68 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// services.AddTransient&lt;IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
 /// 
 /// // Publish the notification (both handlers will execute)
-/// await _mediator.PublishAsync(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
+/// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
 public interface IPvNugsNotificationHandler<in TNotification> : 
     INotificationHandler<TNotification>
-    where TNotification : INotification;
+    where TNotification : INotification
+{
+    /// <summary>
+    /// Handles the specified notification asynchronously.
+    /// </summary>
+    /// <param name="notification">
+    /// The notification instance containing the event data.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None"/>.
+    /// </param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// This method provides an alternative, more explicit naming convention for handling notifications.
+    /// By default, it delegates to the <see cref="INotificationHandler{TNotification}.Handle"/> method
+    /// to maintain MediatR compatibility.
+    /// </para>
+    /// <para>
+    /// Implementers can choose to:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>Implement only <c>Handle</c> (MediatR style) - <c>HandleAsync</c> will call it automatically</description></item>
+    /// <item><description>Implement only <c>HandleAsync</c> (explicit async) - <c>Handle</c> must call it</description></item>
+    /// </list>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Option 1: Implement HandleAsync only
+    /// public class MyNotificationHandler : IPvNugsNotificationHandler&lt;MyNotification&gt;
+    /// {
+    ///     public async Task HandleAsync(MyNotification notification, CancellationToken ct)
+    ///     {
+    ///         // Your implementation
+    ///         await _service.ProcessAsync(notification);
+    ///     }
+    ///     
+    ///     // Handle calls HandleAsync
+    ///     public Task Handle(MyNotification notification, CancellationToken ct)
+    ///         => HandleAsync(notification, ct);
+    /// }
+    /// 
+    /// // Option 2: Implement Handle only (MediatR compatible)
+    /// public class MyNotificationHandler : IPvNugsNotificationHandler&lt;MyNotification&gt;
+    /// {
+    ///     public async Task Handle(MyNotification notification, CancellationToken ct)
+    ///     {
+    ///         // Your implementation
+    ///         await _service.ProcessAsync(notification);
+    ///     }
+    ///     // HandleAsync calls Handle automatically (default implementation)
+    /// }
+    /// </code>
+    /// </example>
+    Task HandleAsync(
+        TNotification notification,
+        CancellationToken cancellationToken = default);
+}

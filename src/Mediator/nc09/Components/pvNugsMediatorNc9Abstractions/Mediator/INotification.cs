@@ -15,8 +15,8 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// and can have multiple handlers execute concurrently.
 /// </para>
 /// <para>
-/// Publish notifications using <see cref="IMediator.PublishAsync{TNotification}"/>
-/// or <see cref="IMediator.PublishAsync(object, CancellationToken)"/>.
+/// Publish notifications using <see cref="IMediator.Publish{TNotification}"/>
+/// or <see cref="IMediator.Publish(object, CancellationToken)"/>.
 /// </para>
 /// </remarks>
 /// <example>
@@ -30,7 +30,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// // Multiple handlers can respond to the same notification
 /// public class SendWelcomeEmailHandler : INotificationHandler&lt;UserCreatedNotification&gt;
 /// {
-///     public async Task HandleAsync(UserCreatedNotification notification, CancellationToken cancellationToken)
+///     public async Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
 ///     {
 ///         await _emailService.SendWelcomeEmailAsync(notification.Email);
 ///     }
@@ -38,14 +38,14 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// 
 /// public class LogUserCreationHandler : INotificationHandler&lt;UserCreatedNotification&gt;
 /// {
-///     public async Task HandleAsync(UserCreatedNotification notification, CancellationToken cancellationToken)
+///     public async Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
 ///     {
 ///         _logger.LogInformation("User {UserId} created", notification.UserId);
 ///     }
 /// }
 /// 
 /// // Usage:
-/// await _mediator.PublishAsync(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
+/// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
 public interface INotification;

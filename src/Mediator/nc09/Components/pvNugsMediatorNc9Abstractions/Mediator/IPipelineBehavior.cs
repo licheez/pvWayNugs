@@ -56,7 +56,7 @@ public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 ///         _logger = logger;
 ///     }
 ///     
-///     public async Task&lt;TResponse&gt; HandleAsync(
+///     public async Task&lt;TResponse&gt; Handle(
 ///         TRequest request,
 ///         RequestHandlerDelegate&lt;TResponse&gt; next,
 ///         CancellationToken cancellationToken)
@@ -83,7 +83,7 @@ public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
 ///     : IPipelineBehavior&lt;TRequest, TResponse&gt;
 ///     where TRequest : IRequest&lt;TResponse&gt;
 /// {
-///     public async Task&lt;TResponse&gt; HandleAsync(
+///     public async Task&lt;TResponse&gt; Handle(
 ///         TRequest request,
 ///         RequestHandlerDelegate&lt;TResponse&gt; next,
 ///         CancellationToken cancellationToken)
@@ -131,8 +131,11 @@ public interface IPipelineBehavior<in TRequest, TResponse>
     /// To short-circuit the pipeline (prevent further handlers from executing), return
     /// a response without calling the <paramref name="next"/> delegate.
     /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This method uses the same name as MediatR's <c>Handle</c> method.
+    /// </para>
     /// </remarks>
-    Task<TResponse> HandleAsync(
+    Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken = default);

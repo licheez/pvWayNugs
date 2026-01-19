@@ -32,14 +32,14 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// // Multiple handlers can respond to the same notification
 /// public class SendWelcomeEmailHandler : IPvNugsNotificationHandler&lt;UserCreatedNotification&gt;
 /// {
-///     public async Task HandleAsync(UserCreatedNotification notification, CancellationToken cancellationToken)
+///     public async Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
 ///     {
 ///         await _emailService.SendWelcomeEmailAsync(notification.Email, cancellationToken);
 ///     }
 /// }
 /// 
 /// // Publish the notification
-/// await _mediator.PublishAsync(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
+/// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
 public interface IPvNugsMediatorNotification: INotification;

@@ -1,4 +1,3 @@
-using pvNugsMediatorNc9Abstractions.pvNugs;
 
 namespace pvNugsMediatorNc9Abstractions.Mediator;
 
@@ -23,7 +22,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// inheritance patterns when needed.
 /// </para>
 /// <para>
-/// Handlers are automatically discovered and invoked by <see cref="IMediator.SendAsync{TResponse}"/>
+/// Handlers are automatically discovered and invoked by <see cref="IMediator.Send{TResponse}"/>
 /// when a request is sent through the mediator.
 /// </para>
 /// </remarks>
@@ -43,7 +42,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 ///         _userRepository = userRepository;
 ///     }
 ///     
-///     public async Task&lt;User&gt; HandleAsync(
+///     public async Task&lt;User&gt; Handle(
 ///         GetUserByIdRequest request, 
 ///         CancellationToken cancellationToken)
 ///     {
@@ -60,7 +59,7 @@ namespace pvNugsMediatorNc9Abstractions.Mediator;
 /// services.AddTransient&lt;IRequestHandler&lt;GetUserByIdRequest, User&gt;, GetUserByIdHandler&gt;();
 /// 
 /// // Usage:
-/// var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = 123 });
+/// var user = await _mediator.Send(new GetUserByIdRequest { UserId = 123 });
 /// </code>
 /// </example>
 public interface IRequestHandler<in TRequest, TResponse>
@@ -80,11 +79,16 @@ public interface IRequestHandler<in TRequest, TResponse>
     /// the response of type <typeparamref name="TResponse"/>.
     /// </returns>
     /// <remarks>
+    /// <para>
     /// This method should contain the business logic for processing the request.
-    /// It is invoked automatically by the mediator when <see cref="IMediator.SendAsync{TResponse}"/>
+    /// It is invoked automatically by the mediator when <see cref="IMediator.Send{TResponse}"/>
     /// is called with a matching request type.
+    /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This method uses the same name as MediatR's <c>Handle</c> method.
+    /// </para>
     /// </remarks>
-    Task<TResponse> HandleAsync(
+    Task<TResponse> Handle(
         TRequest request,
         CancellationToken cancellationToken = default);
 }
@@ -104,7 +108,7 @@ public interface IRequestHandler<in TRequest, TResponse>
 /// </para>
 /// <para>
 /// Handlers implementing this interface should return <see cref="Unit.Value"/> 
-/// from their <see cref="IRequestHandler{TRequest, TResponse}.HandleAsync"/> method.
+/// from their <see cref="IRequestHandler{TRequest, TResponse}.Handle"/> method.
 /// </para>
 /// </remarks>
 /// <example>
@@ -123,7 +127,7 @@ public interface IRequestHandler<in TRequest, TResponse>
 ///         _userRepository = userRepository;
 ///     }
 ///     
-///     public async Task&lt;Unit&gt; HandleAsync(
+///     public async Task&lt;Unit&gt; Handle(
 ///         DeleteUserRequest request, 
 ///         CancellationToken cancellationToken)
 ///     {
@@ -136,7 +140,7 @@ public interface IRequestHandler<in TRequest, TResponse>
 /// services.AddTransient&lt;IRequestHandler&lt;DeleteUserRequest&gt;, DeleteUserHandler&gt;();
 /// 
 /// // Usage:
-/// await _mediator.SendAsync(new DeleteUserRequest { UserId = 123 });
+/// await _mediator.Send(new DeleteUserRequest { UserId = 123 });
 /// </code>
 /// </example>
 public interface IRequestHandler<in TRequest>: 

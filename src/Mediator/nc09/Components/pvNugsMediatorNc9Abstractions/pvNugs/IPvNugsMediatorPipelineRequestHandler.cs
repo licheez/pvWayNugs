@@ -52,7 +52,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 ///         _logger = logger;
 ///     }
 ///     
-///     public async Task&lt;TResponse&gt; HandleAsync(
+///     public async Task&lt;TResponse&gt; Handle(
 ///         TRequest request,
 ///         RequestHandlerDelegate&lt;TResponse&gt; next,
 ///         CancellationToken cancellationToken)
@@ -86,7 +86,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 ///     : IPvNugsMediatorPipelineRequestHandler&lt;TRequest, TResponse&gt;
 ///     where TRequest : IPvNugsMediatorRequest&lt;TResponse&gt;
 /// {
-///     public async Task&lt;TResponse&gt; HandleAsync(
+///     public async Task&lt;TResponse&gt; Handle(
 ///         TRequest request,
 ///         RequestHandlerDelegate&lt;TResponse&gt; next,
 ///         CancellationToken cancellationToken)
@@ -110,10 +110,71 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// services.AddTransient(typeof(IPvNugsMediatorPipelineRequestHandler&lt;,&gt;), typeof(ValidationPipelineBehavior&lt;,&gt;));
 /// 
 /// // Usage - pipeline behaviors execute automatically when sending requests:
-/// var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = 123 });
+/// var user = await _mediator.Send(new GetUserByIdRequest { UserId = 123 });
 /// // Order: Logging (before) → Validation (before) → Handler → Validation (after) → Logging (after)
 /// </code>
 /// </example>
 public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
     IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse>;
+    where TRequest : IPvNugsMediatorRequest<TResponse>
+{
+    /// <summary>
+    /// Handles the request asynchronously within the pipeline, optionally executing logic before and/or after
+    /// invoking the next handler in the chain.
+    /// </summary>
+    /// <param name="request">
+    /// The request instance containing the data needed to process the operation.
+    /// </param>
+    /// <param name="next">
+    /// A delegate that invokes the next handler in the pipeline. Call this to continue
+    /// processing the request, or skip it to short-circuit the pipeline.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None"/>.
+    /// </param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains
+    /// the response of type <typeparamref name="TResponse"/>.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// This method provides an alternative, more explicit naming convention for pipeline behaviors.
+    /// Implementers must implement both this method and <see cref="IPipelineBehavior{TRequest,TResponse}.Handle"/>.
+    /// Typically, one delegates to the other to avoid code duplication.
+    /// </para>
+    /// <para>
+    /// Recommended pattern: Implement your logic in one method and have the other delegate to it.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// public class LoggingPipeline&lt;TRequest, TResponse&gt; 
+    ///     : IPvNugsMediatorPipelineRequestHandler&lt;TRequest, TResponse&gt;
+    ///     where TRequest : IPvNugsMediatorRequest&lt;TResponse&gt;
+    /// {
+    ///     // Implement HandleAsync with your logic
+    ///     public async Task&lt;TResponse&gt; HandleAsync(
+    ///         TRequest request, 
+    ///         RequestHandlerDelegate&lt;TResponse&gt; next, 
+    ///         CancellationToken ct)
+    ///     {
+    ///         Console.WriteLine("Before");
+    ///         var response = await next();
+    ///         Console.WriteLine("After");
+    ///         return response;
+    ///     }
+    ///     
+    ///     // Delegate Handle to HandleAsync for MediatR compatibility
+    ///     public Task&lt;TResponse&gt; Handle(
+    ///         TRequest request, 
+    ///         RequestHandlerDelegate&lt;TResponse&gt; next, 
+    ///         CancellationToken ct)
+    ///         => HandleAsync(request, next, ct);
+    /// }
+    /// </code>
+    /// </example>
+    Task<TResponse> HandleAsync(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken = default);
+}

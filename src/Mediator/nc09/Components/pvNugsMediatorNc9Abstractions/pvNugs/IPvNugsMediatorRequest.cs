@@ -16,7 +16,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// compatibility with the base interface.
 /// </para>
 /// <para>
-/// Requests are sent through <see cref="IMediator.SendAsync{TResponse}"/> and are processed
+/// Requests are sent through <see cref="IMediator.Send{TResponse}"/> and are processed
 /// by exactly one corresponding <see cref="IPvNugsMediatorRequestHandler{TRequest,TResponse}"/>
 /// or <see cref="IRequestHandler{TRequest,TResponse}"/>.
 /// </para>
@@ -42,7 +42,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// }
 /// 
 /// // Send the request
-/// var user = await _mediator.SendAsync(new GetUserByIdRequest { UserId = 123 });
+/// var user = await _mediator.Send(new GetUserByIdRequest { UserId = 123 });
 /// </code>
 /// </example>
 public interface IPvNugsMediatorRequest<TResponse> : IRequest<TResponse>;
@@ -73,7 +73,7 @@ public interface IPvNugsMediatorRequest<TResponse> : IRequest<TResponse>;
 /// // Define the handler
 /// public class DeleteUserHandler : IPvNugsMediatorRequestHandler&lt;DeleteUserRequest&gt;
 /// {
-///     public async Task&lt;Unit&gt; HandleAsync(DeleteUserRequest request, CancellationToken cancellationToken)
+///     public async Task&lt;Unit&gt; Handle(DeleteUserRequest request, CancellationToken cancellationToken)
 ///     {
 ///         await _userRepository.DeleteAsync(request.UserId, cancellationToken);
 ///         return Unit.Value;
@@ -81,7 +81,7 @@ public interface IPvNugsMediatorRequest<TResponse> : IRequest<TResponse>;
 /// }
 /// 
 /// // Send the request
-/// await _mediator.SendAsync(new DeleteUserRequest { UserId = 123 });
+/// await _mediator.Send(new DeleteUserRequest { UserId = 123 });
 /// </code>
 /// </example>
 public interface IPvNugsMediatorRequest : IPvNugsMediatorRequest<Unit>, IRequest;

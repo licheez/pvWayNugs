@@ -31,7 +31,7 @@ namespace pvNugsMediatorNc9Abstractions;
 /// 
 /// public class DeleteUserHandler : IRequestHandler&lt;DeleteUserRequest, Unit&gt;
 /// {
-///     public async Task&lt;Unit&gt; HandleAsync(
+///     public async Task&lt;Unit&gt; Handle(
 ///         DeleteUserRequest request, 
 ///         CancellationToken cancellationToken)
 ///     {
@@ -41,7 +41,7 @@ namespace pvNugsMediatorNc9Abstractions;
 /// }
 /// 
 /// // Usage:
-/// await _mediator.SendAsync(new DeleteUserRequest { UserId = 123 });
+/// await _mediator.Send(new DeleteUserRequest { UserId = 123 });
 /// </code>
 /// </example>
 public readonly struct Unit : IEquatable<Unit>
