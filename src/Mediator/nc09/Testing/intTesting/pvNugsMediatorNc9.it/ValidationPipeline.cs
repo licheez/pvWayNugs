@@ -1,12 +1,12 @@
 using pvNugsLoggerNc9Abstractions;
-using pvNugsMediatorNc9Abstractions;
+using pvNugsMediatorNc9Abstractions.Mediator;
 
 namespace pvNugsMediatorNc9.it;
 
 public class ValidationPipeline(IConsoleLoggerService logger): 
-    IPvNugsPipelineMediator<UserCreationRequest, Guid>
+    IPipelineBehavior<UserCreationRequest, Guid>
 {
-    public async Task<Guid> HandleAsync(
+    public async Task<Guid> Handle(
         UserCreationRequest request, 
         RequestHandlerDelegate<Guid> next, 
         CancellationToken cancellationToken = default)

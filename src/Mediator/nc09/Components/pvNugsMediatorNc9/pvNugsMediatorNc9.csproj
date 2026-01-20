@@ -4,7 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.0.0</Version>
+        <Version>9.0.1</Version>
         <Authors>Pierre Van Wallendael</Authors>
         <Description>Production-ready mediator pattern implementation for .NET 9 with built-in logging, dynamic handler resolution via reflection and DI, full pipeline behavior support, and comprehensive error handling. Requires pvNugsLoggerNc9Abstractions for automatic operation logging.</Description>
         <PackageReleaseNotes>Initial release with complete mediator implementation featuring dynamic request routing, notification publishing, pipeline behavior chain execution, and integrated logging throughout the request/response lifecycle.</PackageReleaseNotes>
@@ -16,13 +16,14 @@
         <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Copyright>pvWay Ltd</Copyright>
-        <PackageTags>mediator;mediator-implementation;cqrs;command-query;messaging;pipeline;publish-subscribe;request-response;logging;reflection;dependency-injection;clean-architecture;ddd;async;dotnet9</PackageTags>
+        <PackageTags>mediator;mediatr;mediatr-compatible;mediator-implementation;cqrs;command-query;messaging;pipeline;publish-subscribe;request-response;logging;reflection;dependency-injection;handler-discovery;auto-discovery;clean-architecture;ddd;async;dotnet9;introspection</PackageTags>
         <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.12" />
         <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.1.3"/>
-        <PackageReference Include="pvNugsMediatorNc9Abstractions" Version="9.0.0"/>
+        <PackageReference Include="pvNugsMediatorNc9Abstractions" Version="9.0.3" />
     </ItemGroup>
 
     <ItemGroup>

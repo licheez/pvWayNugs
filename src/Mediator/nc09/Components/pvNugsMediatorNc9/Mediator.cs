@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using pvNugsLoggerNc9Abstractions;
 using pvNugsMediatorNc9Abstractions;
+using pvNugsMediatorNc9Abstractions.Mediator;
+using pvNugsMediatorNc9Abstractions.pvNugs;
 
 namespace pvNugsMediatorNc9;
 
@@ -25,8 +27,8 @@ public class Mediator(
     IServiceProvider sp,
     ILoggerService logger) : IPvNugsMediator
 {
-    private const string HandleMethodName = "HandleAsync";
-    
+    private const string HandleMethodName = "Handle";
+
     /// <summary>
     /// Sends a request to its registered handler and returns the response, executing any registered pipeline behaviors.
     /// </summary>
@@ -51,8 +53,8 @@ public class Mediator(
     /// All operations are logged using the configured logger service for traceability and debugging.
     /// </para>
     /// </remarks>
-    public async Task<TResponse> SendAsync<TResponse>(
-        IPvNugsMediatorRequest<TResponse> request,
+    public async Task<TResponse> Send<TResponse>(
+        IRequest<TResponse> request,
         CancellationToken cancellationToken = default)
     {
         var requestType = request.GetType();
@@ -85,14 +87,14 @@ public class Mediator(
             (Task<TResponse>)handleMethod.Invoke(handler, [request, cancellationToken])!;
 
         var pipelineType =
-            typeof(IPvNugsPipelineMediator<,>)
+            typeof(IPvNugsMediatorPipelineRequestHandler<,>)
                 .MakeGenericType(requestType, typeof(TResponse));
         var pipelines = sp.GetServices(pipelineType).ToArray();
         var nbPipelines = pipelines.Length;
 
         // Get the Handle method once outside the loop
-        var handleMethodPipeline = nbPipelines > 0 
-            ? pipelineType.GetMethod(HandleMethodName) 
+        var handleMethodPipeline = nbPipelines > 0
+            ? pipelineType.GetMethod(HandleMethodName)
             : null;
         if (nbPipelines > 0 && handleMethodPipeline == null)
         {
@@ -134,6 +136,18 @@ public class Mediator(
     }
 
     /// <summary>
+    /// <inheritdoc cref="Send{TResponse}(IRequest{TResponse}, CancellationToken)"/>
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="cancellationToken"></param>
+    /// <typeparam name="TResponse"></typeparam>
+    /// <returns></returns>
+    public async Task<TResponse> SendAsync<TResponse>(
+        IRequest<TResponse> request,
+        CancellationToken cancellationToken = default) =>
+        await Send(request, cancellationToken);
+
+    /// <summary>
     /// Publishes a notification to all registered handlers of the specified notification type.
     /// </summary>
     /// <typeparam name="TNotification">The type of notification being published.</typeparam>
@@ -147,10 +161,10 @@ public class Mediator(
     /// This method resolves all handlers registered for the notification type and invokes them sequentially.
     /// If no handlers are registered, a warning is logged and the method returns without error.
     /// </remarks>
-    public async Task PublishAsync<TNotification>(
-        IPvNugsMediatorNotification notification,
+    public async Task Publish<TNotification>(
+        TNotification notification,
         CancellationToken cancellationToken = default)
-        where TNotification : IPvNugsMediatorNotification
+        where TNotification : INotification
     {
         await PublishAsyncInternal(notification, cancellationToken);
     }
@@ -168,7 +182,7 @@ public class Mediator(
     /// This non-generic overload uses the runtime type of the notification to resolve handlers.
     /// It is useful when the notification type is only known at runtime or when working with polymorphic notification hierarchies.
     /// </remarks>
-    public async Task PublishAsync(
+    public async Task Publish(
         object notification,
         CancellationToken cancellationToken = default)
     {
@@ -176,13 +190,221 @@ public class Mediator(
     }
     
     /// <summary>
+    /// <inheritdoc cref="Publish(object, CancellationToken)"/>
+    /// </summary>
+    /// <param name="notification"></param>
+    /// <param name="cancellationToken"></param>
+    /// <typeparam name="TNotification"></typeparam>
+    public async Task PublishAsync<TNotification>(
+        TNotification notification,
+        CancellationToken cancellationToken = default)
+        where TNotification : INotification =>
+        await PublishAsyncInternal(notification, cancellationToken);
+
+    /// <summary>
+    /// <inheritdoc cref="Publish(object, CancellationToken)"/>
+    /// </summary>
+    /// <param name="notification"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public Task PublishAsync(
+        object notification, CancellationToken cancellationToken = default)
+        => PublishAsyncInternal(notification, cancellationToken);
+
+    /// <summary>
+    /// Gets information about all registered mediator components (handlers and pipeline behaviors).
+    /// </summary>
+    /// <returns>
+    /// An enumerable of <see cref="MediatorRegistrationInfo"/> containing details about each registered component.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// This method inspects the service provider's service descriptors to find all registered:
+    /// - Request handlers (IPvNugsMediatorRequestHandler)
+    /// - Notification handlers (IPvNugsMediatorNotificationHandler)
+    /// - Pipeline behaviors (IPvNugsMediatorPipelineRequestHandler)
+    /// </para>
+    /// <para>
+    /// This is primarily intended for diagnostics, health checks, and development-time validation
+    /// to ensure all expected handlers are properly registered.
+    /// </para>
+    /// </remarks>
+    public IEnumerable<MediatorRegistrationInfo> GetRegisteredHandlers()
+    {
+        var results = new List<MediatorRegistrationInfo>();
+        
+        var serviceDescriptors = 
+            sp.GetService<IEnumerable<ServiceDescriptor>>()?.ToList();
+        if (serviceDescriptors == null || serviceDescriptors.Count == 0)
+        {
+            return results;
+        }
+
+        foreach (var descriptor in serviceDescriptors)
+        {
+            if (!IsValidDescriptor(descriptor))
+                continue;
+
+            var info = TryCreateRegistrationInfo(descriptor);
+            if (info != null)
+            {
+                results.Add(info);
+            }
+        }
+
+        return results.OrderBy(r => r.RegistrationType)
+            .ThenBy(r => r.MessageType?.Name)
+            .ThenBy(r => r.ImplementationType.Name);
+    }
+
+    /// <summary>
+    /// Validates whether a service descriptor is eligible for handler registration inspection.
+    /// </summary>
+    /// <param name="descriptor">The service descriptor to validate.</param>
+    /// <returns>True if the descriptor is generic and has a concrete implementation type; otherwise, false.</returns>
+    private static bool IsValidDescriptor(ServiceDescriptor descriptor)
+    {
+        return descriptor.ServiceType.IsGenericType && 
+               descriptor.ImplementationType != null;
+    }
+
+    /// <summary>
+    /// Attempts to create a MediatorRegistrationInfo from a service descriptor.
+    /// </summary>
+    /// <param name="descriptor">The service descriptor to inspect.</param>
+    /// <returns>A MediatorRegistrationInfo if the descriptor represents a known handler type; otherwise, null.</returns>
+    private static MediatorRegistrationInfo? TryCreateRegistrationInfo(ServiceDescriptor descriptor)
+    {
+        var serviceType = descriptor.ServiceType;
+        var genericTypeDefinition = serviceType.GetGenericTypeDefinition();
+        var implementationType = descriptor.ImplementationType!;
+        var lifetime = descriptor.Lifetime.ToString();
+
+        return TryCreateRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
+               ?? TryCreateUnitRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
+               ?? TryCreateNotificationHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
+               ?? TryCreatePipelineHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
+               ?? TryCreateBasePipelineHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime);
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a two-parameter request handler.
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreateRequestHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IPvNugsMediatorRequestHandler<,>))
+            return null;
+
+        var genericArgs = serviceType.GetGenericArguments();
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Request Handler",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = genericArgs[0],
+            ResponseType = genericArgs[1]
+        };
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a Unit (void) request handler.
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreateUnitRequestHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IRequestHandler<>))
+            return null;
+
+        var requestType = serviceType.GetGenericArguments()[0];
+        var twoParamHandler = typeof(IPvNugsMediatorRequestHandler<,>)
+            .MakeGenericType(requestType, typeof(Unit));
+
+        if (implementationType.GetInterfaces().All(i => i != twoParamHandler))
+            return null;
+
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Request Handler",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = requestType,
+            ResponseType = typeof(Unit)
+        };
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a notification handler.
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreateNotificationHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IPvNugsMediatorNotificationHandler<>))
+            return null;
+
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Notification Handler",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = serviceType.GetGenericArguments()[0],
+            ResponseType = null
+        };
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a PvNugs pipeline behavior.
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreatePipelineHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IPvNugsMediatorPipelineRequestHandler<,>))
+            return null;
+
+        var genericArgs = serviceType.GetGenericArguments();
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Pipeline Behavior",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = genericArgs[0],
+            ResponseType = genericArgs[1]
+        };
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a base interface pipeline behavior.
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreateBasePipelineHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IPipelineBehavior<,>))
+            return null;
+
+        var genericArgs = serviceType.GetGenericArguments();
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Pipeline Behavior",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = genericArgs[0],
+            ResponseType = genericArgs[1]
+        };
+    }
+
+    /// <summary>
     /// Internal method that handles the actual notification publishing logic for both generic and non-generic overloads.
     /// </summary>
     /// <param name="notification">The notification object to publish.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous publish operation.</returns>
     /// <exception cref="PvNugsMediatorException">
-    /// Thrown when a handler doesn't have a HandleAsync method or when an exception occurs during handler execution.
+    /// Thrown when a handler doesn't have a Handle method or when an exception occurs during handler execution.
     /// </exception>
     /// <remarks>
     /// <para>
@@ -202,11 +424,11 @@ public class Mediator(
         await logger.LogAsync(
             $"Handling notification of type {notificationType.FullName}",
             SeverityEnu.Trace);
-        
+
         var handlerType = typeof(IPvNugsMediatorNotificationHandler<>)
             .MakeGenericType(notificationType);
         var handlers = sp.GetServices(handlerType).ToArray();
-        
+
         if (handlers.Length == 0)
         {
             await logger.LogAsync(
@@ -240,6 +462,6 @@ public class Mediator(
                 await logger.LogAsync(e, SeverityEnu.Error);
                 throw new PvNugsMediatorException(e);
             }
-        }   
+        }
     }
 }

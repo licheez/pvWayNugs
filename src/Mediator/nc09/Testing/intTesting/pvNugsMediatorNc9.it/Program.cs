@@ -4,7 +4,8 @@ using pvNugsLoggerNc9Abstractions;
 using pvNugsLoggerNc9Seri;
 using pvNugsMediatorNc9;
 using pvNugsMediatorNc9.it;
-using pvNugsMediatorNc9Abstractions;
+using pvNugsMediatorNc9Abstractions.Mediator;
+using pvNugsMediatorNc9Abstractions.pvNugs;
 
 Console.WriteLine("Integration Testing for pvNugsMediatorNc9");
 
@@ -24,26 +25,26 @@ services.TryAddPvNugsLoggerSeriService(config);
 
 // Register handler with pipelines (for pipeline testing)
 services.AddTransient<
-    IPvNugsMediatorRequestHandler<UserCreationRequest, Guid>, 
+    IRequestHandler<UserCreationRequest, Guid>, 
     UserCreationHandler>();
 services.AddTransient<
-    IPvNugsPipelineMediator<UserCreationRequest, Guid>, 
+    IPipelineBehavior<UserCreationRequest, Guid>, 
     LoggingPipeline>();
 services.AddTransient<
-    IPvNugsPipelineMediator<UserCreationRequest, Guid>, 
+    IPipelineBehavior<UserCreationRequest, Guid>, 
     ValidationPipeline>();
 
 // Register handler WITHOUT pipelines (for non-pipeline testing)
 services.AddTransient<
-    IPvNugsMediatorRequestHandler<ProductQueryRequest, string>, 
+    IRequestHandler<ProductQueryRequest, string>, 
     ProductQueryHandler>();
 
 services.AddTransient<
-    IPvNugsMediatorNotificationHandler<Notification>, 
+    INotificationHandler<Notification>, 
     MainNotificationHandler>();
 
 services.AddTransient<
-    IPvNugsMediatorNotificationHandler<Notification>, 
+    INotificationHandler<Notification>, 
     AlternateNotificationHandler>();
 
 services.TryAddPvNugsMediator();
@@ -111,6 +112,7 @@ await logger.LogAsync(testSeparator, SeverityEnu.Trace);
 var notification = new Notification("Some notification");
 
 await logger.LogAsync("Testing generic PublishAsync<T>", SeverityEnu.Trace);
+// ReSharper disable once RedundantTypeArgumentsOfMethod
 await mediator.PublishAsync<Notification>(notification);
 
 await logger.LogAsync("Testing non-generic PublishAsync", SeverityEnu.Trace);

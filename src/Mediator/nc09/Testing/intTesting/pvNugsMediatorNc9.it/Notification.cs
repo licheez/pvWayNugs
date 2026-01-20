@@ -1,8 +1,8 @@
-using pvNugsMediatorNc9Abstractions;
+using pvNugsMediatorNc9Abstractions.Mediator;
 
 namespace pvNugsMediatorNc9.it;
 
-public class Notification: IPvNugsMediatorNotification
+public class Notification: INotification
 {
     public string Message { get; }
 

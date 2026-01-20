@@ -1,5 +1,5 @@
 using pvNugsLoggerNc9Abstractions;
-using pvNugsMediatorNc9Abstractions;
+using pvNugsMediatorNc9Abstractions.Mediator;
 
 namespace pvNugsMediatorNc9.it;
 
@@ -7,7 +7,7 @@ namespace pvNugsMediatorNc9.it;
 /// Request to get product information by ID (for testing non-pipeline scenario)
 /// </summary>
 public class ProductQueryRequest(int productId): 
-    IPvNugsMediatorRequest<string>
+    IRequest<string>
 {
     public int ProductId { get; } = productId;
 }
@@ -17,9 +17,9 @@ public class ProductQueryRequest(int productId):
 /// </summary>
 public class ProductQueryHandler(
     IConsoleLoggerService logger): 
-    IPvNugsMediatorRequestHandler<ProductQueryRequest, string>
+    IRequestHandler<ProductQueryRequest, string>
 {
-    public async Task<string> HandleAsync(
+    public async Task<string> Handle(
         ProductQueryRequest request, 
         CancellationToken cancellationToken = default)
     {
@@ -31,4 +31,3 @@ public class ProductQueryHandler(
         return $"Product #{request.ProductId}: Sample Product";
     }
 }
-
