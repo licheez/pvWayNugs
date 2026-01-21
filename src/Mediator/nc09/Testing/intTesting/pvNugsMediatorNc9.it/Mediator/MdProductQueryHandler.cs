@@ -1,26 +1,19 @@
 using pvNugsLoggerNc9Abstractions;
+using pvNugsMediatorNc9Abstractions;
 using pvNugsMediatorNc9Abstractions.Mediator;
 
-namespace pvNugsMediatorNc9.it;
-
-/// <summary>
-/// Request to get product information by ID (for testing non-pipeline scenario)
-/// </summary>
-public class ProductQueryRequest(int productId): 
-    IRequest<string>
-{
-    public int ProductId { get; } = productId;
-}
+namespace pvNugsMediatorNc9.it.Mediator;
 
 /// <summary>
 /// Handler for ProductQueryRequest that will be invoked directly without pipelines
 /// </summary>
-public class ProductQueryHandler(
+[MediatorHandler(Lifetime = ServiceLifetime.Transient)]
+public class MdProductQueryHandler(
     IConsoleLoggerService logger): 
-    IRequestHandler<ProductQueryRequest, string>
+    IRequestHandler<MdProductQueryRequest, string>
 {
     public async Task<string> Handle(
-        ProductQueryRequest request, 
+        MdProductQueryRequest request, 
         CancellationToken cancellationToken = default)
     {
         await logger.LogAsync(

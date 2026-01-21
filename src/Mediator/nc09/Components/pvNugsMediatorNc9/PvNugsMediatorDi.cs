@@ -63,8 +63,13 @@ public static class PvNugsMediatorDi
     {
         var config = new PvNugsMediatorConfig();
         
-        // Bind configuration if provided
-        configuration?.Bind(config);
+        // Bind configuration if provided - get the specific section first
+        if (configuration != null)
+        {
+            var section = configuration
+                .GetSection(PvNugsMediatorConfig.Section);
+            section.Bind(config);
+        }
 
         // Register the configuration
         services.Configure<PvNugsMediatorConfig>(options =>
@@ -75,6 +80,9 @@ public static class PvNugsMediatorDi
         
         // Perform handler discovery based on mode
         PerformHandlerDiscovery(services, config);
+        
+        // Register the service collection itself so Mediator can access it for introspection
+        services.TryAddSingleton(services);
         
         services.TryAddSingleton<IPvNugsMediator, Mediator>();
         return services;
@@ -119,6 +127,9 @@ public static class PvNugsMediatorDi
         });
         
         PerformHandlerDiscovery(services, config);
+        
+        // Register the service collection itself so Mediator can access it for introspection
+        services.TryAddSingleton(services);
         
         services.TryAddSingleton<IPvNugsMediator, Mediator>();
         return services;

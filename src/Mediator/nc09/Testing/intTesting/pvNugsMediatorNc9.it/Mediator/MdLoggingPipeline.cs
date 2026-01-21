@@ -1,25 +1,27 @@
 using pvNugsLoggerNc9Abstractions;
+using pvNugsMediatorNc9Abstractions;
 using pvNugsMediatorNc9Abstractions.Mediator;
 
-namespace pvNugsMediatorNc9.it;
+namespace pvNugsMediatorNc9.it.Mediator;
 
-public class ValidationPipeline(IConsoleLoggerService logger): 
-    IPipelineBehavior<UserCreationRequest, Guid>
+[MediatorHandler(Lifetime = ServiceLifetime.Transient)]
+public class MdLoggingPipeline(IConsoleLoggerService logger): 
+    IPipelineBehavior<MdUserCreationRequest, Guid>
 {
     public async Task<Guid> Handle(
-        UserCreationRequest request, 
+        MdUserCreationRequest request, 
         RequestHandlerDelegate<Guid> next, 
         CancellationToken cancellationToken = default)
     {
         await logger.LogAsync(
-            "ValidationPipeline: Before handling request for user " +
+            "MdLoggingPipeline: Before handling request for user " +
             $"'{request.Username}' with email '{request.Email}'", 
             SeverityEnu.Trace);
         
         var result = await next();
         
         await logger.LogAsync(
-            "ValidationPipeline: After handling request." +
+            "MdLoggingPipeline: After handling request." +
             $" Result = {result}", 
             SeverityEnu.Trace);
         
