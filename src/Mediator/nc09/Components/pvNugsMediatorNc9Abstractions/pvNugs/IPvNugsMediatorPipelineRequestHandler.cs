@@ -116,7 +116,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// </example>
 public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
     IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse>
+    where TRequest : IRequest<TResponse>
 {
     /// <summary>
     /// Handles the request asynchronously within the pipeline, optionally executing logic before and/or after

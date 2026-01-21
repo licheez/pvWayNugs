@@ -4,10 +4,10 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.0.4</Version>
+        <Version>9.0.5</Version>
         <Authors>Pierre Van Wallendael</Authors>
         <Description>Lightweight mediator pattern abstractions for .NET 9 providing request/response and publish/subscribe messaging with pipeline behaviors for cross-cutting concerns. Includes handler introspection for diagnostics and three discovery modes (Manual, Decorated, FullScan) for flexible handler registration. Supports CQRS, clean architecture, and testable designs with comprehensive XML documentation.</Description>
-        <PackageReleaseNotes>v9.0.4: IPvNugsMediatorPipelineRequestHandler constraint changed from IPvNugsMediatorRequest to IRequest for seamless MediatR replacement. Pipeline behaviors now work with both MediatR and PvNugs requests. Previous: v9.0.3 added discovery modes and MediatorHandlerAttribute for flexible handler registration.</PackageReleaseNotes>
+        <PackageReleaseNotes>v9.0.5: IPvNugsMediatorPipelineRequestHandler constraint changed from IPvNugsMediatorRequest to IRequest for seamless MediatR replacement. Pipeline behaviors now work with both MediatR and PvNugs requests. Previous: v9.0.3 added discovery modes and MediatorHandlerAttribute for flexible handler registration.</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
