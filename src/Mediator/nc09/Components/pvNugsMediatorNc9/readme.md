@@ -270,37 +270,40 @@ services.TryAddPvNugsMediator(
 
 ## MediatR Compatibility
 
-This implementation is **fully compatible with MediatR**. The key interfaces extend MediatR's base interfaces:
+This implementation is **fully compatible with MediatR**. The mediator supports both MediatR base interfaces and PvNugs-branded interfaces:
 
-### Interface Hierarchy
+### Interface Support
 
 ```
-IMediator (MediatR base)
-    ↑
-IPvNugsMediator (PvNugs extension)
-    - Adds: GetRegisteredHandlers()
-    
-IRequest<TResponse> (MediatR base)
-    ↑
-IPvNugsMediatorRequest<TResponse> (PvNugs extension)
+MediatR Base Interfaces (uses Handle method):
+- IMediator
+- IRequest<TResponse>
+- IRequestHandler<TRequest, TResponse>  
+- INotification
+- INotificationHandler<TNotification>
+- IPipelineBehavior<TRequest, TResponse>
 
-IRequestHandler<TRequest, TResponse> (MediatR base)
-    ↑
-IPvNugsMediatorRequestHandler<TRequest, TResponse> (PvNugs extension)
-    - Uses: HandleAsync() instead of Handle()
+PvNugs Interfaces (uses HandleAsync method):
+- IPvNugsMediator (extends IMediator + adds GetRegisteredHandlers())
+- IPvNugsMediatorRequest<TResponse> (extends IRequest<TResponse>)
+- IPvNugsMediatorRequestHandler<TRequest, TResponse> (standalone - HandleAsync only)
+- IPvNugsMediatorNotification (extends INotification)
+- IPvNugsMediatorNotificationHandler<TNotification> (standalone - HandleAsync only)
+- IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse> (standalone - HandleAsync only)
 ```
 
-### Method Naming
+### Method Resolution
 
-Both naming conventions are supported for seamless migration:
+The mediator **automatically detects** which interface type your handler implements and calls the correct method:
 
-| MediatR Method | PvNugs Equivalent | Description |
-|---------------|-------------------|-------------|
-| `Send<TResponse>(request)` | `SendAsync<TResponse>(request)` | Send request to handler |
-| `Publish(notification)` | `PublishAsync(notification)` | Publish to all handlers |
-| `Handle(request)` | `HandleAsync(request)` | Handle in handler |
+| Handler Type | Method Called | Example |
+|--------------|---------------|---------|
+| MediatR (`IRequestHandler`) | `Handle(request, ct)` | Base MediatR handlers |
+| PvNugs (`IPvNugsMediatorRequestHandler`) | `HandleAsync(request, ct)` | PvNugs handlers |
+| MediatR (`INotificationHandler`) | `Handle(notification, ct)` | Base MediatR notification handlers |
+| PvNugs (`IPvNugsMediatorNotificationHandler`) | `HandleAsync(notification, ct)` | PvNugs notification handlers |
 
-**Note:** PvNugs methods (`SendAsync`, `PublishAsync`, `HandleAsync`) are called internally by the MediatR-named methods (`Send`, `Publish`, `Handle`), maintaining full compatibility while preferring async naming conventions.
+**Both work seamlessly through the same mediator instance!**
 
 ### Drop-in Replacement Example
 
@@ -438,7 +441,7 @@ public class GetUserByIdHandler : IPvNugsMediatorRequestHandler<GetUserByIdReque
 
 ```csharp
 public class LoggingPipeline<TRequest, TResponse> : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse>
+    where TRequest : IRequest<TResponse>
 {
     private readonly ILoggerService _logger;
     
