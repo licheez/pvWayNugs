@@ -9,9 +9,9 @@ namespace pvNugsMediatorNc9.it.PvNugs;
 public class PvLoggingPipeline(IConsoleLoggerService logger): 
     IPvNugsMediatorPipelineRequestHandler<PvUserCreationRequest, Guid>
 {
-    public async Task<Guid> Handle(
+    public async Task<Guid> HandleAsync(
         PvUserCreationRequest request, 
-        RequestHandlerDelegate<Guid> next, 
+        RequestHandlerDelegate<Guid> next,
         CancellationToken cancellationToken = default)
     {
         await logger.LogAsync(
@@ -27,13 +27,5 @@ public class PvLoggingPipeline(IConsoleLoggerService logger):
             SeverityEnu.Trace);
         
         return result;
-    }
-
-    public async Task<Guid> HandleAsync(
-        PvUserCreationRequest request, 
-        RequestHandlerDelegate<Guid> next,
-        CancellationToken cancellationToken = default)
-    {
-        return await Handle(request, next, cancellationToken);
     }
 }

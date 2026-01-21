@@ -12,7 +12,7 @@
 📝 **Fully Documented**: Comprehensive XML documentation with IntelliSense support  
 🧪 **Testable**: Design promotes clean architecture and testability  
 ⚡ **Async First**: Built for modern asynchronous programming patterns  
-🔁 **Backward Compatible**: PvNugs interfaces extend base interfaces for maximum flexibility  
+🔁 **Simplified API**: PvNugs handlers use only `HandleAsync` - no dual method implementation needed  
 🔍 **Handler Introspection**: Discover and validate registered handlers at runtime (PvNugs exclusive)  
 ⚙️ **Flexible Discovery Modes**: Manual, Decorated, or FullScan handler registration strategies
 
@@ -21,36 +21,90 @@
 This package provides **two layers of interfaces** for maximum flexibility:
 
 ### Base Interfaces (`Mediator` namespace)
-Framework-agnostic interfaces that define the core mediator pattern:
-- `IMediator`, `IRequest<TResponse>`, `IRequestHandler<TRequest, TResponse>`
-- `INotification`, `INotificationHandler<TNotification>`
-- `IPipelineBehavior<TRequest, TResponse>`
+Framework-agnostic interfaces that define the core mediator pattern (MediatR-compatible):
+- `IMediator`, `IRequest<TResponse>`, `IRequestHandler<TRequest, TResponse>` (uses `Handle` method)
+- `INotification`, `INotificationHandler<TNotification>` (uses `Handle` method)
+- `IPipelineBehavior<TRequest, TResponse>` (uses `Handle` method)
 
 ### PvNugs Interfaces (`pvNugs` namespace)
-Branded interfaces that extend the base interfaces:
-- `IPvNugsMediator : IMediator`
-- `IPvNugsMediatorRequest<TResponse> : IRequest<TResponse>`
-- `IPvNugsMediatorRequestHandler<TRequest, TResponse> : IRequestHandler<TRequest, TResponse>`
-- And all other PvNugs-branded equivalents
+Branded interfaces with explicit async naming - **standalone, not inheriting from base**:
+- `IPvNugsMediator : IMediator` (extends base mediator for compatibility)
+- `IPvNugsMediatorRequest<TResponse> : IRequest<TResponse>` (constraint only, not inheritance)
+- `IPvNugsMediatorRequestHandler<TRequest, TResponse>` (uses `HandleAsync` method)
+- `IPvNugsMediatorNotificationHandler<TNotification>` (uses `HandleAsync` method)
+- `IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>` (uses `HandleAsync` method)
 
 ### Why This Dual Design?
 
-**Backward Compatibility** 🔁
+**Backward Compatible** ✅
 ```csharp
-// Register a PvNugs implementation
-services.AddScoped<IPvNugsMediator, PvNugsMediatorImplementation>();
+// v9.0.6: New code is simpler - just HandleAsync!
+public class NewHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User>
+{
+    public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+    {
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
+}
 
-// Can be injected as IPvNugsMediator
-public class NewService(IPvNugsMediator mediator) { }
-
-// Or as IMediator for backward compatibility with existing code
-public class LegacyService(IMediator mediator) { } // Same implementation works!
+// Existing code from v9.0.5 with BOTH methods still works!
+public class ExistingHandler : IPvNugsMediatorRequestHandler<GetProductRequest, Product>
+{
+    public async Task<Product> HandleAsync(GetProductRequest request, CancellationToken ct)
+    {
+        return await _repository.GetByIdAsync(request.ProductId, ct);
+    }
+    
+    // This extra method from v9.0.5 doesn't break anything - just not required anymore
+    public Task<Product> Handle(GetProductRequest request, CancellationToken ct)
+        => HandleAsync(request, ct);
+}
 ```
 
-**Flexibility** 🎯
-- Use **PvNugs interfaces** in your new code for branding
-- Use **base interfaces** for library-agnostic code
-- Mix and match as needed - they're fully compatible!
+**Simplified Development** ✨
+```csharp
+// PvNugs handlers are simple - just implement HandleAsync!
+public class GetUserHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User>
+{
+    public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+    {
+        // Your logic here - that's it!
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
+}
+
+// MediatR handlers use Handle method
+public class MediatRHandler : IRequestHandler<GetUserRequest, User>
+{
+    public async Task<User> Handle(GetUserRequest request, CancellationToken ct)
+    {
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
+}
+```
+
+**Backward Compatibility** 🔁
+```csharp
+// The MEDIATOR supports both interface types seamlessly
+services.AddScoped<IPvNugsMediator, Mediator>();
+
+// PvNugs handlers
+services.AddTransient<IPvNugsMediatorRequestHandler<GetUserRequest, User>, PvNugsHandler>();
+
+// MediatR handlers - work side by side!
+services.AddTransient<IRequestHandler<GetProductRequest, Product>, MediatRHandler>();
+
+// Both work through the same mediator
+public class MyService(IPvNugsMediator mediator)
+{
+    public async Task DoWork()
+    {
+        var user = await mediator.SendAsync(new GetUserRequest());    // PvNugs handler
+        var product = await mediator.SendAsync(new GetProductRequest()); // MediatR handler
+    }
+}
+```
+
 
 **PvNugs Exclusive Features** 🌟
 ```csharp
@@ -65,20 +119,6 @@ foreach (var handler in handlers)
 }
 ```
 
-**Type Safety** ✅
-```csharp
-// PvNugs pipeline only accepts PvNugs requests (stronger typing)
-public class MyPipeline<TRequest, TResponse> 
-    : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse> // PvNugs constraint
-{ }
-
-// Base pipeline accepts any request
-public class GenericPipeline<TRequest, TResponse> 
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse> // Base constraint
-{ }
-```
 
 ## Installation
 
@@ -143,31 +183,40 @@ dotnet add package pvNugsMediatorNc9Abstractions
 - **`ServiceLifetime`**: Enum for specifying DI lifetime (Transient, Scoped, Singleton)
 - **`MediatorRegistrationInfo`**: Information about registered handlers (for introspection)
 
-### 📝 Note on HandleAsync Method
+### 📝 Key Difference: HandleAsync vs Handle
 
-**PvNugs handler interfaces** provide both `Handle` and `HandleAsync` methods:
-- `Handle` - MediatR-compatible naming (required by base interfaces)
-- `HandleAsync` - Explicit async naming (PvNugs enhancement)
+**PvNugs handler interfaces use `HandleAsync`** - simple, explicit async naming:
+- `IPvNugsMediatorRequestHandler<TRequest, TResponse>` → `HandleAsync` method
+- `IPvNugsMediatorNotificationHandler<TNotification>` → `HandleAsync` method  
+- `IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>` → `HandleAsync` method
 
-**Pattern:** Implement your logic in one method and delegate the other to it:
+**Base MediatR interfaces use `Handle`** - traditional naming:
+- `IRequestHandler<TRequest, TResponse>` → `Handle` method
+- `INotificationHandler<TNotification>` → `Handle` method
+- `IPipelineBehavior<TRequest, TResponse>` → `Handle` method
+
+**No delegation needed!** Each interface has only ONE method to implement:
 
 ```csharp
-// Recommended: Implement HandleAsync, delegate Handle to it
-public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+// PvNugs handler - just HandleAsync
+public class PvNugsHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User>
 {
-    // Your implementation here
-    return await _repository.GetByIdAsync(request.UserId, ct);
+    public async Task<User> HandleAsync(GetUserRequest request, CancellationToken ct)
+    {
+        // Your implementation - that's it!
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
 }
 
-public Task<User> Handle(GetUserRequest request, CancellationToken ct)
-    => HandleAsync(request, ct); // Delegate for MediatR compatibility
+// MediatR handler - just Handle  
+public class MediatRHandler : IRequestHandler<GetUserRequest, User>
+{
+    public async Task<User> Handle(GetUserRequest request, CancellationToken ct)
+    {
+        return await _repository.GetByIdAsync(request.UserId, ct);
+    }
+}
 ```
-
-This pattern:
-- ✅ Provides explicit async naming for PvNugs users
-- ✅ Maintains MediatR compatibility via `Handle`
-- ✅ Avoids code duplication through delegation
-- ✅ Allows team preference on naming style
 
 ## Quick Start
 
@@ -246,19 +295,14 @@ public class SendWelcomeEmailHandler : IPvNugsMediatorNotificationHandler<UserCr
         _emailService = emailService;
     }
     
-    // Implement HandleAsync
     public async Task HandleAsync(
         UserCreatedNotification notification, 
         CancellationToken cancellationToken)
     {
         await _emailService.SendWelcomeEmailAsync(notification.Email, cancellationToken);
     }
-    
-    // Delegate Handle to HandleAsync
-    public Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
-        => HandleAsync(notification, cancellationToken);
 }
-```
+
 // Second Handler - Log Event
 public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
 {
@@ -269,7 +313,6 @@ public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCre
         _logger = logger;
     }
     
-    // Implement HandleAsync
     public async Task HandleAsync(
         UserCreatedNotification notification, 
         CancellationToken cancellationToken)
@@ -277,10 +320,6 @@ public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCre
         _logger.LogInformation("User {UserId} created", notification.UserId);
         await Task.CompletedTask;
     }
-    
-    // Delegate Handle to HandleAsync
-    public Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
-        => HandleAsync(notification, cancellationToken);
 }
 ```
 
@@ -290,7 +329,7 @@ public class LogUserCreationHandler : IPvNugsMediatorNotificationHandler<UserCre
 ```csharp
 public class LoggingPipeline<TRequest, TResponse> 
     : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse>
+    where TRequest : IRequest<TResponse>
 {
     private readonly ILogger _logger;
     
@@ -299,7 +338,6 @@ public class LoggingPipeline<TRequest, TResponse>
         _logger = logger;
     }
     
-    // Implement HandleAsync
     public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -332,13 +370,6 @@ public class LoggingPipeline<TRequest, TResponse>
             throw;
         }
     }
-    
-    // Delegate Handle to HandleAsync
-    public Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
-        => HandleAsync(request, next, cancellationToken);
 }
 ```
 
@@ -348,7 +379,6 @@ public class ValidationPipeline<TRequest, TResponse>
     : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    // Implement HandleAsync
     public async Task<TResponse> HandleAsync(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -365,13 +395,6 @@ public class ValidationPipeline<TRequest, TResponse>
         
         return await next();
     }
-    
-    // Delegate Handle to HandleAsync
-    public Task<TResponse> Handle(
-        TRequest request,
-        RequestHandlerDelegate<TResponse> next,
-        CancellationToken cancellationToken)
-        => HandleAsync(request, next, cancellationToken);
 }
 ```
 
@@ -438,9 +461,9 @@ public class UserService
 }
 ```
 
-### 6️⃣ Using Base Interfaces (Alternative)
+### 6️⃣ Using Base Interfaces (MediatR Compatibility)
 
-You can also use base interfaces for framework-agnostic code:
+You can also use base MediatR interfaces for framework-agnostic code:
 
 ```csharp
 using pvNugsMediatorNc9Abstractions.Mediator; // Base interfaces
@@ -453,20 +476,16 @@ public class GetProductRequest : IRequest<Product>
 
 public class GetProductHandler : IRequestHandler<GetProductRequest, Product>
 {
-    // Implement HandleAsync
-    public async Task<Product> HandleAsync(
+    // Base handlers use Handle method (MediatR convention)
+    public async Task<Product> Handle(
         GetProductRequest request, 
         CancellationToken cancellationToken)
     {
         // Implementation
         return new Product();
     }
-    
-    // Delegate Handle to HandleAsync
-    public Task<Product> Handle(GetProductRequest request, CancellationToken cancellationToken)
-        => HandleAsync(request, cancellationToken);
 }
-```
+
 // Inject using base interface
 public class ProductService
 {
@@ -484,7 +503,10 @@ public class ProductService
 }
 ```
 
-**Note**: Both approaches work with the same implementation - choose based on your preference!
+**Note**: Both approaches work with the same mediator implementation:
+- Use **PvNugs interfaces** (`HandleAsync`) for explicit async naming  
+- Use **Base interfaces** (`Handle`) for MediatR compatibility
+- The mediator automatically detects and invokes the correct method
 
 ## Design Patterns
 
@@ -824,15 +846,11 @@ public class GetUserHandler : IPvNugsMediatorRequestHandler<GetUserRequest, User
 
 public class SendEmailHandler : IPvNugsMediatorNotificationHandler<UserCreatedNotification>
 {
-    public async Task Handle(UserCreatedNotification notification, CancellationToken ct)
+    public async Task HandleAsync(UserCreatedNotification notification, CancellationToken ct)
     {
         await _emailService.SendWelcomeEmailAsync(notification.Email, ct);
     }
-    
-    public Task HandleAsync(UserCreatedNotification notification, CancellationToken ct)
-        => Handle(notification, ct);
 }
-```
 // Both handlers above are automatically registered!
 ```
 

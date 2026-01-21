@@ -23,7 +23,6 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.12" />
         <PackageReference Include="pvNugsLoggerNc9Abstractions" Version="9.1.3"/>
-        <PackageReference Include="pvNugsMediatorNc9Abstractions" Version="9.0.5" />
     </ItemGroup>
 
     <ItemGroup>
@@ -36,6 +35,10 @@
             <Pack>True</Pack>
             <PackagePath>/</PackagePath>
         </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\pvNugsMediatorNc9Abstractions\pvNugsMediatorNc9Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

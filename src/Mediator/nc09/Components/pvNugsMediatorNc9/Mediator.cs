@@ -30,31 +30,44 @@ public class Mediator(
     ILoggerService logger) : IPvNugsMediator
 {
     private const string HandleMethodName = "Handle";
+    private const string HandleAsyncMethodName = "HandleAsync";
     
     private void ResolveHandlerType(Type requestType, Type responseType,
         out object handler, out MethodInfo handleMethod)
     {
-        var baseHandlerType =
-            typeof(IRequestHandler<,>)
+        // Try PvNugs handler first
+        var pvNugsHandlerType =
+            typeof(IPvNugsMediatorRequestHandler<,>)
                 .MakeGenericType(requestType, responseType);
-        var svc = sp.GetService(baseHandlerType);
-        if (svc == null)
+        var svc = sp.GetService(pvNugsHandlerType);
+        string methodName;
+        
+        if (svc != null)
         {
-            var pvNugsHandlerType =
-                typeof(IPvNugsMediatorRequestHandler<,>)
-                    .MakeGenericType(requestType, responseType);
-            svc = sp.GetService(pvNugsHandlerType);
+            // PvNugs handler uses HandleAsync
+            methodName = HandleAsyncMethodName;
         }
-
-        if (svc == null)
+        else
         {
-            var sErr = $"No handler registered for request type {requestType.FullName}";
-            logger.Log(sErr, SeverityEnu.Error);
-            throw new PvNugsMediatorException(sErr);
+            // Try base MediatR handler
+            var baseHandlerType =
+                typeof(IRequestHandler<,>)
+                    .MakeGenericType(requestType, responseType);
+            svc = sp.GetService(baseHandlerType);
+            
+            if (svc == null)
+            {
+                var sErr = $"No handler registered for request type {requestType.FullName}";
+                logger.Log(sErr, SeverityEnu.Error);
+                throw new PvNugsMediatorException(sErr);
+            }
+            
+            // Base MediatR handler uses Handle
+            methodName = HandleMethodName;
         }
         
         var handlerType = svc.GetType();
-        var method = handlerType.GetMethod(HandleMethodName);
+        var method = handlerType.GetMethod(methodName);
         if (method != null)
         {
             handleMethod = method;
@@ -63,7 +76,7 @@ public class Mediator(
         }
         
         var mErr = $"Handler for request type {requestType.FullName} " +
-                  $"does not have a '{HandleMethodName}' method";
+                  $"does not have a '{methodName}' method";
         logger.Log(mErr, SeverityEnu.Error);
         throw new PvNugsMediatorException(mErr);
     }
@@ -134,12 +147,20 @@ public class Mediator(
             var pipeline = pipelines[i];
             var pipelineType = pipeline!.GetType();
             
-            // Get the Handle method from this specific pipeline's type
-            var handleMethodPipeline = pipelineType.GetMethod(HandleMethodName);
+            // Determine which method to use based on interface implementation
+            var isPvNugsPipeline = pipelineType.GetInterfaces()
+                .Any(i => i.IsGenericType && 
+                         i.GetGenericTypeDefinition() == typeof(IPvNugsMediatorPipelineRequestHandler<,>));
+            
+            var methodName = isPvNugsPipeline 
+                ? HandleAsyncMethodName : HandleMethodName;
+            
+            // Get the appropriate method from this specific pipeline's type
+            var handleMethodPipeline = pipelineType.GetMethod(methodName);
             if (handleMethodPipeline == null)
             {
                 var err = $"Pipeline {pipelineType.FullName} for request type {requestType.FullName} " +
-                          $"does not have a '{HandleMethodName}' method";
+                          $"does not have a '{methodName}' method";
                 await logger.LogAsync(err, SeverityEnu.Error);
                 throw new PvNugsMediatorException(err);
             }
@@ -157,7 +178,7 @@ public class Mediator(
             var currentPipeline = pipeline;
             var currentMethod = handleMethodPipeline;
             
-            // Create a new handlerDelegate that calls the pipeline's Handle method and returns Task<TResponse>
+            // Create a new handlerDelegate that calls the pipeline's method and returns Task<TResponse>
             handlerDelegate = () =>
                 (Task<TResponse>)currentMethod.Invoke(currentPipeline, [request, nextDelegate, cancellationToken])!;
         }
@@ -523,12 +544,19 @@ public class Mediator(
         foreach (var handler in handlers)
         {
             var handlerType = handler!.GetType();
-            var handleMethod = handlerType.GetMethod(HandleMethodName);
+            
+            // Determine which method to use based on interface implementation
+            var isPvNugsHandler = handlerType.GetInterfaces()
+                .Any(i => i.IsGenericType && 
+                         i.GetGenericTypeDefinition() == typeof(IPvNugsMediatorNotificationHandler<>));
+            
+            var methodName = isPvNugsHandler ? HandleAsyncMethodName : HandleMethodName;
+            var handleMethod = handlerType.GetMethod(methodName);
             
             if (handleMethod == null)
             {
                 var err = $"Handler {handlerType.FullName} for notification type {notificationType.FullName} " +
-                          $"does not have a '{HandleMethodName}' method";
+                          $"does not have a '{methodName}' method";
                 await logger.LogAsync(err, SeverityEnu.Error);
                 throw new PvNugsMediatorException(err);
             }

@@ -10,9 +10,8 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// </typeparam>
 /// <remarks>
 /// <para>
-/// This interface extends <see cref="INotificationHandler{TNotification}"/> and serves as
-/// a marker to identify PvNugs notification handlers while maintaining compatibility with
-/// the base interface.
+/// This interface defines the PvNugs-branded notification handler pattern, providing an alternative
+/// to <see cref="INotificationHandler{TNotification}"/> with explicit async naming.
 /// </para>
 /// <para>
 /// Unlike request handlers, which have a one-to-one relationship with requests,
@@ -20,12 +19,16 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// and all will be invoked when the notification is published.
 /// </para>
 /// <para>
+/// The PvNugs mediator supports both this interface and <see cref="INotificationHandler{TNotification}"/>,
+/// allowing mixed usage patterns and seamless migration from MediatR.
+/// </para>
+/// <para>
 /// The <c>TNotification</c> parameter is marked as contravariant (<c>in</c>) to support
 /// handler inheritance patterns when needed.
 /// </para>
 /// <para>
-/// Handlers are automatically discovered and invoked by <see cref="IMediator.Publish{TNotification}"/>
-/// when a notification is published through the mediator. Handlers typically execute concurrently.
+/// Handlers are automatically discovered and invoked by <see cref="IPvNugsMediator.PublishAsync{TNotification}"/>
+/// when a notification is published through the mediator. Handlers typically execute sequentially.
 /// </para>
 /// </remarks>
 /// <example>
@@ -40,17 +43,12 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 ///         _emailService = emailService;
 ///     }
 ///     
-///     // Implement HandleAsync
 ///     public async Task HandleAsync(
 ///         UserCreatedNotification notification, 
 ///         CancellationToken cancellationToken)
 ///     {
 ///         await _emailService.SendWelcomeEmailAsync(notification.Email, cancellationToken);
 ///     }
-///     
-///     // Delegate Handle to HandleAsync for MediatR compatibility
-///     public Task Handle(UserCreatedNotification notification, CancellationToken cancellationToken)
-///         => HandleAsync(notification, cancellationToken);
 /// }
 /// 
 /// // Register in DI (multiple handlers can be registered for the same notification)
@@ -58,11 +56,10 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// services.AddTransient&lt;IPvNugsMediatorNotificationHandler&lt;UserCreatedNotification&gt;, LogUserCreationHandler&gt;();
 /// 
 /// // Publish the notification (both handlers will execute)
-/// await _mediator.Publish(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
+/// await _mediator.PublishAsync(new UserCreatedNotification { UserId = 123, Email = "user@example.com" });
 /// </code>
 /// </example>
-public interface IPvNugsMediatorNotificationHandler<in TNotification> : 
-    INotificationHandler<TNotification>
+public interface IPvNugsMediatorNotificationHandler<in TNotification>
     where TNotification : INotification
 {
     /// <summary>
@@ -79,35 +76,25 @@ public interface IPvNugsMediatorNotificationHandler<in TNotification> :
     /// </returns>
     /// <remarks>
     /// <para>
-    /// This method provides an alternative, more explicit naming convention for handling notifications.
-    /// By default, it delegates to the <see cref="INotificationHandler{TNotification}.Handle"/> method
-    /// to maintain MediatR compatibility.
+    /// This is the only method that needs to be implemented for PvNugs notification handlers.
+    /// The async suffix makes it clear that this method performs asynchronous operations.
     /// </para>
     /// <para>
-    /// Implementers can choose to:
+    /// The mediator will automatically discover and invoke this method when notifications are published.
     /// </para>
-    /// <list type="bullet">
-    /// <item><description>Implement only <c>Handle</c> (MediatR style) - <c>HandleAsync</c> will call it automatically</description></item>
-    /// <item><description>Implement only <c>HandleAsync</c> (explicit async) - <c>Handle</c> must call it</description></item>
-    /// </list>
     /// </remarks>
     /// <example>
     /// <code>
     /// public class MyNotificationHandler : IPvNugsMediatorNotificationHandler&lt;MyNotification&gt;
     /// {
-    ///     // Implement HandleAsync with your logic
     ///     public async Task HandleAsync(MyNotification notification, CancellationToken ct)
     ///     {
     ///         await _service.ProcessAsync(notification);
     ///     }
-    ///     
-    ///     // Delegate Handle to HandleAsync for MediatR compatibility
-    ///     public Task Handle(MyNotification notification, CancellationToken ct)
-    ///         => HandleAsync(notification, ct);
     /// }
     /// </code>
     /// </example>
     Task HandleAsync(
-        TNotification notification,
+        TNotification notification, 
         CancellationToken cancellationToken = default);
 }

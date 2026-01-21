@@ -12,7 +12,8 @@ public class PvProductQueryHandler(
     IConsoleLoggerService logger): 
     IPvNugsMediatorRequestHandler<PvProductQueryRequest, string>
 {
-    public async Task<string> Handle(
+
+    public async Task<string> HandleAsync(
         PvProductQueryRequest request, 
         CancellationToken cancellationToken = default)
     {
@@ -22,12 +23,5 @@ public class PvProductQueryHandler(
         
         // Simulate database lookup
         return $"Product #{request.ProductId}: Sample Product";
-    }
-
-    public async Task<string> HandleAsync(
-        PvProductQueryRequest request, 
-        CancellationToken cancellationToken = default)
-    {
-        return await Handle(request, cancellationToken);
     }
 }

@@ -114,8 +114,7 @@ namespace pvNugsMediatorNc9Abstractions.pvNugs;
 /// // Order: Logging (before) → Validation (before) → Handler → Validation (after) → Logging (after)
 /// </code>
 /// </example>
-public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
-    IPipelineBehavior<TRequest, TResponse>
+public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     /// <summary>
@@ -138,12 +137,12 @@ public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
     /// </returns>
     /// <remarks>
     /// <para>
-    /// This method provides an alternative, more explicit naming convention for pipeline behaviors.
-    /// Implementers must implement both this method and <see cref="IPipelineBehavior{TRequest,TResponse}.Handle"/>.
-    /// Typically, one delegates to the other to avoid code duplication.
+    /// This is the only method that needs to be implemented for PvNugs pipeline behaviors.
+    /// The async suffix makes it clear that this method performs asynchronous operations.
     /// </para>
     /// <para>
-    /// Recommended pattern: Implement your logic in one method and have the other delegate to it.
+    /// The mediator will automatically discover and invoke this method when processing requests
+    /// that have registered pipeline behaviors.
     /// </para>
     /// </remarks>
     /// <example>
@@ -152,7 +151,6 @@ public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
     ///     : IPvNugsMediatorPipelineRequestHandler&lt;TRequest, TResponse&gt;
     ///     where TRequest : IRequest&lt;TResponse&gt;
     /// {
-    ///     // Implement HandleAsync with your logic
     ///     public async Task&lt;TResponse&gt; HandleAsync(
     ///         TRequest request, 
     ///         RequestHandlerDelegate&lt;TResponse&gt; next, 
@@ -163,13 +161,6 @@ public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
     ///         Console.WriteLine("After");
     ///         return response;
     ///     }
-    ///     
-    ///     // Delegate Handle to HandleAsync for MediatR compatibility
-    ///     public Task&lt;TResponse&gt; Handle(
-    ///         TRequest request, 
-    ///         RequestHandlerDelegate&lt;TResponse&gt; next, 
-    ///         CancellationToken ct)
-    ///         => HandleAsync(request, next, ct);
     /// }
     /// </code>
     /// </example>

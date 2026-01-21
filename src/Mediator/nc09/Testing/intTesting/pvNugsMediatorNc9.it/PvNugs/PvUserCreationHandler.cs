@@ -9,7 +9,7 @@ public class PvUserCreationHandler(
     IConsoleLoggerService logger):
     IPvNugsMediatorRequestHandler<PvUserCreationRequest, Guid>
 {
-    public async Task<Guid> Handle(
+    public async Task<Guid> HandleAsync(
         PvUserCreationRequest request, 
         CancellationToken cancellationToken = default)
     {
@@ -19,12 +19,5 @@ public class PvUserCreationHandler(
             SeverityEnu.Trace);
         
         return Guid.NewGuid();
-    }
-
-    public async Task<Guid> HandleAsync(
-        PvUserCreationRequest request, 
-        CancellationToken cancellationToken = default)
-    {
-        return await Handle(request, cancellationToken);
     }
 }
