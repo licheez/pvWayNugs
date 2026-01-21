@@ -150,7 +150,7 @@ public interface IPvNugsMediatorPipelineRequestHandler<in TRequest, TResponse>:
     /// <code>
     /// public class LoggingPipeline&lt;TRequest, TResponse&gt; 
     ///     : IPvNugsMediatorPipelineRequestHandler&lt;TRequest, TResponse&gt;
-    ///     where TRequest : IPvNugsMediatorRequest&lt;TResponse&gt;
+    ///     where TRequest : IRequest&lt;TResponse&gt;
     /// {
     ///     // Implement HandleAsync with your logic
     ///     public async Task&lt;TResponse&gt; HandleAsync(

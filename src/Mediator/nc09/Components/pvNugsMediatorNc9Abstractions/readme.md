@@ -346,7 +346,7 @@ public class LoggingPipeline<TRequest, TResponse>
 ```csharp
 public class ValidationPipeline<TRequest, TResponse> 
     : IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse>
-    where TRequest : IPvNugsMediatorRequest<TResponse>
+    where TRequest : IRequest<TResponse>
 {
     // Implement HandleAsync
     public async Task<TResponse> HandleAsync(
