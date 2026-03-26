@@ -4,7 +4,6 @@ using pvNugsLoggerNc9Abstractions;
 using pvNugsLoggerNc9Seri;
 using pvNugsMediatorNc9.it.Mediator;
 using pvNugsMediatorNc9.it.PvNugs;
-using pvNugsMediatorNc9Abstractions.Mediator;
 using pvNugsMediatorNc9Abstractions.pvNugs;
 
 namespace pvNugsMediatorNc9.it;

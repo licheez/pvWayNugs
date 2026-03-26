@@ -149,8 +149,8 @@ public class Mediator(
             
             // Determine which method to use based on interface implementation
             var isPvNugsPipeline = pipelineType.GetInterfaces()
-                .Any(i => i.IsGenericType && 
-                         i.GetGenericTypeDefinition() == typeof(IPvNugsMediatorPipelineRequestHandler<,>));
+                .Any(t => t.IsGenericType && 
+                         t.GetGenericTypeDefinition() == typeof(IPvNugsMediatorPipelineRequestHandler<,>));
             
             var methodName = isPvNugsPipeline 
                 ? HandleAsyncMethodName : HandleMethodName;

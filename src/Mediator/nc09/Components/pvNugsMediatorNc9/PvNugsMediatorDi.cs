@@ -25,7 +25,7 @@ public static class PvNugsMediatorDi
     /// <returns>The same service collection so that multiple calls can be chained.</returns>
     /// <remarks>
     /// <para>
-    /// This method registers the mediator as a singleton service and configures how handlers
+    /// This method registers the mediator as a scoped service and configures how handlers
     /// are discovered based on the specified <see cref="DiscoveryMode"/>:
     /// </para>
     /// <list type="bullet">
@@ -84,7 +84,13 @@ public static class PvNugsMediatorDi
         // Register the service collection itself so Mediator can access it for introspection
         services.TryAddSingleton(services);
         
-        services.TryAddSingleton<IPvNugsMediator, Mediator>();
+        services.TryAddScoped<Mediator>();
+        
+        services.TryAddScoped<IPvNugsMediator>(sp => 
+            sp.GetRequiredService<Mediator>());
+        services.TryAddScoped<IMediator>(sp =>
+            sp.GetRequiredService<Mediator>());
+        
         return services;
     }
 
@@ -131,7 +137,13 @@ public static class PvNugsMediatorDi
         // Register the service collection itself so Mediator can access it for introspection
         services.TryAddSingleton(services);
         
-        services.TryAddSingleton<IPvNugsMediator, Mediator>();
+        services.TryAddScoped<Mediator>();
+        
+        services.TryAddScoped<IPvNugsMediator>(sp => 
+            sp.GetRequiredService<Mediator>());
+        services.TryAddScoped<IMediator>(sp =>
+            sp.GetRequiredService<Mediator>());
+        
         return services;
     }
 

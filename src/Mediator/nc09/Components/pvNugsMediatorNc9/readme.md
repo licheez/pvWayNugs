@@ -8,6 +8,26 @@ This package provides a ready-to-use implementation of `IPvNugsMediator` from th
 
 **🎯 MediatR Compatible**: This implementation extends the standard `IMediator` interface and uses the same method naming conventions (`Send`, `Publish`) as MediatR, making it a drop-in replacement for existing MediatR-based applications while adding PvNugs-specific features like handler introspection and flexible discovery modes.
 
+## 🔧 Critical Fix in v9.0.3
+
+**IMPORTANT UPDATE**: If upgrading from v9.0.2 or earlier:
+
+- **Mediator is now correctly registered as `Scoped`** (was incorrectly `Singleton`)
+- This **fixes critical issues** with scoped dependencies in WebAPI applications
+- **Why**: Handlers can now properly resolve `DbContext`, `HttpContext`, and other scoped services
+- **Impact**: ✅ **No code changes required** - existing applications continue to work, now with correct scoping
+
+**Migration**: Zero code changes needed! Just update the package version. Your application will immediately benefit from proper scoping behavior.
+
+**What This Fixes**:
+- ✅ Handlers can now safely inject and use DbContext
+- ✅ Each HTTP request gets proper service isolation  
+- ✅ Scoped dependencies resolve correctly
+- ✅ Both `IPvNugsMediator` and `IMediator` resolve to the same instance per scope
+- ✅ No more "Cannot resolve scoped service from singleton" errors
+
+**Strongly recommended upgrade for all WebAPI applications!**
+
 ## Features
 
 ⚡ **Production-Ready**: Complete mediator implementation ready for immediate use  
@@ -575,6 +595,101 @@ services.AddTransient(
 var sp = services.BuildServiceProvider();
 ```
 
+### WebAPI Integration with Scoped Services
+
+The mediator is registered as **scoped**, making it perfect for ASP.NET Core applications with scoped dependencies:
+
+```csharp
+// Program.cs (WebAPI)
+var builder = WebApplication.CreateBuilder(args);
+
+// Register DbContext (scoped)
+builder.Services.AddDbContext<MyDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Register logger
+builder.Services.TryAddPvNugsLoggerSeriService(builder.Configuration);
+
+// Register mediator (scoped)
+builder.Services.TryAddPvNugsMediator(DiscoveryMode.Decorated);
+
+var app = builder.Build();
+```
+
+**Handler with Scoped Dependencies:**
+
+```csharp
+[MediatorHandler(pvNugsMediatorNc9Abstractions.ServiceLifetime.Scoped)]
+public class CreateOrderHandler : IPvNugsMediatorRequestHandler<CreateOrderRequest, OrderResult>
+{
+    private readonly MyDbContext _db;           // Scoped - same instance per request
+    private readonly ICurrentUser _userContext;  // Scoped - current authenticated user
+    private readonly ILoggerService _logger;     // Can be singleton or scoped
+    
+    public CreateOrderHandler(MyDbContext db, ICurrentUser userContext, ILoggerService logger)
+    {
+        _db = db;
+        _userContext = userContext;
+        _logger = logger;
+    }
+    
+    public async Task<OrderResult> HandleAsync(
+        CreateOrderRequest request, 
+        CancellationToken cancellationToken)
+    {
+        // All dependencies are properly resolved for the current HTTP request
+        var order = new Order
+        {
+            UserId = _userContext.UserId,  // ✅ Current request's user
+            Products = request.Products,
+            // ...
+        };
+        
+        await _db.Orders.AddAsync(order, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);  // ✅ Uses correct DbContext
+        
+        return new OrderResult { OrderId = order.Id };
+    }
+}
+```
+
+**Controller Usage:**
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class OrdersController : ControllerBase
+{
+    private readonly IMediator _mediator;
+    private readonly MyDbContext _db;
+    
+    public OrdersController(IMediator mediator, MyDbContext db)
+    {
+        _mediator = mediator;
+        _db = db;  // Same instance as handler will receive
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
+    {
+        // Handler gets the SAME DbContext instance
+        var result = await _mediator.Send(request);
+        
+        // Changes made in handler are visible here
+        var order = await _db.Orders.FindAsync(result.OrderId);
+        
+        return CreatedAtAction(nameof(GetOrder), new { id = result.OrderId }, order);
+    }
+}
+```
+
+**Key Benefits:**
+- ✅ Handler and controller share the same `DbContext` instance
+- ✅ Changes made in handler are visible in controller
+- ✅ Each HTTP request gets its own isolated scope
+- ✅ Proper disposal of scoped services at request end
+- ✅ No cross-contamination between concurrent requests
+
 ## Advanced Scenarios
 
 ### Generic Pipeline Registration
@@ -647,7 +762,7 @@ public class ManualHandler : IPvNugsMediatorRequestHandler<OtherRequest, OtherRe
 
 ## Performance Tips
 
-✅ **Singleton Mediator**: Registered as singleton for optimal performance  
+✅ **Scoped Mediator**: Registered as scoped for proper WebAPI integration with scoped dependencies  
 ✅ **Cache Handler Types**: Reflection overhead is minimized  
 ✅ **Sequential Pipelines**: Pipelines execute in order (not parallel overhead)  
 ✅ **Notification Handlers**: Execute sequentially (predictable performance)  

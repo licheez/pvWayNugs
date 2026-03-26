@@ -4,10 +4,10 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>9.0.2</Version>
+        <Version>9.0.3</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <Description>Production-ready mediator pattern implementation for .NET 9 with built-in logging, dynamic handler resolution via reflection and DI, full pipeline behavior support, and comprehensive error handling. Requires pvNugsLoggerNc9Abstractions for automatic operation logging.</Description>
-        <PackageReleaseNotes>v9.0.2: Updated for pvNugsMediatorNc9Abstractions 9.0.6 - supports simplified PvNugs interfaces with HandleAsync-only methods. Improved handler resolution to detect and call correct method (HandleAsync for PvNugs, Handle for MediatR). Full backward compatibility maintained. Enhanced pipeline and notification handler discovery. Previous: v9.0.1 initial release with complete mediator implementation.</PackageReleaseNotes>
+        <Description>Production-ready mediator pattern implementation for .NET 9 with built-in logging, dynamic handler resolution via reflection and DI, full pipeline behavior support, and comprehensive error handling. Registered as scoped service for proper WebAPI integration with scoped dependencies (DbContext, HttpContext). Requires pvNugsLoggerNc9Abstractions for automatic operation logging.</Description>
+        <PackageReleaseNotes>v9.0.3: CRITICAL FIX - Mediator now correctly registered as Scoped (was incorrectly Singleton) to properly support scoped dependencies in WebAPI scenarios. Fixes issues where handlers couldn't resolve DbContext and other scoped services. Both IPvNugsMediator and IMediator interfaces now use factory pattern to ensure single instance per scope. No code changes required - existing applications continue to work but now with correct scoping behavior. Strongly recommended upgrade for all WebAPI applications. Previous: v9.0.2 updated for pvNugsMediatorNc9Abstractions 9.0.6 with HandleAsync support. v9.0.1 initial release.</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
@@ -16,7 +16,7 @@
         <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Copyright>pvWay Ltd</Copyright>
-        <PackageTags>mediator;mediatr;mediatr-compatible;mediator-implementation;cqrs;command-query;messaging;pipeline;publish-subscribe;request-response;logging;reflection;dependency-injection;handler-discovery;auto-discovery;clean-architecture;ddd;async;dotnet9;introspection</PackageTags>
+        <PackageTags>mediator;mediatr;mediatr-compatible;mediator-implementation;cqrs;command-query;messaging;pipeline;publish-subscribe;request-response;logging;reflection;dependency-injection;handler-discovery;auto-discovery;clean-architecture;ddd;async;dotnet9;introspection;scoped;webapi;aspnetcore;scoped-services</PackageTags>
         <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
     </PropertyGroup>
 
