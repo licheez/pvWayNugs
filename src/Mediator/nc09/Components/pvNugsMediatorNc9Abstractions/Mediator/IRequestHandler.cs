@@ -101,14 +101,15 @@ public interface IRequestHandler<in TRequest, TResponse>
 /// </typeparam>
 /// <remarks>
 /// <para>
-/// This is a convenience interface that inherits from 
-/// <see cref="IRequestHandler{TRequest, TResponse}"/> with <see cref="Unit"/> 
-/// as the response type. Use this for command-style handlers that perform actions 
-/// but don't need to return data (similar to void methods).
+/// This is a convenience interface for command-style handlers that perform actions 
+/// but don't need to return data (similar to void methods). Unlike the two-parameter
+/// version, this interface returns <see cref="Task"/> instead of <see cref="Task{Unit}"/>,
+/// eliminating the need to return <see cref="Unit.Value"/>.
 /// </para>
 /// <para>
-/// Handlers implementing this interface should return <see cref="Unit.Value"/> 
-/// from their <see cref="IRequestHandler{TRequest, TResponse}.Handle"/> method.
+/// <b>MediatR Compatibility:</b> This interface provides a cleaner alternative to MediatR's
+/// approach of returning Task&lt;Unit&gt;, while maintaining the same interface name for
+/// easy migration. Existing code using the Handle method name will work seamlessly.
 /// </para>
 /// </remarks>
 /// <example>
@@ -127,12 +128,12 @@ public interface IRequestHandler<in TRequest, TResponse>
 ///         _userRepository = userRepository;
 ///     }
 ///     
-///     public async Task&lt;Unit&gt; Handle(
+///     public async Task Handle(
 ///         DeleteUserRequest request, 
 ///         CancellationToken cancellationToken)
 ///     {
 ///         await _userRepository.DeleteAsync(request.UserId, cancellationToken);
-///         return Unit.Value; // Return Unit to indicate completion
+///         // No need to return Unit.Value!
 ///     }
 /// }
 /// 
@@ -143,7 +144,33 @@ public interface IRequestHandler<in TRequest, TResponse>
 /// await _mediator.Send(new DeleteUserRequest { UserId = 123 });
 /// </code>
 /// </example>
-public interface IRequestHandler<in TRequest>: 
-    IRequestHandler<TRequest, Unit>
-    where TRequest : IRequest;
-
+public interface IRequestHandler<in TRequest>
+    where TRequest : IRequest
+{
+    /// <summary>
+    /// Handles the specified request asynchronously.
+    /// </summary>
+    /// <param name="request">
+    /// The request instance containing the data needed to process the operation.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None"/>.
+    /// </param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// This method should contain the business logic for processing the request.
+    /// Unlike handlers that return a specific response type, this method returns
+    /// <see cref="Task"/> instead of <see cref="Task{Unit}"/>, providing a more
+    /// natural async/await experience.
+    /// </para>
+    /// <para>
+    /// <b>MediatR Compatibility:</b> This method uses the same name as MediatR's Handle method.
+    /// </para>
+    /// </remarks>
+    Task Handle(
+        TRequest request,
+        CancellationToken cancellationToken = default);
+}

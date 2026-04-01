@@ -7,7 +7,7 @@
 ✨ **Request/Response Pattern**: Send commands and queries to single handlers with typed responses  
 📢 **Publish/Subscribe Pattern**: Broadcast notifications to multiple handlers concurrently  
 🔄 **Pipeline Behaviors**: Add cross-cutting concerns like logging, validation, and caching  
-🎭 **Unit Type Support**: Handle void-like operations with type-safe `Unit` return type  
+🎭 **Cleaner Void Handlers**: Single-parameter handlers return `Task` instead of `Task<Unit>` - no more `Unit.Value`!  
 🔌 **Dependency Injection Ready**: Seamlessly integrates with Microsoft.Extensions.DependencyInjection  
 📝 **Fully Documented**: Comprehensive XML documentation with IntelliSense support  
 🧪 **Testable**: Design promotes clean architecture and testability  
@@ -144,14 +144,14 @@ dotnet add package pvNugsMediatorNc9Abstractions
 **Base Interfaces:**
 - **`IRequest<TResponse>`**: Base marker interface for requests expecting a response
 - **`IRequest`**: Base convenience interface for requests returning `Unit` (void-like)
-- **`IRequestHandler<TRequest, TResponse>`**: Base handler for processing requests
-- **`IRequestHandler<TRequest>`**: Base handler for void-like requests
+- **`IRequestHandler<TRequest, TResponse>`**: Base handler for processing requests (returns `Task<TResponse>`)
+- **`IRequestHandler<TRequest>`**: Base handler for void-like requests (returns `Task`, not `Task<Unit>`)
 
 **PvNugs Interfaces:**
 - **`IPvNugsMediatorRequest<TResponse>`**: PvNugs-branded request interface
 - **`IPvNugsMediatorRequest`**: PvNugs-branded void-like request interface
-- **`IPvNugsMediatorRequestHandler<TRequest, TResponse>`**: PvNugs-branded request handler
-- **`IPvNugsMediatorRequestHandler<TRequest>`**: PvNugs-branded void-like request handler
+- **`IPvNugsMediatorRequestHandler<TRequest, TResponse>`**: PvNugs-branded request handler (returns `Task<TResponse>`)
+- **`IPvNugsMediatorRequestHandler<TRequest>`**: PvNugs-branded void-like request handler (returns `Task`, not `Task<Unit>`)
 
 ### 📢 Publish/Subscribe
 
@@ -249,7 +249,7 @@ public class GetUserByIdHandler : IPvNugsMediatorRequestHandler<GetUserByIdReque
 }
 ```
 
-**Define a Command Request (returns Unit)**
+**Define a Command Request (void-like)**
 ```csharp
 public class DeleteUserRequest : IPvNugsMediatorRequest
 {
@@ -265,12 +265,12 @@ public class DeleteUserHandler : IPvNugsMediatorRequestHandler<DeleteUserRequest
         _userRepository = userRepository;
     }
     
-    public async Task<Unit> HandleAsync(
+    public async Task HandleAsync(
         DeleteUserRequest request, 
         CancellationToken cancellationToken)
     {
         await _userRepository.DeleteAsync(request.UserId, cancellationToken);
-        return Unit.Value;
+        // No need to return Unit.Value! Just returns Task
     }
 }
 ```
@@ -783,10 +783,11 @@ public class CreateUserHandler : IPvNugsMediatorRequestHandler<CreateUserRequest
         _context = context;
     }
     
-    public async Task<Unit> HandleAsync(CreateUserRequest request, CancellationToken ct)
+    public async Task HandleAsync(CreateUserRequest request, CancellationToken ct)
     {
-        // Implementation
-        return Unit.Value;
+        // Implementation - no need to return Unit.Value!
+        await _context.Users.AddAsync(request.User, ct);
+        await _context.SaveChangesAsync(ct);
     }
 }
 

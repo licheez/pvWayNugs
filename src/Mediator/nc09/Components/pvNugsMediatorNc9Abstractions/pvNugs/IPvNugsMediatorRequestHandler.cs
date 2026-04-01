@@ -96,14 +96,10 @@ public interface IPvNugsMediatorRequestHandler<in TRequest, TResponse>
 /// </typeparam>
 /// <remarks>
 /// <para>
-/// This is a convenience interface that inherits from 
-/// <see cref="IPvNugsMediatorRequestHandler{TRequest,TResponse}"/> with <see cref="Unit"/> as the response type.
-/// Use this for command-style handlers that perform actions but don't need to return data
-/// (similar to void methods).
-/// </para>
-/// <para>
-/// Handlers implementing this interface should return <see cref="Unit.Value"/> 
-/// from their HandleAsync method.
+/// This is a convenience interface for command-style handlers that perform actions
+/// but don't need to return data (similar to void methods). Unlike the two-parameter
+/// version, this interface returns <see cref="Task"/> instead of <see cref="Task{Unit}"/>,
+/// eliminating the need to return <see cref="Unit.Value"/>.
 /// </para>
 /// </remarks>
 /// <example>
@@ -118,12 +114,12 @@ public interface IPvNugsMediatorRequestHandler<in TRequest, TResponse>
 ///         _userRepository = userRepository;
 ///     }
 ///     
-///     public async Task&lt;Unit&gt; HandleAsync(
+///     public async Task HandleAsync(
 ///         DeleteUserRequest request, 
 ///         CancellationToken cancellationToken)
 ///     {
 ///         await _userRepository.DeleteAsync(request.UserId, cancellationToken);
-///         return Unit.Value;
+///         // No need to return Unit.Value!
 ///     }
 /// }
 /// 
@@ -134,6 +130,30 @@ public interface IPvNugsMediatorRequestHandler<in TRequest, TResponse>
 /// await _mediator.SendAsync(new DeleteUserRequest { UserId = 123 });
 /// </code>
 /// </example>
-public interface IPvNugsMediatorRequestHandler<in TRequest> :
-    IPvNugsMediatorRequestHandler<TRequest, Unit>
-    where TRequest : IRequest;
+public interface IPvNugsMediatorRequestHandler<in TRequest>
+    where TRequest : IRequest
+{
+    /// <summary>
+    /// Handles the specified request asynchronously.
+    /// </summary>
+    /// <param name="request">
+    /// The request instance containing the data needed to process the operation.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None"/>.
+    /// </param>
+    /// <returns>
+    /// A task that represents the asynchronous operation.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// This is the only method that needs to be implemented for PvNugs request handlers
+    /// that don't return a value. Unlike the <see cref="IPvNugsMediatorRequestHandler{TRequest,TResponse}"/>
+    /// interface, this method returns <see cref="Task"/> instead of <see cref="Task{Unit}"/>,
+    /// eliminating the need to return <see cref="Unit.Value"/>.
+    /// </para>
+    /// </remarks>
+    Task HandleAsync(
+        TRequest request,
+        CancellationToken cancellationToken = default);
+}
