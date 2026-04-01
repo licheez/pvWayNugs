@@ -33,29 +33,73 @@ public class Mediator(
     private const string HandleAsyncMethodName = "HandleAsync";
     
     private void ResolveHandlerType(Type requestType, Type responseType,
-        out object handler, out MethodInfo handleMethod)
+        out object handler, out MethodInfo handleMethod, out bool isTaskOnly)
     {
-        // Try PvNugs handler first
+        isTaskOnly = false;
+        
+        // Special handling for Unit response type - try Task-only handlers first
+        if (responseType == typeof(Unit))
+        {
+            // Try PvNugs single-param handler (Task without Unit)
+            var pvNugsSingleParamHandlerType =
+                typeof(IPvNugsMediatorRequestHandler<>)
+                    .MakeGenericType(requestType);
+            var svc = sp.GetService(pvNugsSingleParamHandlerType);
+            
+            if (svc != null)
+            {
+                isTaskOnly = true;
+                var handlerType = svc.GetType();
+                var method = handlerType.GetMethod(HandleAsyncMethodName);
+                if (method != null)
+                {
+                    handleMethod = method;
+                    handler = svc;
+                    return;
+                }
+            }
+            
+            // Try base single-param handler (Task without Unit)
+            var baseSingleParamHandlerType =
+                typeof(IRequestHandler<>)
+                    .MakeGenericType(requestType);
+            svc = sp.GetService(baseSingleParamHandlerType);
+            
+            if (svc != null)
+            {
+                isTaskOnly = true;
+                var handlerType = svc.GetType();
+                var method = handlerType.GetMethod(HandleMethodName);
+                if (method != null)
+                {
+                    handleMethod = method;
+                    handler = svc;
+                    return;
+                }
+            }
+        }
+        
+        // Try PvNugs two-param handler (Task<TResponse>)
         var pvNugsHandlerType =
             typeof(IPvNugsMediatorRequestHandler<,>)
                 .MakeGenericType(requestType, responseType);
-        var svc = sp.GetService(pvNugsHandlerType);
+        var svcHandler = sp.GetService(pvNugsHandlerType);
         string methodName;
         
-        if (svc != null)
+        if (svcHandler != null)
         {
             // PvNugs handler uses HandleAsync
             methodName = HandleAsyncMethodName;
         }
         else
         {
-            // Try base MediatR handler
+            // Try base MediatR handler (Task<TResponse>)
             var baseHandlerType =
                 typeof(IRequestHandler<,>)
                     .MakeGenericType(requestType, responseType);
-            svc = sp.GetService(baseHandlerType);
+            svcHandler = sp.GetService(baseHandlerType);
             
-            if (svc == null)
+            if (svcHandler == null)
             {
                 var sErr = $"No handler registered for request type {requestType.FullName}";
                 logger.Log(sErr, SeverityEnu.Error);
@@ -66,12 +110,12 @@ public class Mediator(
             methodName = HandleMethodName;
         }
         
-        var handlerType = svc.GetType();
-        var method = handlerType.GetMethod(methodName);
-        if (method != null)
+        var handlerTypeResolved = svcHandler.GetType();
+        var methodResolved = handlerTypeResolved.GetMethod(methodName);
+        if (methodResolved != null)
         {
-            handleMethod = method;
-            handler = svc;
+            handleMethod = methodResolved;
+            handler = svcHandler;
             return;
         }
         
@@ -130,11 +174,27 @@ public class Mediator(
             SeverityEnu.Trace);
         
         ResolveHandlerType(requestType, typeof(TResponse), 
-            out var handler, out var handleMethod);
+            out var handler, out var handleMethod, out var isTaskOnly);
 
-        // Final delegate that will call the real handler and return Task<TResponse>
-        var handlerDelegate = () =>
-            (Task<TResponse>)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        // Create the handler delegate based on return type
+        Func<Task<TResponse>> handlerDelegate;
+        
+        if (isTaskOnly)
+        {
+            // Handler returns Task (not Task<TResponse>)
+            // We need to wrap it to return Task<TResponse> with Unit
+            handlerDelegate = async () =>
+            {
+                await (Task)handleMethod.Invoke(handler, [request, cancellationToken])!;
+                return (TResponse)(object)Unit.Value;
+            };
+        }
+        else
+        {
+            // Handler returns Task<TResponse>
+            handlerDelegate = () =>
+                (Task<TResponse>)handleMethod.Invoke(handler, [request, cancellationToken])!;
+        }
         
         var pipelines = 
             ResolvePipelines(requestType, typeof(TResponse)).ToList();
@@ -335,6 +395,8 @@ public class Mediator(
 
         return TryCreateRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
                ?? TryCreateBaseRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
+               ?? TryCreateSingleParamPvNugsRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
+               ?? TryCreateSingleParamBaseRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
                ?? TryCreateUnitRequestHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
                ?? TryCreateNotificationHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
                ?? TryCreateBaseNotificationHandlerInfo(serviceType, genericTypeDefinition, implementationType, lifetime)
@@ -403,6 +465,54 @@ public class Mediator(
         return new MediatorRegistrationInfo
         {
             RegistrationType = "Request Handler",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = requestType,
+            ResponseType = typeof(Unit)
+        };
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a PvNugs single-param request handler (Task-returning).
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreateSingleParamPvNugsRequestHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IPvNugsMediatorRequestHandler<>))
+            return null;
+
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Request Handler (Task)",
+            ServiceType = serviceType,
+            ImplementationType = implementationType,
+            Lifetime = lifetime,
+            MessageType = serviceType.GetGenericArguments()[0],
+            ResponseType = typeof(Unit)
+        };
+    }
+
+    /// <summary>
+    /// Attempts to create registration info for a base single-param request handler (Task-returning).
+    /// </summary>
+    private static MediatorRegistrationInfo? TryCreateSingleParamBaseRequestHandlerInfo(
+        Type serviceType, Type genericTypeDefinition, Type implementationType, string lifetime)
+    {
+        if (genericTypeDefinition != typeof(IRequestHandler<>))
+            return null;
+
+        // Only register if it's NOT a PvNugs handler (to avoid duplicates)
+        var requestType = serviceType.GetGenericArguments()[0];
+        var pvNugsSingleParam = typeof(IPvNugsMediatorRequestHandler<>)
+            .MakeGenericType(requestType);
+        
+        if (implementationType.GetInterfaces().Any(i => i == pvNugsSingleParam))
+            return null;
+
+        return new MediatorRegistrationInfo
+        {
+            RegistrationType = "Request Handler (Task)",
             ServiceType = serviceType,
             ImplementationType = implementationType,
             Lifetime = lifetime,

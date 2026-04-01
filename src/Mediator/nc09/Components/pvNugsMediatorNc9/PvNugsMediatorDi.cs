@@ -238,23 +238,20 @@ public static class PvNugsMediatorDi
 
             var genericTypeDefinition = @interface.GetGenericTypeDefinition();
 
-            // Check for Request Handlers (with response)
+            // Check for Request Handlers (with response - two parameters)
             if (genericTypeDefinition == typeof(IPvNugsMediatorRequestHandler<,>))
             {
                 RegisterService(services, @interface, implementationType, lifetime);
             }
-            // Check for Request Handlers (without response - Unit)
+            // Check for PvNugs single-param Request Handlers (Task without Unit)
+            else if (genericTypeDefinition == typeof(IPvNugsMediatorRequestHandler<>))
+            {
+                RegisterService(services, @interface, implementationType, lifetime);
+            }
+            // Check for base single-param Request Handlers (Task without Unit)
             else if (genericTypeDefinition == typeof(IRequestHandler<>))
             {
-                // Only register if it's a PvNugs handler (implements the 2-param version)
-                var requestType = @interface.GetGenericArguments()[0];
-                var twoParamInterface = typeof(IPvNugsMediatorRequestHandler<,>)
-                    .MakeGenericType(requestType, typeof(Unit));
-                
-                if (interfaces.Any(i => i == twoParamInterface))
-                {
-                    RegisterService(services, @interface, implementationType, lifetime);
-                }
+                RegisterService(services, @interface, implementationType, lifetime);
             }
             // Check for Notification Handlers
             else if (genericTypeDefinition == typeof(IPvNugsMediatorNotificationHandler<>))

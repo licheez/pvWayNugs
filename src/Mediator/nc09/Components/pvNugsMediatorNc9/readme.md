@@ -28,8 +28,44 @@ This package provides a ready-to-use implementation of `IPvNugsMediator` from th
 
 **Strongly recommended upgrade for all WebAPI applications!**
 
+## ✨ New in v9.0.4 - Task-Returning Handlers!
+
+**EXCITING NEW FEATURE**: Cleaner void-like command handlers!
+
+- **No more `return Unit.Value;`** - Single-parameter handlers return `Task` instead of `Task<Unit>`
+- **More natural C# code** - Just write `async Task` for commands that don't return data
+- **100% Backward Compatible** - Existing handlers continue to work without changes
+- **Both styles supported** - Use the new interfaces (`IRequestHandler<TRequest>`) or keep the old ones
+
+**Before (still works):**
+```csharp
+public class DeleteUserHandler : IPvNugsMediatorRequestHandler<DeleteUserRequest, Unit>
+{
+    public async Task<Unit> HandleAsync(DeleteUserRequest request, CancellationToken ct)
+    {
+        await _repository.DeleteAsync(request.UserId, ct);
+        return Unit.Value; // ← Boilerplate!
+    }
+}
+```
+
+**After (cleaner!):**
+```csharp
+public class DeleteUserHandler : IPvNugsMediatorRequestHandler<DeleteUserRequest>
+{
+    public async Task HandleAsync(DeleteUserRequest request, CancellationToken ct)
+    {
+        await _repository.DeleteAsync(request.UserId, ct);
+        // ← No return needed!
+    }
+}
+```
+
+**Requires**: `pvNugsMediatorNc9Abstractions` v9.0.7+
+
 ## Features
 
+✨ **Task-Returning Handlers**: NEW! Void-like handlers return `Task` instead of `Task<Unit>` - no more `Unit.Value`  
 ⚡ **Production-Ready**: Complete mediator implementation ready for immediate use  
 🔄 **MediatR Compatible**: Drop-in replacement for MediatR with same method names (`Send`, `Publish`)  
 🔍 **Built-in Logging**: Automatic logging of all request/notification handling operations  
@@ -298,7 +334,9 @@ This implementation is **fully compatible with MediatR**. The mediator supports 
 MediatR Base Interfaces (uses Handle method):
 - IMediator
 - IRequest<TResponse>
-- IRequestHandler<TRequest, TResponse>  
+- IRequest (NEW v9.0.4 - void-like requests)
+- IRequestHandler<TRequest, TResponse> (returns Task<TResponse>)
+- IRequestHandler<TRequest> (NEW v9.0.4 - returns Task, not Task<Unit>)
 - INotification
 - INotificationHandler<TNotification>
 - IPipelineBehavior<TRequest, TResponse>
@@ -306,7 +344,9 @@ MediatR Base Interfaces (uses Handle method):
 PvNugs Interfaces (uses HandleAsync method):
 - IPvNugsMediator (extends IMediator + adds GetRegisteredHandlers())
 - IPvNugsMediatorRequest<TResponse> (extends IRequest<TResponse>)
-- IPvNugsMediatorRequestHandler<TRequest, TResponse> (standalone - HandleAsync only)
+- IPvNugsMediatorRequest (extends IRequest - void-like)
+- IPvNugsMediatorRequestHandler<TRequest, TResponse> (returns Task<TResponse>)
+- IPvNugsMediatorRequestHandler<TRequest> (NEW v9.0.4 - returns Task, not Task<Unit>)
 - IPvNugsMediatorNotification (extends INotification)
 - IPvNugsMediatorNotificationHandler<TNotification> (standalone - HandleAsync only)
 - IPvNugsMediatorPipelineRequestHandler<TRequest, TResponse> (standalone - HandleAsync only)
@@ -420,6 +460,8 @@ catch (PvNugsMediatorException ex)
 
 ### Define Request and Handler
 
+#### Query Handler (returns data)
+
 ```csharp
 // Request
 public class GetUserByIdRequest : IPvNugsMediatorRequest<User>
@@ -453,6 +495,42 @@ public class GetUserByIdHandler : IPvNugsMediatorRequestHandler<GetUserByIdReque
             throw new UserNotFoundException(request.UserId);
         
         return user;
+    }
+}
+```
+
+#### Command Handler (void-like - NEW in v9.0.4!)
+
+```csharp
+// Request
+public class DeleteUserRequest : IPvNugsMediatorRequest
+{
+    public int UserId { get; init; }
+}
+
+// Handler - Returns Task instead of Task<Unit>
+public class DeleteUserHandler : IPvNugsMediatorRequestHandler<DeleteUserRequest>
+{
+    private readonly IUserRepository _repository;
+    private readonly ILoggerService _logger;
+    
+    public DeleteUserHandler(IUserRepository repository, ILoggerService logger)
+    {
+        _repository = repository;
+        _logger = logger;
+    }
+    
+    public async Task HandleAsync(
+        DeleteUserRequest request, 
+        CancellationToken cancellationToken)
+    {
+        await _logger.LogAsync(
+            $"Deleting user {request.UserId}", 
+            SeverityEnu.Debug);
+        
+        await _repository.DeleteAsync(request.UserId, cancellationToken);
+        
+        // No need to return Unit.Value! ✨
     }
 }
 ```

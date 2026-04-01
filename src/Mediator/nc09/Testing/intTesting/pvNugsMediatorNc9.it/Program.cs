@@ -31,6 +31,7 @@ while (true)
     Console.WriteLine("2) Manual");
     Console.WriteLine("3) Decorated");
     Console.WriteLine("4) Full Scan");
+    Console.WriteLine("5) Task-Returning Handlers (NEW v9.0.7)");
     Console.WriteLine("Enter 0 to quit");
 
     var input = Console.ReadLine();
@@ -53,6 +54,9 @@ while (true)
         case "4":
             var fullScan = new FullScan(logger);
             await fullScan.RunTestAsync();
+            break;
+        case "5":
+            await TaskReturningHandlers.RunTests();
             break;
     }
 }
