@@ -24,7 +24,7 @@ public static class PvNugsCacheDi
     /// services.TryAddPvNugsCacheNc9Local(configuration);
     /// </code>
     /// </example>
-    public static IServiceCollection TryAddPvNugsCacheNc9Local(
+    public static IServiceCollection TryAddPvNugsCacheMemory(
         this IServiceCollection services,
         IConfiguration config)
     {

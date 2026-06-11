@@ -48,12 +48,10 @@ using pvNugsCacheNc10Memory;
 var builder = WebApplication.CreateBuilder(args);
 
 // Registers IMemoryCache and IPvNugsCache
-builder.Services.TryAddPvNugsCacheNc9Local(builder.Configuration);
+builder.Services.TryAddPvNugsCacheMemory(builder.Configuration);
 
 var app = builder.Build();
 ```
-
-> Note: The DI extension method currently keeps its legacy name `TryAddPvNugsCacheNc9Local` for compatibility.
 
 ### 3) Use the cache
 

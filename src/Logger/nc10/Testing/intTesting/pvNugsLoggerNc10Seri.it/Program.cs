@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using pvNugsLoggerNc6Abstractions;
 using pvNugsLoggerNc6Seri;
 
-Console.WriteLine("Integration console for pvNugsLoggerNc9Hybrid");
+Console.WriteLine("Integration console for pvNugsLoggerNc10Seri");
 
 var inMemSettings = new Dictionary<string, string>
 {
