@@ -214,6 +214,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "untTesting", "untTesting", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsEnumConvNc10.ut", "src\EnumConv\nc10\Testing\untTesting\pvNugsEnumConvNc10.ut\pvNugsEnumConvNc10.ut.csproj", "{84CDE4EA-0B05-4C8C-B734-936A3838CE2D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc10Abstractions", "src\Logger\nc10\Components\pvNugsLoggerNc10Abstractions\pvNugsLoggerNc10Abstractions.csproj", "{7341FBAE-75B1-47B1-A977-5CC43E8C0941}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -319,6 +321,7 @@ Global
 		{126DAF18-9FCD-4E29-9535-23C3B8957363} = {CE23CE31-8CBB-43DC-99AC-1A8F139F3FF3}
 		{45DA3F25-70EE-4B7E-A7E1-210B2DE0FF5F} = {126DAF18-9FCD-4E29-9535-23C3B8957363}
 		{84CDE4EA-0B05-4C8C-B734-936A3838CE2D} = {45DA3F25-70EE-4B7E-A7E1-210B2DE0FF5F}
+		{7341FBAE-75B1-47B1-A977-5CC43E8C0941} = {66CC2BBF-C5AD-4CA2-9285-60A0C6B02139}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -517,5 +520,9 @@ Global
 		{84CDE4EA-0B05-4C8C-B734-936A3838CE2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84CDE4EA-0B05-4C8C-B734-936A3838CE2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84CDE4EA-0B05-4C8C-B734-936A3838CE2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7341FBAE-75B1-47B1-A977-5CC43E8C0941}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7341FBAE-75B1-47B1-A977-5CC43E8C0941}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7341FBAE-75B1-47B1-A977-5CC43E8C0941}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7341FBAE-75B1-47B1-A977-5CC43E8C0941}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
