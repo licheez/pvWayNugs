@@ -250,6 +250,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc10Abst
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc10", "src\SecretManager\nc10\Components\pvNugsSecretManagerNc10\pvNugsSecretManagerNc10.csproj", "{4158F591-3861-4445-B6E6-E45F88DA6853}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc10Azure", "src\SecretManager\nc10\Components\pvNugsSecretManagerNc10Azure\pvNugsSecretManagerNc10Azure.csproj", "{191E9FDD-9046-4C22-90CC-082C3E3C1A01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -373,6 +375,7 @@ Global
 		{C5D23E4E-8A27-4A3B-8B51-F89DF50DF443} = {EC87ADC7-9BBE-4CC5-9322-71B54C8C95CC}
 		{AB430559-8396-467A-BE96-8EEEE1A617F8} = {C5D23E4E-8A27-4A3B-8B51-F89DF50DF443}
 		{4158F591-3861-4445-B6E6-E45F88DA6853} = {C5D23E4E-8A27-4A3B-8B51-F89DF50DF443}
+		{191E9FDD-9046-4C22-90CC-082C3E3C1A01} = {C5D23E4E-8A27-4A3B-8B51-F89DF50DF443}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -607,5 +610,9 @@ Global
 		{4158F591-3861-4445-B6E6-E45F88DA6853}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4158F591-3861-4445-B6E6-E45F88DA6853}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4158F591-3861-4445-B6E6-E45F88DA6853}.Release|Any CPU.Build.0 = Release|Any CPU
+		{191E9FDD-9046-4C22-90CC-082C3E3C1A01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{191E9FDD-9046-4C22-90CC-082C3E3C1A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{191E9FDD-9046-4C22-90CC-082C3E3C1A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{191E9FDD-9046-4C22-90CC-082C3E3C1A01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
