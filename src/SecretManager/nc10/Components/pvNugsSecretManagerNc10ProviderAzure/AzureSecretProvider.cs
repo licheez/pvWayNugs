@@ -234,7 +234,7 @@ internal class AzureSecretProvider(
     /// </exception>
     public async Task<IPvNugsDynamicCredential?> GetDynamicSecretAsync(
         IReadOnlyDictionary<string, string> parameters,
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         const string msg = "Azure secret provider does not " +
                            "support retrieving dynamic secrets";

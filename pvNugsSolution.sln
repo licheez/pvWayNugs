@@ -260,6 +260,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "untTesing", "untTesing", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc10ProviderAzure.it", "src\SecretManager\nc10\Testing\intTesting\pvNugsSecretManagerNc10ProviderAzure.it\pvNugsSecretManagerNc10ProviderAzure.it.csproj", "{325214C7-3ACB-446D-BA81-2539CA84BEF9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc10ProviderEnvironment", "src\SecretManager\nc10\Components\pvNugsSecretManagerNc10ProviderEnvironment\pvNugsSecretManagerNc10ProviderEnvironment.csproj", "{55AB76DB-D644-4672-A0BF-CD63B8BAD7DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -388,6 +390,7 @@ Global
 		{826AA26A-07A9-4B2D-AD4F-409443734E39} = {BD15CD9D-6E50-48C3-AAF6-6DCF45C5A380}
 		{E4FD391C-7D18-4BE3-B545-948DC7B56C62} = {BD15CD9D-6E50-48C3-AAF6-6DCF45C5A380}
 		{325214C7-3ACB-446D-BA81-2539CA84BEF9} = {826AA26A-07A9-4B2D-AD4F-409443734E39}
+		{55AB76DB-D644-4672-A0BF-CD63B8BAD7DC} = {C5D23E4E-8A27-4A3B-8B51-F89DF50DF443}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -630,5 +633,9 @@ Global
 		{325214C7-3ACB-446D-BA81-2539CA84BEF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{325214C7-3ACB-446D-BA81-2539CA84BEF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{325214C7-3ACB-446D-BA81-2539CA84BEF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55AB76DB-D644-4672-A0BF-CD63B8BAD7DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55AB76DB-D644-4672-A0BF-CD63B8BAD7DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55AB76DB-D644-4672-A0BF-CD63B8BAD7DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55AB76DB-D644-4672-A0BF-CD63B8BAD7DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
