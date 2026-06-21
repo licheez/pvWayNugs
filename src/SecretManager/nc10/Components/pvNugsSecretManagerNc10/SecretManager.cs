@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using pvNugsCacheNc10Abstractions;
@@ -48,9 +48,9 @@ namespace pvNugsSecretManagerNc10;
 ///
 /// <para><c>Exception Handling:</c></para>
 /// <para>
-/// All provider exceptions are caught, logged at <see cref="SeverityEnu.Error"/> severity,
-/// and re-thrown as <see cref="PvNugsSecretManagerException"/> to give consumers a single,
-/// stable exception type to handle regardless of the active provider.
+/// Provider exceptions in static-secret flows are caught, logged at <see cref="SeverityEnu.Error"/>
+/// severity, and re-thrown as <see cref="PvNugsSecretManagerException"/> to give consumers
+/// a single, stable exception type to handle regardless of the active provider.
 /// Note that <c>GetDynamicSecretAsync</c> propagates provider exceptions directly (not wrapped)
 /// because the dynamic credential flow should surface transient failures transparently.
 /// </para>
@@ -78,8 +78,9 @@ namespace pvNugsSecretManagerNc10;
 ///
 /// <para><c>Dependency Injection:</c></para>
 /// <code>
-/// // Register via the extension method provided by pvNugsSecretManagerNc10
-/// services.AddPvNugsSecretManager&lt;MyAzureSecretProvider&gt;(configuration);
+/// // Register provider + manager via the extension method provided by pvNugsSecretManagerNc10
+/// services.TryAddSingleton&lt;IPvNugsSecretProvider, MyAzureSecretProvider&gt;();
+/// services.TryAddPvNugsSecretManager(configuration);
 ///
 /// // Or manually:
 /// services.Configure&lt;PvNugsSecretManagerConfig&gt;(
@@ -128,12 +129,15 @@ internal class SecretManager(
         IReadOnlyDictionary<string, string> parameters,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(parameters);
+
         var cacheKey = GetCacheKey(parameters);
+        var cacheKeyId = GetCacheKeyId(cacheKey);
         await logger.LogAsync(
-            $"Getting static secrets with parameters: {cacheKey}",
+            $"Getting static secrets. {GetParameterSummary(parameters)}; cacheKeyId={cacheKeyId}",
             SeverityEnu.Trace);
 
-        var cached = await cache.GetAsync<ReadOnlyDictionary<string, string>>(
+        var cached = await cache.GetAsync<IReadOnlyDictionary<string, string>>(
             cacheKey, cancellationToken);
         if (cached != null) return cached;
 
@@ -143,6 +147,10 @@ internal class SecretManager(
                 parameters, cancellationToken);
             await cache.SetAsync(cacheKey, res, _config.CacheTimeToLive, cancellationToken);
             return res;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -178,9 +186,12 @@ internal class SecretManager(
         IReadOnlyDictionary<string, string> parameters,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(parameters);
+
         var cacheKey = GetCacheKey(parameters);
+        var cacheKeyId = GetCacheKeyId(cacheKey);
         await logger.LogAsync(
-            $"Getting static secret with parameters: {cacheKey}",
+            $"Getting static secret. {GetParameterSummary(parameters)}; cacheKeyId={cacheKeyId}",
             SeverityEnu.Trace);
         var cached = await cache.GetAsync<string>(
             cacheKey, cancellationToken);
@@ -194,9 +205,13 @@ internal class SecretManager(
             await cache.SetAsync(cacheKey, res, _config.CacheTimeToLive, cancellationToken);
             return res;
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception e)
         {
-            await logger.LogAsync(e);
+            await logger.LogAsync(e, SeverityEnu.Error);
             throw new PvNugsSecretManagerException(e);
         }
     }
@@ -242,17 +257,34 @@ internal class SecretManager(
         IReadOnlyDictionary<string, string> parameters,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(parameters);
+
         var cacheKey = GetCacheKey(parameters);
+        var cacheKeyId = GetCacheKeyId(cacheKey);
         await logger.LogAsync(
-            $"Getting dynamic secret with parameters: {cacheKey}",
+            $"Getting dynamic secret. {GetParameterSummary(parameters)}; cacheKeyId={cacheKeyId}",
             SeverityEnu.Trace);
 
         var cached = await cache.GetAsync<IPvNugsDynamicCredential>(
             cacheKey, cancellationToken);
         if (cached != null) return cached;
 
-        var res = await provider.GetDynamicSecretAsync(
-            parameters, cancellationToken);
+        IPvNugsDynamicCredential? res;
+        try
+        {
+            res = await provider.GetDynamicSecretAsync(
+                parameters, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            // Dynamic flow propagates provider exceptions, but we still log for observability.
+            await logger.LogAsync(e, SeverityEnu.Error);
+            throw;
+        }
 
         if (res == null) return null;
 
@@ -270,7 +302,7 @@ internal class SecretManager(
     /// Builds a deterministic cache key from the configured prefix and the full parameter dictionary.
     /// </summary>
     /// <param name="parameters">
-    /// The parameters dictionary whose entries are serialised into the key.
+    /// The parameters dictionary whose entries are serialized into the key.
     /// </param>
     /// <returns>
     /// A string of the form <c>prefix:key1=value1:key2=value2</c> derived from the
@@ -287,12 +319,27 @@ internal class SecretManager(
     /// </remarks>
     private string GetCacheKey(IReadOnlyDictionary<string, string> parameters)
     {
+        ArgumentNullException.ThrowIfNull(parameters);
+
         var sb = new StringBuilder(_config.CacheKeyPrefix);
-        foreach (var kvp in parameters)
+        foreach (var kvp in parameters.OrderBy(x => x.Key, StringComparer.Ordinal))
         {
-            sb.Append($":{kvp.Key}={kvp.Value}");
+            // Escape delimiters so different parameter sets cannot produce colliding keys.
+            sb.Append($":{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}");
         }
         return sb.ToString();
+    }
+
+    private static string GetParameterSummary(IReadOnlyDictionary<string, string> parameters)
+    {
+        var keys = string.Join(",", parameters.Keys.OrderBy(x => x, StringComparer.Ordinal));
+        return $"parameterCount={parameters.Count}; keys=[{keys}]";
+    }
+
+    private static string GetCacheKeyId(string cacheKey)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(cacheKey));
+        return Convert.ToHexString(hash)[..12];
     }
 }
 

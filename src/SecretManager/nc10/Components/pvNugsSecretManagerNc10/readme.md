@@ -10,7 +10,7 @@ It implements `IPvNugsSecretManager` by:
 - delegating all backend calls to a swappable `IPvNugsSecretProvider`
 - adding **transparent caching** (static secrets cached by TTL, dynamic credentials cached by expiration)
 - adding **structured logging** of every retrieval attempt
-- **normalizing exceptions** from any provider into `PvNugsSecretManagerException`
+- **normalizing static-secret exceptions** into `PvNugsSecretManagerException`
 
 Your application code depends only on `IPvNugsSecretManager` and stays completely decoupled from the underlying secret store.
 
@@ -177,7 +177,7 @@ Cache keys are built as:
 {CacheKeyPrefix}:{param1Key}={param1Value}:{param2Key}={param2Value}
 ```
 
-Parameter iteration order affects the key — use a consistent insertion order per logical call site.
+Keys are sorted before key generation, so equivalent parameter dictionaries produce the same cache key.
 
 ## Injector API
 
