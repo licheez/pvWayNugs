@@ -128,6 +128,9 @@ var app = builder.Build();
 
 Your caller service should depend on `IPvNugsSecretManager`, not on the Azure provider directly.
 
+If the caller is Azure-aware, you can use the helper `PvNugsAzureSecretProviderParameters.CreateParameters(...)`
+to avoid repeating dictionary boilerplate.
+
 ```csharp
 using pvNugsSecretManagerNc10Abstractions;
 using pvNugsSecretManagerNc10ProviderAzure;
@@ -136,10 +139,8 @@ public class CallerService(IPvNugsSecretManager secretManager)
 {
     public async Task<string?> GetDatabasePasswordAsync(CancellationToken ct = default)
     {
-        var parameters = new Dictionary<string, string>
-        {
-            [PvNugsAzureSecretProviderParameters.SecretName] = "database-password"
-        };
+        var parameters = PvNugsAzureSecretProviderParameters
+            .CreateParameters("database-password");
 
         return await secretManager.GetStaticSecretAsync(parameters, ct);
     }
@@ -155,6 +156,15 @@ PvNugsAzureSecretProviderParameters.SecretName // "secretName"
 ```
 
 The key is intentionally explicit so callers can build the dictionary once and reuse it consistently.
+
+Helper available for Azure-aware callers:
+
+```csharp
+PvNugsAzureSecretProviderParameters.CreateParameters("database-password")
+```
+
+The helper validates input and returns a read-only dictionary containing the canonical
+`"secretName"` key/value pair.
 
 ## ⚠️ Notes on unsupported APIs
 
