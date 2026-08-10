@@ -52,6 +52,15 @@ dotnet add package pvNugsLoggerNc10Abstractions
 
 - **IMethodResult**: Tracks method execution status and notifications
 - **IMethodResultNotification**: Represents individual notifications within results
+- **MethodResult**: Concrete implementation of `IMethodResult` for tracking method execution results
+- **MethodResult&lt;T&gt;**: Generic method result that includes typed return values
+
+### HTTP Result Wrappers
+
+- **DsoHttpResult**: HTTP response wrapper for downstream operations with status, notifications, and mutation tracking
+- **DsoHttpResult&lt;T&gt;**: Generic HTTP result that includes typed data payloads
+- **DsoHttpResultMutationEnu**: Enumeration defining mutation types (None, Create, Update, Delete)
+- **DsoHttpResultNotification**: Notification message within an HTTP result with severity and message
 
 ### Data Structures
 
@@ -60,6 +69,109 @@ dotnet add package pvNugsLoggerNc10Abstractions
 - **SqlRoleEnu**: Defines SQL database access roles
 
 ## Basic Usage
+
+### Method Results
+
+The library includes a comprehensive method result tracking system:
+
+```csharp
+public MethodResult ProcessData(string data)
+{
+    var result = new MethodResult();
+    
+    if (string.IsNullOrEmpty(data))
+    {
+        result.AddNotification("Data cannot be empty", SeverityEnu.Error);
+        return result;
+    }
+    
+    try
+    {
+        // Process data...
+        result.AddNotification("Data processed successfully", SeverityEnu.Info);
+    }
+    catch (Exception ex)
+    {
+        return new MethodResult(ex); // Creates result from exception
+    }
+    
+    return result;
+}
+
+// Generic method result with data
+public MethodResult<UserDto> GetUser(string userId)
+{
+    try
+    {
+        var user = _repository.GetUser(userId);
+        if (user == null)
+        {
+            return new MethodResult<UserDto>("User not found", SeverityEnu.Warning);
+        }
+        return new MethodResult<UserDto>(user);
+    }
+    catch (Exception ex)
+    {
+        return new MethodResult<UserDto>(ex);
+    }
+}
+```
+
+### HTTP Result Wrappers
+
+Convert method results to HTTP-friendly responses for APIs:
+
+```csharp
+[HttpGet("{id}")]
+public DsoHttpResult<UserDto> GetUser(string id)
+{
+    var methodResult = _userService.GetUser(id);
+    
+    // Convert method result to HTTP result
+    if (methodResult.Failure)
+    {
+        return new DsoHttpResult<UserDto>(methodResult);
+    }
+    
+    return new DsoHttpResult<UserDto>(methodResult.Data);
+}
+
+[HttpPost]
+public DsoHttpResult<UserDto> CreateUser(CreateUserDto dto)
+{
+    try
+    {
+        var user = _userService.CreateUser(dto);
+        
+        // Return success with mutation tracking
+        return new DsoHttpResult<UserDto>(
+            user, 
+            DsoHttpResultMutationEnu.Create);
+    }
+    catch (Exception ex)
+    {
+        // Convert exception to HTTP result
+        return new DsoHttpResult<UserDto>(ex);
+    }
+}
+
+// Paginated results
+[HttpGet]
+public DsoHttpResult<List<UserDto>> GetUsers(int page, int pageSize)
+{
+    var users = _userService.GetUsers(page, pageSize);
+    var hasMore = _userService.HasMoreUsers(page, pageSize);
+    
+    return new DsoHttpResult<List<UserDto>>(users, hasMore);
+}
+```
+
+The `DsoHttpResult` automatically sets the appropriate HTTP status code:
+- Returns `200 OK` for success scenarios
+- Returns `500 InternalServerError` for Error or Fatal severity levels
+- Includes notifications collection for detailed error/warning messages
+- Tracks mutation type (None, Create, Update, Delete) for auditing
+- Supports pagination with `HasMoreResults` flag
 
 ### Using Existing Implementations
 
