@@ -274,6 +274,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "intTesting", "intTesting", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsCsProviderNc10Abstractions", "src\CsProvider\nc10\Components\pvNugsCsProviderNc10Abstractions\pvNugsCsProviderNc10Abstractions.csproj", "{C6AC8DE6-C646-423A-A5DE-300B0F5FED24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsCsProviderNc10PgSql", "src\CsProvider\nc10\Components\pvNugsCsProviderNc10PgSql\pvNugsCsProviderNc10PgSql.csproj", "{97F29AD9-0487-46F7-82A7-F615072FE3A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsSecretManagerNc10VaultLab.it", "src\SecretManager\nc10\Testing\intTesting\pvNugsSecretManagerNc10VaultLab.it\pvNugsSecretManagerNc10VaultLab.it.csproj", "{8C472380-FC3D-495D-8CB8-CEB8716A648F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -409,6 +413,8 @@ Global
 		{828FFB13-B13B-4A58-8DFD-4D80879E590A} = {A39CA972-219F-424B-B6C9-92FA37D8028E}
 		{F52F4EAC-547C-4046-8926-BE6AD307F633} = {828FFB13-B13B-4A58-8DFD-4D80879E590A}
 		{C6AC8DE6-C646-423A-A5DE-300B0F5FED24} = {0709123F-0614-45F6-B070-CD72B87401ED}
+		{97F29AD9-0487-46F7-82A7-F615072FE3A7} = {0709123F-0614-45F6-B070-CD72B87401ED}
+		{8C472380-FC3D-495D-8CB8-CEB8716A648F} = {826AA26A-07A9-4B2D-AD4F-409443734E39}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -663,5 +669,13 @@ Global
 		{C6AC8DE6-C646-423A-A5DE-300B0F5FED24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6AC8DE6-C646-423A-A5DE-300B0F5FED24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6AC8DE6-C646-423A-A5DE-300B0F5FED24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97F29AD9-0487-46F7-82A7-F615072FE3A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97F29AD9-0487-46F7-82A7-F615072FE3A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97F29AD9-0487-46F7-82A7-F615072FE3A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97F29AD9-0487-46F7-82A7-F615072FE3A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C472380-FC3D-495D-8CB8-CEB8716A648F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C472380-FC3D-495D-8CB8-CEB8716A648F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C472380-FC3D-495D-8CB8-CEB8716A648F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C472380-FC3D-495D-8CB8-CEB8716A648F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,22 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "pg5432",
+      "Group": "Vault Lab",
+      "Host": "postgres5432",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    },
+    "2": {
+      "Name": "pg5433",
+      "Group": "Vault Lab",
+      "Host": "postgres5433",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    }
+  }
+}
