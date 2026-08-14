@@ -13,12 +13,22 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  * -------
  *
  * This console provisions the HashiCorp Vault configuration required by the
- * pvNugs Secret Manager integration test laboratory.
- *
- * It does NOT test dynamic credentials and does NOT consume secrets.
+ * pvNugs Secret Manager integration-test laboratory.
  *
  * Infrastructure lifecycle is managed by Docker Compose.
  * Vault configuration is managed by this console using VaultSharp.
+ *
+ * The console provisions:
+ *
+ *   - Static secrets using the Vault KV v2 Secrets Engine.
+ *   - PostgreSQL dynamic credentials using Database Secrets Engines.
+ *   - One independent Database Secrets Engine per PostgreSQL target.
+ *
+ * A dynamic credential is generated at the end of the provisioning process
+ * as a simple validation that the PostgreSQL Database Secrets Engine is
+ * correctly configured.
+ *
+ * The actual Secret Manager integration tests are implemented separately.
  *
  *
  * =============================================================================
@@ -118,11 +128,14 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  *
  * Stopping this provisioning console does NOT destroy Vault configuration.
  *
- * However, destroying/recreating the Vault container destroys:
+ * However, destroying/recreating the Vault container destroys the Vault state,
+ * including:
  *
+ *      - Static secrets
  *      - Secrets engines
  *      - Database connections
  *      - Database roles
+ *      - Dynamic credentials
  *      - Leases
  *      - Other Vault configuration
  *
@@ -137,10 +150,39 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  *
  *
  * =============================================================================
- * PROVISIONED VAULT STRUCTURE
+ * STATIC SECRETS - KV v2
  * =============================================================================
  *
- * This console provisions:
+ * The laboratory uses the default KV v2 Secrets Engine mounted at:
+ *
+ *      secret/
+ *
+ * This console provisions the following secret:
+ *
+ *      secret/secret-manager-test
+ *
+ * containing:
+ *
+ *      username    = lab-user
+ *      password    = lab-password
+ *      api-key     = lab-api-key
+ *      environment = development
+ *
+ * These values are intentionally non-sensitive development values and exist
+ * only to support Secret Manager integration tests.
+ *
+ * Example VaultSharp access:
+ *
+ *      var secret = await client.V1.Secrets.KeyValue.V2.ReadSecretAsync(
+ *          path: "secret-manager-test",
+ *          mountPoint: "secret");
+ *
+ *
+ * =============================================================================
+ * DYNAMIC DATABASE SECRETS
+ * =============================================================================
+ *
+ * Two independent PostgreSQL Database Secrets Engines are provisioned:
  *
  *      database/postgres/pg5432
  *          |
@@ -159,9 +201,41 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  *          |
  *          +-- role: owner
  *
- *
  * Having one mount point per database allows the same logical role name
  * ("owner") to exist independently for each PostgreSQL target.
+ *
+ *
+ * =============================================================================
+ * POSTGRESQL CONNECTION CONFIGURATION
+ * =============================================================================
+ *
+ * Connection names:
+ *
+ *      pg5432
+ *      pg5433
+ *
+ * Connection URLs:
+ *
+ *      postgresql://{{username}}:{{password}}@postgres5432:5432/postgres?sslmode=disable
+ *
+ *      postgresql://{{username}}:{{password}}@postgres5433:5432/postgres?sslmode=disable
+ *
+ * Root PostgreSQL credentials used by Vault:
+ *
+ *      Username : postgres
+ *      Password : dev-only-password
+ *
+ * Database plugin:
+ *
+ *      postgresql-database-plugin
+ *
+ * Connection verification:
+ *
+ *      enabled
+ *
+ * Allowed dynamic roles:
+ *
+ *      owner
  *
  *
  * =============================================================================
@@ -174,11 +248,14 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  *
  * Default TTL:
  *
- *      1 hour
+ *      1 minute
  *
  * Maximum TTL:
  *
- *      24 hours
+ *      15 minutes
+ *
+ * Each GetCredentials request creates a new PostgreSQL login with its own
+ * Vault lease.
  *
  * PostgreSQL creation statement:
  *
@@ -187,28 +264,82 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  *      PASSWORD '{{password}}'
  *      VALID UNTIL '{{expiration}}';
  *
+ * The default TTL determines the initial lifetime of a generated credential.
+ *
+ * The maximum TTL determines the maximum lifetime that the credential can
+ * reach through lease renewal.
+ *
+ *
+ * =============================================================================
+ * PROVISIONING VALIDATION
+ * =============================================================================
+ *
+ * After provisioning, this console requests one dynamic credential from:
+ *
+ *      database/postgres/pg5432
+ *
+ * using role:
+ *
+ *      owner
+ *
+ * Example:
+ *
+ *      var credentials =
+ *          await client.V1.Secrets.Database.GetCredentialsAsync(
+ *              roleName: "owner",
+ *              mountPoint: "database/postgres/pg5432");
+ *
+ * The console displays:
+ *
+ *      - generated username
+ *      - generated password
+ *      - lease TTL
+ *
+ * This request exists only as a provisioning smoke test.
+ *
+ * Every GetCredentialsAsync call creates a NEW dynamic PostgreSQL credential
+ * and an independent Vault lease.
+ *
  *
  * =============================================================================
  * AFTER PROVISIONING
  * =============================================================================
  *
  * Once this console completes successfully, Vault is ready for the separate
- * Secret Manager integration-test console.
+ * pvNugs Secret Manager integration-test application.
  *
- * Example:
+ * The integration tests can exercise:
  *
- *      GetCredentialsAsync(
- *          roleName: "owner",
- *          mountPoint: "database/postgres/pg5432");
+ *      Static secrets
+ *          secret/secret-manager-test
  *
- * or:
+ *      Dynamic PostgreSQL credentials
+ *          database/postgres/pg5432/creds/owner
+ *          database/postgres/pg5433/creds/owner
  *
- *      GetCredentialsAsync(
- *          roleName: "owner",
- *          mountPoint: "database/postgres/pg5433");
+ * The Secret Manager is responsible for consuming and caching these secrets.
  *
- * Credential generation, lease inspection and lease revocation belong to
- * the integration-test application and are intentionally NOT performed here.
+ * Lease renewal is intentionally outside the scope of the current laboratory
+ * implementation. When a cached dynamic credential is expired or considered
+ * close to expiration, the Secret Manager can request a new credential rather
+ * than renewing the existing lease.
+ *
+ *
+ * =============================================================================
+ * DEVELOPMENT ONLY
+ * =============================================================================
+ *
+ * This entire environment is intended exclusively for local development and
+ * integration testing.
+ *
+ * The following values are deliberately hard-coded development credentials:
+ *
+ *      Vault root token    : dev-only-token
+ *      PostgreSQL password : dev-only-password
+ *      pgAdmin password    : dev-only-password
+ *
+ * NONE of these settings, credentials or deployment patterns must be used
+ * in a production environment.
  *
  * =============================================================================
  */
@@ -262,41 +393,77 @@ catch (Exception ex)
 // Provision each PostgreSQL target
 // -----------------------------------------------------------------------------
 
-try
-{
-    foreach (var port in postgresPorts)
-    {
-        Console.WriteLine($"Provisioning pg{port}...");
-        Console.WriteLine();
+await ProvisionSecretEngines();
+await ConfigureStaticSecretsAsync(client);
 
-        await ProvisionDbEngineAsync(client, port);
-        await ConfigureDbConnectionAsync(client, port);
-        await ConfigureDbRoleAsync(client, port);
+// -----------------------------------------------------------------------------
+// Testing and validation of the provisioned Vault configuration is performed
+// -----------------------------------------------------------------------------
 
-        Console.WriteLine();
-        Console.WriteLine($"pg{port} provisioned successfully.");
-        Console.WriteLine();
-    }
-
-    Console.WriteLine("------------------------------------------------------------");
-    Console.WriteLine("Vault provisioning completed successfully.");
-    Console.WriteLine("The Secret Manager integration tests can now be executed.");
-    Console.WriteLine("------------------------------------------------------------");
-}
-catch (Exception ex)
-{
-    Console.WriteLine();
-    Console.WriteLine("Vault provisioning failed.");
-    Console.WriteLine(ex.Message);
-}
+var testDbEngine = client.V1.Secrets.Database;
+var credentials = await testDbEngine.GetCredentialsAsync(
+    roleName: "owner",
+    mountPoint: GetMountPoint(5432));
+Console.WriteLine($"username: {credentials.Data.Username}");
+Console.WriteLine($"password: {credentials.Data.Password}");
+Console.WriteLine($"ttl: {credentials.LeaseDurationSeconds} seconds");
 
 return;
 
+async Task ProvisionSecretEngines()
+{
+    try
+    {
+        foreach (var port in postgresPorts)
+        {
+            Console.WriteLine($"Provisioning pg{port}...");
+            Console.WriteLine();
+
+            await ProvisionDbEngineAsync(client, port);
+            await ConfigureDbConnectionAsync(client, port);
+            await ConfigureDbRoleAsync(client, port);
+
+            Console.WriteLine();
+            Console.WriteLine($"pg{port} provisioned successfully.");
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("------------------------------------------------------------");
+        Console.WriteLine("Vault provisioning completed successfully.");
+        Console.WriteLine("The Secret Manager integration tests can now be executed.");
+        Console.WriteLine("------------------------------------------------------------");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine();
+        Console.WriteLine("Vault provisioning failed.");
+        Console.WriteLine(ex.Message);
+    }
+}
+
+async Task ConfigureStaticSecretsAsync(VaultClient vClient)
+{
+    Console.WriteLine("Configuring static KV secrets...");
+
+    var secrets = new Dictionary<string, object>
+    {
+        ["username"] = "lab-user",
+        ["password"] = "lab-password",
+        ["api-key"] = "lab-api-key",
+        ["environment"] = "development"
+    };
+
+    await vClient.V1.Secrets.KeyValue.V2.WriteSecretAsync(
+        path: "secret-manager-test",
+        data: secrets,
+        mountPoint: "secret");
+
+    Console.WriteLine("Static KV secrets provisioned successfully.");
+}
 
 // -----------------------------------------------------------------------------
 // Database Secrets Engine
 // -----------------------------------------------------------------------------
-
 async Task ProvisionDbEngineAsync(
     VaultClient vaultClient,
     int portNumber)
@@ -316,8 +483,8 @@ async Task ProvisionDbEngineAsync(
 
         Config = new Dictionary<string, object>
         {
-            { "default_lease_ttl", "1h" },
-            { "max_lease_ttl", "24h" }
+            { "default_lease_ttl", "1m" },
+            { "max_lease_ttl", "15m" }
         }
     };
 
@@ -328,7 +495,6 @@ async Task ProvisionDbEngineAsync(
 // -----------------------------------------------------------------------------
 // PostgreSQL connection
 // -----------------------------------------------------------------------------
-
 async Task ConfigureDbConnectionAsync(
     VaultClient vaultClient,
     int portNumber)
@@ -350,7 +516,9 @@ async Task ConfigureDbConnectionAsync(
 
         PluginName = "postgresql-database-plugin",
 
-        VerifyConnection = true
+        VerifyConnection = true,
+        
+        AllowedRoles = ["owner"]
     };
 
     await vaultClient.V1.Secrets.Database.ConfigureConnectionAsync(
@@ -363,7 +531,6 @@ async Task ConfigureDbConnectionAsync(
 // -----------------------------------------------------------------------------
 // Dynamic database role
 // -----------------------------------------------------------------------------
-
 async Task ConfigureDbRoleAsync(
     VaultClient vaultClient,
     int portNumber)
@@ -385,8 +552,8 @@ async Task ConfigureDbRoleAsync(
     {
         DatabaseProviderType = databaseProvider,
 
-        DefaultTimeToLive = "1h",
-        MaximumTimeToLive = "24h",
+        DefaultTimeToLive = "1m",
+        MaximumTimeToLive = "15m",
 
         CreationStatements =
         [
