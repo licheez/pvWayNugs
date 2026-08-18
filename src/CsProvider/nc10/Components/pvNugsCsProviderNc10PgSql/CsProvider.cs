@@ -17,8 +17,8 @@ namespace pvNugsCsProviderNc10PgSql;
 /// <para><strong>Constructor Selection:</strong></para>
 /// <list type="bullet">
 /// <item><description><strong>Config Mode:</strong> Use the primary constructor with logger and options only. Credentials are read from configuration.</description></item>
-/// <item><description><strong>StaticSecret Mode:</strong> Use the constructor with <see cref="IPvNugsStaticSecretManager"/>. Passwords are retrieved from a secret manager using static secrets.</description></item>
-/// <item><description><strong>DynamicSecret Mode:</strong> Use the constructor with <see cref="IPvNugsDynamicSecretManager"/>. Username/password pairs are dynamically generated with expiration times.</description></item>
+/// <item><description><strong>StaticSecret Mode:</strong> Use the constructor with <see cref="IPvNugsSecretManager"/>. Passwords are retrieved from a secret manager using static secret APIs.</description></item>
+/// <item><description><strong>DynamicSecret Mode:</strong> Use the constructor with <see cref="IPvNugsSecretManager"/> (must have SupportsDatabaseSecrets = true). Username/password pairs are dynamically generated with expiration times.</description></item>
 /// </list>
 /// <para><strong>Secret Name Resolution:</strong></para>
 /// <para>For StaticSecret and DynamicSecret modes, the secret name is constructed as: <c>{SecretName}-{Role}</c></para>
@@ -75,7 +75,7 @@ namespace pvNugsCsProviderNc10PgSql;
 ///     config.ExpirationErrorToleranceInMinutes = 10;
 /// });
 /// services.AddSingleton&lt;IConsoleLoggerService, ConsoleLogger&gt;();
-/// services.AddSingleton&lt;IPvNugsDynamicSecretManager, VaultDynamicSecretManager&gt;();
+/// services.AddSingleton&lt;IPvNugsSecretManager, VaultSecretManager&gt;(); // Must have SupportsDatabaseSecrets = true
 /// services.AddSingleton&lt;IPvNugsCsProvider, CsProvider&gt;();
 ///
 /// var provider = serviceProvider.GetService&lt;IPvNugsCsProvider&gt;();
@@ -83,7 +83,7 @@ namespace pvNugsCsProviderNc10PgSql;
 /// // Credentials will be automatically refreshed before expiration
 /// </code>
 /// </example>
-public class CsProvider(
+internal class CsProvider(
     IConsoleLoggerService logger,
     IOptions<PvNugsCsProviderPgSqlConfig> options) : IPvNugsPgSqlCsProvider
 {
@@ -203,16 +203,18 @@ public class CsProvider(
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CsProvider"/> class for StaticSecret mode.
-    /// Use this constructor when credentials should be retrieved from a secret manager using static secrets.
+    /// Initializes a new instance of the <see cref="CsProvider"/> class for StaticSecret or DynamicSecret mode.
+    /// Use this constructor when credentials should be retrieved from a secret manager.
     /// </summary>
     /// <param name="logger">The console logger service for error and diagnostic logging.</param>
     /// <param name="options">Configuration options containing database connection parameters and secret settings.</param>
-    /// <param name="secretManager">The static secret manager for retrieving passwords from secure storage.</param>
+    /// <param name="secretManager">The secret manager for retrieving credentials from secure storage. Must have SupportsDatabaseSecrets = true for DynamicSecret mode.</param>
     /// <remarks>
-    /// In StaticSecret mode, the provider will query the secret manager for passwords using the pattern: 
-    /// <c>{config.SecretName}-{role}</c> where role is Owner, Application, or Reader.
-    /// The username comes from configuration and remains constant.
+    /// <para>The provider's behavior depends on the configured mode:</para>
+    /// <list type="bullet">
+    /// <item><description><strong>StaticSecret mode:</strong> Uses GetStaticSecretAsync to retrieve passwords. The username comes from configuration and remains constant. Secret names follow the pattern: <c>{config.SecretName}-{role}</c></description></item>
+    /// <item><description><strong>DynamicSecret mode:</strong> Uses GetDynamicSecretAsync to retrieve username/password pairs with expiration times. Requires secretManager.SupportsDatabaseSecrets = true. Secret names follow the pattern: <c>{config.SecretName}-{role}</c></description></item>
+    /// </list>
     /// </remarks>
     public CsProvider(
         IConsoleLoggerService logger,

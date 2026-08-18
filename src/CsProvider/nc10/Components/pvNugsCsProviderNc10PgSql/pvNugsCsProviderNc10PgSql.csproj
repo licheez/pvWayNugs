@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Version>10.0.0</Version>
+        <Authors>Pierre Van Wallendael</Authors>
+        <PackageReleaseNotes>Initial .NET 10 release with unified IPvNugsSecretManager interface supporting both static and dynamic database secrets</PackageReleaseNotes>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
+        <PackageTags>PostgreSQL ConnectionString Provider Database PgSql Npgsql ConnectionManagement SecretManager DynamicCredentials StaticSecrets RoleBasedAccess DatabaseSecurity Configuration Caching ThreadSafe Async NET10 pvWayNugs</PackageTags>
+        <Description>
+          Secure, production-ready PostgreSQL connection string provider for .NET 10.0+ with advanced credential management, role-based access, and automatic secret rotation. Supports three modes: Config, StaticSecret, and DynamicSecret with unified secret manager interface.
+        </Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+      <PackageReference Include="pvNugsCsProviderNc10Abstractions" Version="10.0.0" />
+      <PackageReference Include="pvNugsLoggerNc10Abstractions" Version="10.0.1" />
+      <PackageReference Include="pvNugsSecretManagerNc10Abstractions" Version="10.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+            <Pack>True</Pack>
+            <PackagePath>/</PackagePath>
+        </None>
+        <None Update="readme.md">
+          <Pack>true</Pack>
+          <PackagePath>\</PackagePath>
+        </None>
+        <None Update="pvwayLogoTextLess256.png">
+          <Pack>True</Pack>
+          <PackagePath>/</PackagePath>
+        </None>
+    </ItemGroup>
+
+</Project>
