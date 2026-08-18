@@ -248,11 +248,11 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
  *
  * Default TTL:
  *
- *      1 minute
+ *      10 minutes
  *
  * Maximum TTL:
  *
- *      15 minutes
+ *      30 minutes
  *
  * Each GetCredentials request creates a new PostgreSQL login with its own
  * Vault lease.
@@ -346,6 +346,8 @@ using VaultSharp.V1.SecretsEngines.Database.Models;
 
 const string vaultAddress = "http://127.0.0.1:8200";
 const string vaultToken = "dev-only-token";
+const string defaultTimeToLive = "10m";
+const string maximumTimeToLive = "30m";
 
 int[] postgresPorts = [5432, 5433];
 
@@ -483,8 +485,8 @@ async Task ProvisionDbEngineAsync(
 
         Config = new Dictionary<string, object>
         {
-            { "default_lease_ttl", "1m" },
-            { "max_lease_ttl", "15m" }
+            { "default_lease_ttl", defaultTimeToLive },
+            { "max_lease_ttl", maximumTimeToLive }
         }
     };
 
@@ -552,8 +554,8 @@ async Task ConfigureDbRoleAsync(
     {
         DatabaseProviderType = databaseProvider,
 
-        DefaultTimeToLive = "1m",
-        MaximumTimeToLive = "15m",
+        DefaultTimeToLive = defaultTimeToLive,
+        MaximumTimeToLive = maximumTimeToLive,
 
         CreationStatements =
         [
