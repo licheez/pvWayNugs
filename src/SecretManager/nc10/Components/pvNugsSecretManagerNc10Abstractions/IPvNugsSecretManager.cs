@@ -35,6 +35,11 @@
 public interface IPvNugsSecretManager
 {
     /// <summary>
+    /// Tells whether this provider supports dynamic secret such as Hashicorp Vault does 
+    /// </summary>
+    bool SupportsDatabaseSecrets { get; }
+    
+    /// <summary>
     /// Retrieves multiple static secrets using provider-specific parameters.
     /// </summary>
     /// <param name="parameters">

@@ -29,6 +29,11 @@ public class HVaultSecretProvider(
     } = null;
 
     /// <summary>
+    /// Indicates whether this provider supports dynamic database credentials.
+    /// </summary>
+    public bool SupportsDatabaseSecrets => true;
+
+    /// <summary>
     /// Retrieves multiple static secrets from the HashiCorp Vault Key-Value (v2) secrets engine.
     /// </summary>
     /// <param name="parameters">

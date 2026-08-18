@@ -38,6 +38,11 @@ namespace pvNugsSecretManagerNc10Abstractions;
 public interface IPvNugsSecretProvider
 {
     /// <summary>
+    /// Tells whether this provider supports dynamic secret such as Hashicorp Vault does 
+    /// </summary>
+    bool SupportsDatabaseSecrets { get; }
+    
+    /// <summary>
     /// Retrieves multiple static secret values from the underlying secret backend.
     /// </summary>
     /// <param name="parameters">

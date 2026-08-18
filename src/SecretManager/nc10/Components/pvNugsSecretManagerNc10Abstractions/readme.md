@@ -16,6 +16,7 @@ It defines the interfaces used by:
 
 - Static secret retrieval contracts
 - Dynamic credential retrieval contracts (username/password + expiration)
+- Database secrets support detection (rotating credentials)
 - Provider-agnostic API surface
 - Dictionary-based parameter model for maximum provider flexibility
 - Cancellation token support on all async operations
@@ -47,9 +48,17 @@ Consumer-facing entry point to retrieve:
 - a single static secret (`GetStaticSecretAsync`)
 - a dynamic credential (`GetDynamicSecretAsync`)
 
+Properties:
+
+- `SupportsDatabaseSecrets` - indicates whether the implementation supports dynamic database secrets (rotating credentials)
+
 ### `IPvNugsSecretProvider`
 
 Provider-facing contract implemented by backend adapters (Azure, env vars, HashiCorp Vault, etc.).
+
+Properties:
+
+- `SupportsDatabaseSecrets` - indicates whether the provider supports dynamic database secrets (rotating credentials)
 
 ### `IPvNugsDynamicCredential`
 

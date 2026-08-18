@@ -142,6 +142,8 @@ internal class AzureSecretProvider(
         }
     }
 
+    public bool SupportsDatabaseSecrets => false;
+
     /// <summary>
     /// Retrieves multiple static secrets from Azure Key Vault.
     /// </summary>
