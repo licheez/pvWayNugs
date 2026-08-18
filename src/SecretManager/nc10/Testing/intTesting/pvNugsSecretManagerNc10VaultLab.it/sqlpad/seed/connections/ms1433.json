@@ -1,0 +1,14 @@
+{
+  "id": "ms1433",
+  "name": "ms1433",
+  "driver": "sqlserver",
+  "data": {
+    "host": "mssql1433",
+    "port": 1433,
+    "database": "master",
+    "username": "sa",
+    "password": "YourStrong!Passw0rd",
+    "encrypt": false,
+    "trustServerCertificate": true
+  }
+}

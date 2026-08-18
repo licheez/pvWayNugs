@@ -17,6 +17,16 @@ services:
     environment:
       POSTGRES_PASSWORD: dev-only-password
       
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql1433
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+      
   vault:
     image: hashicorp/vault:latest
     container_name: vault
@@ -26,14 +36,15 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID: dev-only-token
       VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
+  sqlpad:
+    image: sqlpad/sqlpad:latest
+    container_name: sqlpad
     ports:
-      - "5050:80"
+      - "3000:3000"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: dev-only-password
-      PGADMIN_REPLACE_SERVERS_ON_STARTUP: "True"
+      SQLPAD_DB_IN_MEMORY: "true"
+      SQLPAD_ADMIN: "admin@local.local"
+      SQLPAD_ADMIN_PASSWORD: "admin"
+      SQLPAD_SEED_DATA_PATH: "/etc/sqlpad/seed"
     volumes:
-      - ./servers.json:/pgadmin4/servers.json
+      - ./sqlpad/seed:/etc/sqlpad/seed:ro
