@@ -124,6 +124,8 @@ internal class EnvVarSecretProvider(
 {
     private readonly string? _prefix = options.Value.Prefix;
 
+    public bool SupportsDatabaseSecrets => false;
+
     /// <summary>
     /// This operation is not supported by the Environment Variable provider.
     /// </summary>

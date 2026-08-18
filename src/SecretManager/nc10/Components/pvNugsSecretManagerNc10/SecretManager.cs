@@ -102,6 +102,8 @@ internal class SecretManager(
 {
     private readonly PvNugsSecretManagerConfig _config = options.Value;
 
+    public bool SupportsDatabaseSecrets => provider.SupportsDatabaseSecrets;
+
     /// <summary>
     /// Retrieves multiple static secrets, serving from cache when available or delegating to
     /// the provider on a cache miss, then populating the cache for subsequent calls.
