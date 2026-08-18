@@ -1,8 +1,6 @@
-﻿using VaultSharp;
+﻿using pvNugsSecretManagerNc10VaultLab.it;
+using VaultSharp;
 using VaultSharp.V1.AuthMethods.Token;
-using VaultSharp.V1.SecretsEngines;
-using VaultSharp.V1.SecretsEngines.Database;
-using VaultSharp.V1.SecretsEngines.Database.Models;
 
 /*
  * =============================================================================
@@ -350,6 +348,7 @@ const string defaultTimeToLive = "10m";
 const string maximumTimeToLive = "30m";
 
 int[] postgresPorts = [5432, 5433];
+int[] mssqlPorts = [1433];
 
 // -----------------------------------------------------------------------------
 // Create Vault client
@@ -395,25 +394,47 @@ catch (Exception ex)
 // Provision each PostgreSQL target
 // -----------------------------------------------------------------------------
 
-await ProvisionSecretEngines();
+await ProvisionPgSecretEngines();
+await ProvisionMsSecretEngines();
 await ConfigureStaticSecretsAsync(client);
-
-// -----------------------------------------------------------------------------
-// Testing and validation of the provisioned Vault configuration is performed
-// -----------------------------------------------------------------------------
-
-var testDbEngine = client.V1.Secrets.Database;
-var credentials = await testDbEngine.GetCredentialsAsync(
-    roleName: "owner",
-    mountPoint: GetMountPoint(5432));
-Console.WriteLine($"username: {credentials.Data.Username}");
-Console.WriteLine($"password: {credentials.Data.Password}");
-Console.WriteLine($"ttl: {credentials.LeaseDurationSeconds} seconds");
 
 return;
 
-async Task ProvisionSecretEngines()
+async Task ProvisionMsSecretEngines()
 {
+    var msProvisioner = new MsSqlSecretProvisioner(
+        client, defaultTimeToLive, maximumTimeToLive);
+    try
+    {
+        foreach (var port in mssqlPorts)
+        {
+            Console.WriteLine($"Provisioning ms{port}...");
+            Console.WriteLine();
+
+            await msProvisioner.ProvisionAsync(port);
+
+            Console.WriteLine();
+            Console.WriteLine($"ms{port} provisioned successfully.");
+            Console.WriteLine();
+        }
+
+        Console.WriteLine("------------------------------------------------------------");
+        Console.WriteLine("MsSQL Vault provisioning completed successfully.");
+        Console.WriteLine("The Secret Manager integration tests can now be executed.");
+        Console.WriteLine("------------------------------------------------------------");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine();
+        Console.WriteLine("MsSQL Vault provisioning failed.");
+        Console.WriteLine(ex.Message);
+    }
+}
+
+async Task ProvisionPgSecretEngines()
+{
+    var pgProvisioner = new PostgresSecretProvisioner(
+        client, defaultTimeToLive, maximumTimeToLive);
     try
     {
         foreach (var port in postgresPorts)
@@ -421,9 +442,7 @@ async Task ProvisionSecretEngines()
             Console.WriteLine($"Provisioning pg{port}...");
             Console.WriteLine();
 
-            await ProvisionDbEngineAsync(client, port);
-            await ConfigureDbConnectionAsync(client, port);
-            await ConfigureDbRoleAsync(client, port);
+            await pgProvisioner.ProvisionAsync(port);
 
             Console.WriteLine();
             Console.WriteLine($"pg{port} provisioned successfully.");
@@ -431,14 +450,14 @@ async Task ProvisionSecretEngines()
         }
 
         Console.WriteLine("------------------------------------------------------------");
-        Console.WriteLine("Vault provisioning completed successfully.");
+        Console.WriteLine("Postgres Vault provisioning completed successfully.");
         Console.WriteLine("The Secret Manager integration tests can now be executed.");
         Console.WriteLine("------------------------------------------------------------");
     }
     catch (Exception ex)
     {
         Console.WriteLine();
-        Console.WriteLine("Vault provisioning failed.");
+        Console.WriteLine("Postgres Vault provisioning failed.");
         Console.WriteLine(ex.Message);
     }
 }
@@ -462,125 +481,3 @@ async Task ConfigureStaticSecretsAsync(VaultClient vClient)
 
     Console.WriteLine("Static KV secrets provisioned successfully.");
 }
-
-// -----------------------------------------------------------------------------
-// Database Secrets Engine
-// -----------------------------------------------------------------------------
-async Task ProvisionDbEngineAsync(
-    VaultClient vaultClient,
-    int portNumber)
-{
-    var mountPoint = GetMountPoint(portNumber);
-
-    Console.WriteLine($"  Creating Database Secrets Engine:");
-    Console.WriteLine($"    {mountPoint}");
-
-    var dbEngine = new SecretsEngine
-    {
-        Type = new SecretsEngineType("database"),
-
-        Description = $"PostgreSQL Dynamic Credentials - pg{portNumber}",
-
-        Path = mountPoint,
-
-        Config = new Dictionary<string, object>
-        {
-            { "default_lease_ttl", defaultTimeToLive },
-            { "max_lease_ttl", maximumTimeToLive }
-        }
-    };
-
-    await vaultClient.V1.System.MountSecretBackendAsync(dbEngine);
-}
-
-
-// -----------------------------------------------------------------------------
-// PostgreSQL connection
-// -----------------------------------------------------------------------------
-async Task ConfigureDbConnectionAsync(
-    VaultClient vaultClient,
-    int portNumber)
-{
-    var connectionName = GetConnectionName(portNumber);
-    var mountPoint = GetMountPoint(portNumber);
-
-    Console.WriteLine($"  Creating PostgreSQL connection:");
-    Console.WriteLine($"    {connectionName}");
-
-    var connectionConfig = new ConnectionConfigModel
-    {
-        ConnectionUrl =
-            $"postgresql://{{{{username}}}}:{{{{password}}}}" +
-            $"@postgres{portNumber}:5432/postgres?sslmode=disable",
-
-        Username = "postgres",
-        Password = "dev-only-password",
-
-        PluginName = "postgresql-database-plugin",
-
-        VerifyConnection = true,
-        
-        AllowedRoles = ["owner"]
-    };
-
-    await vaultClient.V1.Secrets.Database.ConfigureConnectionAsync(
-        connectionName,
-        connectionConfig,
-        mountPoint);
-}
-
-
-// -----------------------------------------------------------------------------
-// Dynamic database role
-// -----------------------------------------------------------------------------
-async Task ConfigureDbRoleAsync(
-    VaultClient vaultClient,
-    int portNumber)
-{
-    var connectionName = GetConnectionName(portNumber);
-    var mountPoint = GetMountPoint(portNumber);
-
-    Console.WriteLine($"  Creating dynamic role:");
-    Console.WriteLine($"    owner");
-
-    /*
-     * VaultSharp's DatabaseProviderType property represents Vault's
-     * database connection name (db_name) for a database role.
-     */
-    var databaseProvider =
-        new DatabaseProviderType(connectionName);
-
-    var role = new Role
-    {
-        DatabaseProviderType = databaseProvider,
-
-        DefaultTimeToLive = defaultTimeToLive,
-        MaximumTimeToLive = maximumTimeToLive,
-
-        CreationStatements =
-        [
-            """
-            CREATE ROLE "{{name}}"
-            WITH LOGIN
-            PASSWORD '{{password}}'
-            VALID UNTIL '{{expiration}}';
-            """
-        ]
-    };
-
-    await vaultClient.V1.Secrets.Database.CreateRoleAsync(
-        "owner",
-        role,
-        mountPoint);
-}
-
-
-// -----------------------------------------------------------------------------
-// Naming conventions
-// -----------------------------------------------------------------------------
-
-string GetMountPoint(int portNumber) =>
-    $"database/postgres/pg{portNumber}";
-
-string GetConnectionName(int portNumber) =>
-    $"pg{portNumber}";
