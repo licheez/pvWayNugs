@@ -5,7 +5,7 @@
 /// Each mode corresponds to a different credential management strategy with varying levels of security and complexity.
 /// </summary>
 /// <remarks>
-/// <para>The mode determines which constructor should be used when creating a <see cref="CsProvider"/> instance:</para>
+/// <para>The mode determines which constructor should be used when creating a <see cref="MsSqlCsProvider"/> instance:</para>
 /// <list type="bullet">
 /// <item><description><see cref="Config"/> - Use the basic constructor with logger and options only</description></item>
 /// <item><description><see cref="StaticSecret"/> - Use the constructor with <c>IPvNugsStaticSecretManager</c></description></item>

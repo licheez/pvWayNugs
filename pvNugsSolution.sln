@@ -292,6 +292,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Components", "Components", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsMessagingNc10Abstractions", "src\Messaging\nc10\Components\pvNugsMessagingNc10Abstractions\pvNugsMessagingNc10Abstractions.csproj", "{2B8CBCE0-BC94-4DEB-B317-10D777DD1A1A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsCsProviderNc10MsSqlHVault.it", "src\CsProvider\nc10\Testing\intTesting\pvNugsCsProviderNc10MsSqlHVault.it\pvNugsCsProviderNc10MsSqlHVault.it.csproj", "{48AF9FDD-433B-4750-A848-272BCE9D6B69}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -435,6 +437,7 @@ Global
 		{59F0B78D-9901-406F-AD56-EF48D9DBF90E} = {0709123F-0614-45F6-B070-CD72B87401ED}
 		{7AF5A523-1CAD-4A7D-A907-5D00ACBCB9C7} = {E8187C5E-5795-45A0-A5DE-9D5459A7FF24}
 		{2B8CBCE0-BC94-4DEB-B317-10D777DD1A1A} = {7AF5A523-1CAD-4A7D-A907-5D00ACBCB9C7}
+		{48AF9FDD-433B-4750-A848-272BCE9D6B69} = {F52F4EAC-547C-4046-8926-BE6AD307F633}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -717,5 +720,9 @@ Global
 		{2B8CBCE0-BC94-4DEB-B317-10D777DD1A1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B8CBCE0-BC94-4DEB-B317-10D777DD1A1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B8CBCE0-BC94-4DEB-B317-10D777DD1A1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48AF9FDD-433B-4750-A848-272BCE9D6B69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48AF9FDD-433B-4750-A848-272BCE9D6B69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48AF9FDD-433B-4750-A848-272BCE9D6B69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48AF9FDD-433B-4750-A848-272BCE9D6B69}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

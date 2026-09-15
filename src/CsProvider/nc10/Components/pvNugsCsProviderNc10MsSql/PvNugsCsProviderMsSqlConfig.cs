@@ -164,14 +164,88 @@ public class PvNugsCsProviderMsSqlConfig
         set => Row0.UseIntegratedSecurity = value ?? false;
     }
 
-    /// <summary>
-    /// Gets or sets the base secret name used for credential retrieval from secret managers.
-    /// The actual secret name queried follows the pattern: <c>{SecretName}-{Role}</c>.
+        /// <summary>
+    /// Gets or sets the secret parameters dictionary for the Reader role.
+    /// Used in StaticSecret and DynamicSecret modes to pass provider-specific parameters to IPvNugsSecretManager.
+    /// The dictionary is passed as-is to the secret manager; keys and values depend on your provider implementation.
     /// </summary>
-    /// <value>The base name for secrets stored in the secret manager, or null when not using secret managers.</value>
-    public string? SecretName
+    /// <remarks>
+    /// <para><strong>Provider-Specific Examples:</strong></para>
+    /// <para>HashiCorp Vault: { "mountPoint": "database", "role": "myapp-reader" }</para>
+    /// <para>Azure Key Vault: { "name": "myapp-postgres-reader" }</para>
+    /// <para>Environment Variables: { "name": "MYAPP_DB_READER_PASSWORD" }</para>
+    /// <para>Consult your secret manager provider's documentation for required parameter keys.</para>
+    /// </remarks>
+    public Dictionary<string, string>? ReaderSecretParams
     {
-        get => Row0.SecretName;
-        set => Row0.SecretName = value;
+        get => Row0.ReaderSecretParams;
+        set => Row0.ReaderSecretParams = value;
     }
+
+    /// <summary>
+    /// Gets or sets the secret parameters dictionary for the Application role.
+    /// Used in StaticSecret and DynamicSecret modes to pass provider-specific parameters to IPvNugsSecretManager.
+    /// The dictionary is passed as-is to the secret manager; keys and values depend on your provider implementation.
+    /// </summary>
+    /// <remarks>
+    /// <para><strong>Provider-Specific Examples:</strong></para>
+    /// <para>HashiCorp Vault: { "mountPoint": "database", "role": "myapp-application" }</para>
+    /// <para>Azure Key Vault: { "name": "myapp-postgres-application" }</para>
+    /// <para>Environment Variables: { "name": "MYAPP_DB_APP_PASSWORD" }</para>
+    /// <para>Consult your secret manager provider's documentation for required parameter keys.</para>
+    /// </remarks>
+    public Dictionary<string, string>? ApplicationSecretParams
+    {
+        get => Row0.ApplicationSecretParams;
+        set => Row0.ApplicationSecretParams = value;
+    }
+    
+    /// <summary>
+    /// Gets or sets the secret parameters dictionary for the Owner role.
+    /// Used in StaticSecret and DynamicSecret modes to pass provider-specific parameters to IPvNugsSecretManager.
+    /// The dictionary is passed as-is to the secret manager; keys and values depend on your provider implementation.
+    /// </summary>
+    /// <remarks>
+    /// <para><strong>Provider-Specific Examples:</strong></para>
+    /// <para>HashiCorp Vault: { "mountPoint": "database", "role": "myapp-owner" }</para>
+    /// <para>Azure Key Vault: { "name": "myapp-postgres-owner" }</para>
+    /// <para>Environment Variables: { "name": "MYAPP_DB_OWNER_PASSWORD" }</para>
+    /// <para>Consult your secret manager provider's documentation for required parameter keys.</para>
+    /// </remarks>
+    public Dictionary<string, string>? OwnerSecretParams
+    {
+        get => Row0.OwnerSecretParams;
+        set => Row0.OwnerSecretParams = value;
+    }
+    
+    /// <summary>
+    /// Gets or sets the warning tolerance in minutes before dynamic secret expiration.
+    /// When a dynamic secret is within this time window before expiration, a warning will be logged.
+    /// Only applicable in DynamicSecret mode. Default value is typically 30 minutes.
+    /// </summary>
+    /// <remarks>
+    /// This allows you to receive advance warning that credentials are approaching expiration,
+    /// giving you time to investigate potential renewal issues before they become critical.
+    /// </remarks>
+    public int? ExpirationWarningToleranceInMinutes
+    {
+        get => Row0.ExpirationWarningToleranceInMinutes;
+        set => Row0.ExpirationWarningToleranceInMinutes = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the error tolerance in minutes before dynamic secret expiration.
+    /// When a dynamic secret is within this time window before expiration, an exception will be thrown to prevent using nearly-expired credentials.
+    /// Only applicable in DynamicSecret mode. Default value is typically 5 minutes.
+    /// </summary>
+    /// <remarks>
+    /// This prevents the application from using credentials that might expire mid-transaction,
+    /// forcing an early refresh instead. The error threshold should always be smaller than the warning threshold.
+    /// </remarks>
+    public int? ExpirationErrorToleranceInMinutes
+    {
+        get => Row0.ExpirationErrorToleranceInMinutes;
+        set => Row0.ExpirationErrorToleranceInMinutes = value;
+    }
+    
 }
