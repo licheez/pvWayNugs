@@ -68,17 +68,18 @@ internal sealed class PvNugsMessagingKafkaMonitor(
 
         try
         {
-            var clientConfig = await CreateClientConfigAsync(
-                cancellationToken);
+            var adminClientConfig =
+                await CreateAdminClientConfigAsync(
+                    cancellationToken);
 
             var pendingMessages = await GetPendingMessagesAsync(
-                clientConfig,
+                adminClientConfig,
                 topic,
                 consumerGroup,
                 cancellationToken);
 
             var activeConsumers = await GetActiveConsumersAsync(
-                clientConfig,
+                adminClientConfig,
                 topic,
                 consumerGroup,
                 cancellationToken);
@@ -133,18 +134,19 @@ internal sealed class PvNugsMessagingKafkaMonitor(
     }
 
     /// <summary>
-    /// Creates the Kafka client configuration used by monitoring operations.
+    /// Creates the Kafka admin client configuration used by monitoring
+    /// operations.
     /// </summary>
     /// <param name="cancellationToken">
     /// A token that can be used to cancel security credential retrieval.
     /// </param>
     /// <returns>
-    /// The Kafka client configuration used by monitoring operations.
+    /// The Kafka admin client configuration used by monitoring operations.
     /// </returns>
-    private async Task<ClientConfig> CreateClientConfigAsync(
+    private async Task<AdminClientConfig> CreateAdminClientConfigAsync(
         CancellationToken cancellationToken)
     {
-        var config = new ClientConfig
+        var config = new AdminClientConfig
         {
             BootstrapServers = _config.BootstrapServers
         };
@@ -179,8 +181,8 @@ internal sealed class PvNugsMessagingKafkaMonitor(
     /// reported as unavailable because the monitor cannot determine which
     /// offset reset policy a future consumer would apply.
     /// </remarks>
-    /// <param name="clientConfig">
-    /// The Kafka client configuration used to query the broker.
+    /// <param name="adminClientConfig">
+    /// The Kafka admin client configuration used to query the broker.
     /// </param>
     /// <param name="topic">
     /// The Kafka topic to inspect.
@@ -197,7 +199,7 @@ internal sealed class PvNugsMessagingKafkaMonitor(
     /// </returns>
     private async Task<PvNugsCommunicationMetric<long>>
         GetPendingMessagesAsync(
-            ClientConfig clientConfig,
+            AdminClientConfig adminClientConfig,
             string topic,
             string consumerGroup,
             CancellationToken cancellationToken)
@@ -212,7 +214,7 @@ internal sealed class PvNugsMessagingKafkaMonitor(
             cancellationToken.ThrowIfCancellationRequested();
 
             using var adminClient =
-                new AdminClientBuilder(clientConfig).Build();
+                new AdminClientBuilder(adminClientConfig).Build();
 
             var metadata = adminClient.GetMetadata(
                 topic,
@@ -242,7 +244,19 @@ internal sealed class PvNugsMessagingKafkaMonitor(
                     $"{topicMetadata.Error.Reason}");
             }
 
-            var consumerConfig = new ConsumerConfig(clientConfig)
+            // Important:
+            // ConsumerConfig(AdminClientConfig) shares the underlying
+            // configuration collection. Adding consumer-specific properties
+            // would therefore also mutate adminClientConfig and cause
+            // librdkafka CONFWARN messages when it is subsequently reused
+            // by an AdminClient.
+            //
+            // Materializing the configuration into a new dictionary creates
+            // an independent backing collection for the consumer.
+            var consumerConfig = new ConsumerConfig(
+                adminClientConfig.ToDictionary(
+                    item => item.Key,
+                    item => item.Value))
             {
                 GroupId = consumerGroup,
                 EnableAutoCommit = false
@@ -316,8 +330,8 @@ internal sealed class PvNugsMessagingKafkaMonitor(
     /// Retrieves the number of active consumers in the specified consumer
     /// group that currently own at least one partition of the requested topic.
     /// </summary>
-    /// <param name="clientConfig">
-    /// The Kafka client configuration used to query the broker.
+    /// <param name="adminClientConfig">
+    /// The Kafka admin client configuration used to query the broker.
     /// </param>
     /// <param name="topic">
     /// The Kafka topic to inspect.
@@ -334,7 +348,7 @@ internal sealed class PvNugsMessagingKafkaMonitor(
     /// </returns>
     private async Task<PvNugsCommunicationMetric<int>>
         GetActiveConsumersAsync(
-            ClientConfig clientConfig,
+            AdminClientConfig adminClientConfig,
             string topic,
             string consumerGroup,
             CancellationToken cancellationToken)
@@ -349,7 +363,7 @@ internal sealed class PvNugsMessagingKafkaMonitor(
             cancellationToken.ThrowIfCancellationRequested();
 
             using var adminClient =
-                new AdminClientBuilder(clientConfig).Build();
+                new AdminClientBuilder(adminClientConfig).Build();
 
             var result =
                 await adminClient.DescribeConsumerGroupsAsync(

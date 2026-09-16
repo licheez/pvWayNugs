@@ -8,7 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Confluent.Kafka" Version="2.15.1" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\..\Logger\nc10\Components\pvNugsLoggerNc10Seri\pvNugsLoggerNc10Seri.csproj" />
+      <ProjectReference Include="..\..\..\Components\pvNugsMessagingNc10Kafka\pvNugsMessagingNc10Kafka.csproj" />
     </ItemGroup>
 
 </Project>

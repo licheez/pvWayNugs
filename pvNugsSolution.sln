@@ -302,7 +302,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "intTesting", "intTesting", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PvNugsMessagingNc10KafkaLab.it", "src\Messaging\nc10\Testing\intTesting\PvNugsMessagingNc10KafkaLab.it\PvNugsMessagingNc10KafkaLab.it.csproj", "{38DFD0A6-920E-4347-998D-4AB65E781BB8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PvNugsMessagingNc10Kafka.it", "src\Messaging\nc10\Testing\intTesting\PvNugsMessagingNc10Kafka.it\PvNugsMessagingNc10Kafka.it.csproj", "{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PvNugsMessagingNc10KafkaLocal.it", "src\Messaging\nc10\Testing\intTesting\PvNugsMessagingNc10KafkaLocal.it\PvNugsMessagingNc10KafkaLocal.it.csproj", "{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
