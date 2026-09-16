@@ -42,7 +42,7 @@ The abstraction deliberately exposes messaging concepts such as topics and consu
 
 ```bash
 dotnet add package pvNugsMessagingNc10Abstractions
-```
+````
 
 ### Package Manager Console
 
@@ -110,12 +110,14 @@ This allows applications to access useful publication metadata without introduci
 
 `IPvNugsMessagingConsumer` subscribes to a topic and invokes an asynchronous callback for incoming messages.
 
+The callback receives the source topic, publication metadata, and raw message payload.
+
 ```csharp
 public interface IPvNugsMessagingConsumer
 {
     Task<Guid> SubscribeAsync(
         string topic,
-        Func<string, PvNugsPublishResult, Task<bool>> handleIncomingMessageAsync,
+        Func<string, PvNugsPublishResult, string, Task<bool>> handleIncomingMessageAsync,
         string? consumerGroup = null,
         CancellationToken cancellationToken = default);
 
@@ -124,6 +126,14 @@ public interface IPvNugsMessagingConsumer
         CancellationToken cancellationToken = default);
 }
 ```
+
+The message handler receives, in order:
+
+```text
+topic → publication metadata → raw message payload
+```
+
+Returning `true` indicates that the message was processed successfully. The concrete provider determines how this acknowledgement is applied to the underlying messaging technology.
 
 The returned `Guid` identifies the subscription and can subsequently be passed to `UnsubscribeAsync`.
 
@@ -142,8 +152,8 @@ Consumer groups allow several subscriptions to identify themselves as instances 
 
 When supported by the underlying messaging technology:
 
-- subscriptions in the **same consumer group** can share the processing workload
-- subscriptions in **different consumer groups** can process the same published messages independently
+* subscriptions in the **same consumer group** can share the processing workload
+* subscriptions in **different consumer groups** can process the same published messages independently
 
 For example:
 
@@ -183,7 +193,15 @@ public interface IPvNugsMessagingConsumer<T> where T : class
 
 The `factorAsync` delegate converts the raw payload into the required domain type.
 
-This allows serialization concerns to remain outside the business callback while keeping the abstraction independent from a particular serialization format.
+The typed consumer follows the same callback structure as the raw string consumer:
+
+```text
+topic → publication metadata → typed message
+```
+
+The only difference is that the raw string payload is first passed to `factorAsync`, which materializes the `T` instance supplied to the message handler.
+
+This keeps raw and typed consumers consistent while allowing serialization concerns to remain outside the business callback and keeping the abstraction independent from a particular serialization format.
 
 ## 👁️ Monitor
 
@@ -257,9 +275,9 @@ Different messaging technologies expose different monitoring capabilities.
 
 Returning a nullable value alone would not distinguish between:
 
-- a metric that is not relevant to the current request
-- a metric that the provider cannot support
-- a metric that should be available but could not currently be retrieved
+* a metric that is not relevant to the current request
+* a metric that the provider cannot support
+* a metric that should be available but could not currently be retrieved
 
 For this reason, observable values are represented by `PvNugsCommunicationMetric<T>`:
 
@@ -288,12 +306,12 @@ public enum PvNugsCommunicationMetricStatusEnu
 
 The four states have deliberately different semantics:
 
-| Status | Meaning |
-|---|---|
-| `Available` | The metric is supported and its current value was successfully retrieved. |
-| `NotApplicable` | The metric is supported conceptually, but does not apply in the current context. |
-| `NotSupported` | The underlying messaging technology cannot provide the metric. |
-| `Unavailable` | The metric is normally supported and applicable, but its current value could not be retrieved. |
+| Status          | Meaning                                                                                        |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `Available`     | The metric is supported and its current value was successfully retrieved.                      |
+| `NotApplicable` | The metric is supported conceptually, but does not apply in the current context.               |
+| `NotSupported`  | The underlying messaging technology cannot provide the metric.                                 |
+| `Unavailable`   | The metric is normally supported and applicable, but its current value could not be retrieved. |
 
 For example, a provider could return:
 
@@ -348,9 +366,13 @@ public sealed class OrderPublisher
 ```csharp
 var subscriptionId = await consumer.SubscribeAsync(
     "orders.created",
-    async (message, metadata) =>
+    async (topic, metadata, message) =>
     {
+        Console.WriteLine(
+            $"Received message {metadata.MessageId} from {topic}");
+
         await ProcessOrderAsync(message);
+
         return true;
     },
     consumerGroup: "billing");
@@ -386,14 +408,14 @@ Concrete provider packages implement these contracts and translate the capabilit
 
 For example, a Kafka provider can map:
 
-| Abstraction | Kafka concept |
-|---|---|
-| `Topic` | Topic |
-| `ConsumerGroup` | Consumer Group / `GroupId` |
-| `PendingMessages` | Consumer lag |
+| Abstraction       | Kafka concept                 |
+| ----------------- | ----------------------------- |
+| `Topic`           | Topic                         |
+| `ConsumerGroup`   | Consumer Group / `GroupId`    |
+| `PendingMessages` | Consumer lag                  |
 | `ActiveConsumers` | Active consumer group members |
-| `Offset` | Record offset |
-| `Partition` | Partition |
+| `Offset`          | Record offset                 |
+| `Partition`       | Partition                     |
 
 Provider-specific APIs, configuration objects, connection details, and administrative concepts remain outside the abstraction package.
 
@@ -403,23 +425,23 @@ Other providers can map the same contracts according to their own messaging sema
 
 Use this package when you want to:
 
-- keep application code independent from broker-specific SDKs
-- use a stable messaging contract across applications
-- support multiple messaging providers over time
-- distinguish logical consumers through consumer groups
-- build testable message-driven components
-- expose operational messaging information without coupling application code to broker monitoring APIs
+* keep application code independent from broker-specific SDKs
+* use a stable messaging contract across applications
+* support multiple messaging providers over time
+* distinguish logical consumers through consumer groups
+* build testable message-driven components
+* expose operational messaging information without coupling application code to broker monitoring APIs
 
 ## 🔜 Provider-friendly by design
 
 The abstraction is designed to support implementations for messaging technologies such as:
 
-- Apache Kafka
-- IBM MQ
-- RabbitMQ
-- Azure Service Bus
-- Redis Pub/Sub
-- test, dummy, or in-memory providers
+* Apache Kafka
+* IBM MQ
+* RabbitMQ
+* Azure Service Bus
+* Redis Pub/Sub
+* test, dummy, or in-memory providers
 
 Not every provider is expected to support every optional capability.
 

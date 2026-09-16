@@ -2,11 +2,12 @@
 
 /// <summary>
 /// Defines the contract for subscribing to a message topic and processing
-/// incoming messages.
+/// incoming raw message payloads.
 /// </summary>
 /// <remarks>
 /// Implementations are responsible for registering a callback that receives
-/// message payloads and their associated publication metadata.
+/// the source topic, publication metadata, and raw message payload for each
+/// incoming message.
 ///
 /// Multiple subscriptions may use the same consumer group to represent
 /// instances of the same logical consumer. The underlying messaging provider
@@ -21,10 +22,10 @@ public interface IPvNugsMessagingConsumer
     /// The topic to subscribe to.
     /// </param>
     /// <param name="handleIncomingMessageAsync">
-    /// A callback invoked for each incoming message. The callback receives
-    /// the raw message payload and its associated publication metadata,
-    /// and returns <see langword="true"/> when the message was processed
-    /// successfully.
+    /// A callback invoked for each incoming message. The callback receives,
+    /// in order, the source topic, the associated publication metadata, and
+    /// the raw message payload. It returns <see langword="true"/> when the
+    /// message was processed successfully.
     /// </param>
     /// <param name="consumerGroup">
     /// The logical consumer group associated with the subscription,
@@ -47,7 +48,7 @@ public interface IPvNugsMessagingConsumer
     /// </remarks>
     Task<Guid> SubscribeAsync(
         string topic,
-        Func<string, PvNugsPublishResult, Task<bool>> handleIncomingMessageAsync,
+        Func<string, PvNugsPublishResult, string, Task<bool>> handleIncomingMessageAsync,
         string? consumerGroup = null,
         CancellationToken cancellationToken = default);
 
@@ -76,6 +77,10 @@ public interface IPvNugsMessagingConsumer
 /// The target type produced from each incoming message payload.
 /// </typeparam>
 /// <remarks>
+/// Implementations are responsible for converting each raw message payload
+/// into an instance of <typeparamref name="T"/> before invoking the message
+/// handler.
+///
 /// Multiple subscriptions may use the same consumer group to represent
 /// instances of the same logical consumer. The underlying messaging provider
 /// determines how messages are distributed between those instances.
@@ -94,9 +99,9 @@ public interface IPvNugsMessagingConsumer<T> where T : class
     /// an instance of <typeparamref name="T"/>.
     /// </param>
     /// <param name="handleIncomingMessageAsync">
-    /// A callback invoked for each converted message. The callback receives
-    /// the raw message payload, its associated publication metadata, and the
-    /// materialized <typeparamref name="T"/> instance, and returns
+    /// A callback invoked for each converted message. The callback receives,
+    /// in order, the source topic, the associated publication metadata, and
+    /// the materialized <typeparamref name="T"/> instance. It returns
     /// <see langword="true"/> when the message was processed successfully.
     /// </param>
     /// <param name="consumerGroup">

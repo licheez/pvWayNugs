@@ -5,19 +5,19 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
-        <Version>10.0.1</Version>
+        <Version>10.1.0</Version>
 
         <Authors>Pierre Van Wallendael</Authors>
         <Copyright>pvWay Ltd</Copyright>
 
         <PackageReleaseNotes>
-            Added optional consumer group support to messaging subscriptions.
-            Added broker-neutral messaging monitoring contracts for topic status,
-            pending messages, active consumers, and last activity.
-            Added metric availability statuses to represent provider capabilities
-            without exposing broker-specific monitoring contracts.
+            Updated the raw string consumer callback contract to provide the source topic,
+            publication metadata, and message payload as separate parameters.
+            This aligns the raw string consumer with the typed consumer contract and provides
+            consistent handler semantics across both consumer models.
+            Updated the documentation and usage examples accordingly.
         </PackageReleaseNotes>
-
+        
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
