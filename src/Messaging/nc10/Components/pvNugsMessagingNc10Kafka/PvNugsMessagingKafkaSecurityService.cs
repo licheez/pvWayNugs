@@ -26,7 +26,13 @@ internal sealed class PvNugsMessagingKafkaSecurityService(
     private PvNugsMessagingKafkaSecurity? _cachedSecurity;
 
     private readonly IPvNugsSecretManager? _secretManager;
-
+    
+    /// <summary>
+    /// Gets a value indicating whether SSL/TLS encryption is enabled
+    /// for SASL-authenticated Kafka connections.
+    /// </summary>
+    public bool EnableSsl => _config.EnableSsl;
+    
     /// <summary>
     /// Initializes a new instance of the
     /// <see cref="PvNugsMessagingKafkaSecurityService"/> class with a secret

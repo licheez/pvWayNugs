@@ -159,7 +159,9 @@ internal sealed class PvNugsMessagingKafkaMonitor(
         var security = await securityService.GetKafkaSecurityAsync(
             cancellationToken);
 
-        config.SecurityProtocol = SecurityProtocol.SaslSsl;
+        config.SecurityProtocol = securityService.EnableSsl 
+            ? SecurityProtocol.SaslSsl 
+            : SecurityProtocol.SaslPlaintext;
         config.SaslMechanism = SaslMechanism.Plain;
         config.SaslUsername = security.SaslUsername;
         config.SaslPassword = security.SaslPassword;

@@ -204,7 +204,9 @@ internal sealed class PvNugsMessagingKafkaProducer(
         var security = await securityService.GetKafkaSecurityAsync(
             cancellationToken);
 
-        producerConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
+        producerConfig.SecurityProtocol = securityService.EnableSsl
+            ? SecurityProtocol.SaslSsl
+            : SecurityProtocol.SaslPlaintext;
         producerConfig.SaslMechanism = SaslMechanism.Plain;
         producerConfig.SaslUsername = security.SaslUsername;
         producerConfig.SaslPassword = security.SaslPassword;

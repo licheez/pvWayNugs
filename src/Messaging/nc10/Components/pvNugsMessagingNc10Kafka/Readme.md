@@ -117,10 +117,21 @@ Auto-commit is deliberately disabled by the provider.
 
 ## 🔐 Security
 
-For non-local Kafka infrastructure, the provider uses:
+For non-local Kafka infrastructure, the provider uses SASL/PLAIN
+authentication.
+
+SSL/TLS encryption is enabled by default:
 
 ```text
 SecurityProtocol : SASL_SSL
+SaslMechanism    : PLAIN
+```
+
+For development, integration testing, or other trusted environments,
+SSL/TLS encryption can be disabled:
+
+```text
+SecurityProtocol : SASL_PLAINTEXT
 SaslMechanism    : PLAIN
 ```
 
@@ -130,16 +141,26 @@ rather than stored directly in the Kafka configuration.
 ```json
 {
   "PvNugsMessagingKafkaSecurityConfig": {
-    "SaslUserNameParams": {
+    "SaslUsernameParams": {
       "key": "value"
     },
     "SaslPasswordParams": {
       "key": "value"
     },
+    "EnableSsl": true,
     "EnableSslCertificateVerification": true
   }
 }
 ```
+
+`EnableSsl` defaults to `true`.
+
+When enabled, the provider uses `SASL_SSL`. When disabled, it uses
+`SASL_PLAINTEXT`. Disabling SSL/TLS is primarily intended for local
+development, integration testing, or other trusted environments.
+
+`EnableSslCertificateVerification` only applies when SSL/TLS is enabled
+and defaults to `true`.
 
 The parameter dictionaries are passed directly to the configured secret
 manager. Their contents therefore depend on the secret-provider

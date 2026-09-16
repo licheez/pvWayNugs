@@ -91,7 +91,9 @@ internal abstract class PvNugsMessagingKafkaBaseConsumer(
         var security = await securityService.GetKafkaSecurityAsync(
             cancellationToken);
 
-        consumerConfig.SecurityProtocol = SecurityProtocol.SaslSsl;
+        consumerConfig.SecurityProtocol = securityService.EnableSsl
+            ? SecurityProtocol.SaslSsl
+            : SecurityProtocol.SaslPlaintext;
         consumerConfig.SaslMechanism = SaslMechanism.Plain;
         consumerConfig.SaslUsername = security.SaslUsername;
         consumerConfig.SaslPassword = security.SaslPassword;

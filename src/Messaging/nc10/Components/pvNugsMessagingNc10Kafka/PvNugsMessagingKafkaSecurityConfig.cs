@@ -1,3 +1,7 @@
+// ReSharper disable CollectionNeverUpdated.Global
+
+using Confluent.Kafka;
+
 namespace pvNugsMessagingNc10Kafka;
 
 /// <summary>
@@ -27,6 +31,21 @@ public sealed class PvNugsMessagingKafkaSecurityConfig
     /// </summary>
     public Dictionary<string, string> SaslPasswordParams { get; set; } = new ();
 
+    /// <summary>
+    /// Gets or sets a value indicating whether SSL/TLS encryption is enabled
+    /// for SASL-authenticated Kafka connections.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see langword="true"/>, causing the provider to use
+    /// <see cref="SecurityProtocol.SaslSsl"/>.
+    /// When set to <see langword="false"/>, the provider uses
+    /// <see cref="SecurityProtocol.SaslPlaintext"/> instead.
+    ///
+    /// Disabling SSL/TLS is primarily intended for local development,
+    /// integration testing, or other trusted environments.
+    /// </remarks>
+    public bool EnableSsl { get; set; } = true;
+    
     /// <summary>
     /// Gets or sets a value indicating whether SSL certificate verification
     /// is enabled when connecting to Kafka.
