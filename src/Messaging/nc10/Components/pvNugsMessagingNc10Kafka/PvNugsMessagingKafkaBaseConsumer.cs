@@ -83,7 +83,8 @@ internal abstract class PvNugsMessagingKafkaBaseConsumer(
             IsolationLevel = ConsumerConfig.IsolationLevel
         };
 
-        if (ConsumerConfig.Dummy || GlobalConfig.IsLocal)
+        if (ConsumerConfig.Dummy
+            || securityService.Mode == PvNugsMessagingKafkaSecurityMode.None)
         {
             return consumerConfig;
         }
@@ -91,9 +92,10 @@ internal abstract class PvNugsMessagingKafkaBaseConsumer(
         var security = await securityService.GetKafkaSecurityAsync(
             cancellationToken);
 
-        consumerConfig.SecurityProtocol = securityService.EnableSsl
-            ? SecurityProtocol.SaslSsl
-            : SecurityProtocol.SaslPlaintext;
+        consumerConfig.SecurityProtocol =
+            securityService.Mode == PvNugsMessagingKafkaSecurityMode.SaslSsl
+                ? SecurityProtocol.SaslSsl
+                : SecurityProtocol.SaslPlaintext;
         consumerConfig.SaslMechanism = SaslMechanism.Plain;
         consumerConfig.SaslUsername = security.SaslUsername;
         consumerConfig.SaslPassword = security.SaslPassword;

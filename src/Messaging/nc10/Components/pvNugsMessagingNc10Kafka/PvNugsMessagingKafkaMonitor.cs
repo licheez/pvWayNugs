@@ -151,7 +151,7 @@ internal sealed class PvNugsMessagingKafkaMonitor(
             BootstrapServers = _config.BootstrapServers
         };
 
-        if (_config.IsLocal)
+        if (securityService.Mode == PvNugsMessagingKafkaSecurityMode.None)
         {
             return config;
         }
@@ -159,9 +159,10 @@ internal sealed class PvNugsMessagingKafkaMonitor(
         var security = await securityService.GetKafkaSecurityAsync(
             cancellationToken);
 
-        config.SecurityProtocol = securityService.EnableSsl 
-            ? SecurityProtocol.SaslSsl 
-            : SecurityProtocol.SaslPlaintext;
+        config.SecurityProtocol =
+            securityService.Mode == PvNugsMessagingKafkaSecurityMode.SaslSsl
+                ? SecurityProtocol.SaslSsl
+                : SecurityProtocol.SaslPlaintext;
         config.SaslMechanism = SaslMechanism.Plain;
         config.SaslUsername = security.SaslUsername;
         config.SaslPassword = security.SaslPassword;

@@ -23,21 +23,4 @@ public sealed class PvNugsMessagingKafkaConfig
     /// the initial connection to the Kafka cluster.
     /// </summary>
     public string BootstrapServers { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets a value indicating whether the configured Kafka bootstrap server
-    /// points to the local machine.
-    /// </summary>
-    /// <remarks>
-    /// Local Kafka infrastructure is currently identified by a bootstrap
-    /// server starting with <c>localhost</c> or <c>127.0.0.1</c>.
-    /// </remarks>
-    public bool IsLocal =>
-        BootstrapServers.StartsWith(
-            "localhost",
-            StringComparison.OrdinalIgnoreCase)
-        ||
-        BootstrapServers.StartsWith(
-            "127.0.0.1",
-            StringComparison.Ordinal);
 }

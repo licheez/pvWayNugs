@@ -191,22 +191,22 @@ internal sealed class PvNugsMessagingKafkaProducer(
                 _producerConfig.MessageSendMaxRetries
         };
 
-        if (_globalConfig.IsLocal)
+        if (securityService.Mode == PvNugsMessagingKafkaSecurityMode.None)
         {
             await logger.LogAsync(
-                "Kafka producer is configured for local infrastructure; " +
-                "security credentials will not be applied.",
+                "Kafka producer security mode is None: " +
+                "SASL credentials will not be applied.",
                 SeverityEnu.Trace);
-
             return producerConfig;
         }
 
         var security = await securityService.GetKafkaSecurityAsync(
             cancellationToken);
 
-        producerConfig.SecurityProtocol = securityService.EnableSsl
-            ? SecurityProtocol.SaslSsl
-            : SecurityProtocol.SaslPlaintext;
+        producerConfig.SecurityProtocol =
+            securityService.Mode == PvNugsMessagingKafkaSecurityMode.SaslSsl
+                ? SecurityProtocol.SaslSsl
+                : SecurityProtocol.SaslPlaintext;
         producerConfig.SaslMechanism = SaslMechanism.Plain;
         producerConfig.SaslUsername = security.SaslUsername;
         producerConfig.SaslPassword = security.SaslPassword;

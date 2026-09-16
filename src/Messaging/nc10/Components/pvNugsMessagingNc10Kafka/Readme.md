@@ -20,8 +20,8 @@ The package provides broker-neutral **Producer**, **Consumer** and
 - 👥 Explicit Kafka consumer-group support
 - ✅ Explicit message acknowledgement through Kafka offset commits
 - 🔍 Observe pending messages and active consumers
-- 🔐 SASL/SSL authentication with credentials resolved through a secret manager
-- 🏠 Simplified local Kafka configuration without authentication
+- 🔐 Explicit Kafka security modes: no authentication, SASL/PLAIN, or SASL/PLAIN over SSL/TLS
+- 🔑 SASL credentials resolved through a secret manager
 - 🧪 Dummy producer and consumer modes
 - 💉 Modular dependency-injection registration
 - 🔄 Designed behind broker-neutral pvNugs messaging abstractions
@@ -49,11 +49,11 @@ The package separates messaging into three independent responsibilities:
 ```text
                   pvNugsMessagingNc10Abstractions
                              │
-          ┌──────────────────┼───────────────────┐
-          │                  │                   │
-      Producer            Consumer             Monitor
-          │                  │                   │
-          └──────────────────┼───────────────────┘
+           ┌─────────────────┼──────────────────┐
+           │                 │                  │
+       Producer           Consumer           Monitor
+           │                 │                  │
+           └─────────────────┼──────────────────┘
                              │
                          Apache Kafka
 ```
@@ -77,10 +77,9 @@ Kafka infrastructure configuration is shared by all components:
 }
 ```
 
-`IsLocal` is automatically derived from the bootstrap server.
-
-A Kafka instance whose bootstrap server starts with `localhost` or
-`127.0.0.1` is considered local and does not use SASL authentication.
+The bootstrap server address and Kafka security mode are configured
+independently. No security behaviour is inferred from the server name
+or address.
 
 ### Producer configuration
 
@@ -117,54 +116,106 @@ Auto-commit is deliberately disabled by the provider.
 
 ## 🔐 Security
 
-For non-local Kafka infrastructure, the provider uses SASL/PLAIN
-authentication.
+Kafka security is configured explicitly and independently of the
+bootstrap server address.
 
-SSL/TLS encryption is enabled by default:
+The provider supports three security modes:
 
-```text
-SecurityProtocol : SASL_SSL
-SaslMechanism    : PLAIN
+| Mode | Kafka protocol | Authentication | SSL/TLS |
+| --- | --- | --- | --- |
+| `None` | `PLAINTEXT` | None | No |
+| `SaslPlaintext` | `SASL_PLAINTEXT` | SASL/PLAIN | No |
+| `SaslSsl` | `SASL_SSL` | SASL/PLAIN | Yes |
+
+The security mode is configured through
+`PvNugsMessagingKafkaSecurityConfig`.
+
+### No authentication
+
+Use `None` when connecting to Kafka infrastructure that does not require
+authentication:
+
+```json
+{
+  "PvNugsMessagingKafkaSecurityConfig": {
+    "Mode": "None"
+  }
+}
 ```
 
-For development, integration testing, or other trusted environments,
-SSL/TLS encryption can be disabled:
+In this mode, SASL credentials are not retrieved from the secret manager.
+
+This is typically suitable for local development or other trusted Kafka
+infrastructure where authentication is not required.
+
+### SASL without SSL/TLS
+
+Use `SaslPlaintext` to authenticate with SASL/PLAIN without SSL/TLS
+encryption:
+
+```json
+{
+  "PvNugsMessagingKafkaSecurityConfig": {
+    "Mode": "SaslPlaintext",
+    "SaslUsernameParams": {
+      "key": "value"
+    },
+    "SaslPasswordParams": {
+      "key": "value"
+    }
+  }
+}
+```
+
+This mode is particularly useful for development, integration testing,
+or trusted environments where SASL authentication needs to be tested
+without configuring TLS certificates.
+
+The corresponding Kafka client configuration is:
 
 ```text
 SecurityProtocol : SASL_PLAINTEXT
 SaslMechanism    : PLAIN
 ```
 
-Credentials are resolved through the configured pvNugs secret manager
-rather than stored directly in the Kafka configuration.
+### SASL with SSL/TLS
+
+Use `SaslSsl` to authenticate with SASL/PLAIN over an SSL/TLS encrypted
+connection:
 
 ```json
 {
   "PvNugsMessagingKafkaSecurityConfig": {
+    "Mode": "SaslSsl",
     "SaslUsernameParams": {
       "key": "value"
     },
     "SaslPasswordParams": {
       "key": "value"
     },
-    "EnableSsl": true,
     "EnableSslCertificateVerification": true
   }
 }
 ```
 
-`EnableSsl` defaults to `true`.
+The corresponding Kafka client configuration is:
 
-When enabled, the provider uses `SASL_SSL`. When disabled, it uses
-`SASL_PLAINTEXT`. Disabling SSL/TLS is primarily intended for local
-development, integration testing, or other trusted environments.
+```text
+SecurityProtocol : SASL_SSL
+SaslMechanism    : PLAIN
+```
 
-`EnableSslCertificateVerification` only applies when SSL/TLS is enabled
-and defaults to `true`.
+`SaslSsl` is the default security mode.
 
-The parameter dictionaries are passed directly to the configured secret
-manager. Their contents therefore depend on the secret-provider
-implementation.
+`EnableSslCertificateVerification` only applies when the security mode
+is `SaslSsl` and defaults to `true`.
+
+SASL credentials are resolved through the configured pvNugs secret
+manager rather than stored directly in the Kafka configuration.
+
+The `SaslUsernameParams` and `SaslPasswordParams` dictionaries are
+passed directly to the configured secret manager. Their contents
+therefore depend on the secret-provider implementation.
 
 ---
 
@@ -423,11 +474,11 @@ not maintain local monitoring state.
 
 It currently exposes:
 
-| Metric            | Kafka support    | Description                                                                                  |
-| ----------------- | ---------------- | -------------------------------------------------------------------------------------------- |
-| `PendingMessages` | ✅ Available      | Difference between partition high watermarks and committed consumer-group offsets            |
-| `ActiveConsumers` | ✅ Available      | Active group members owning at least one partition of the requested topic                    |
-| `LastActivity`    | 🚫 Not supported | Kafka does not expose an unambiguous last-activity timestamp for a topic/consumer-group pair |
+| Metric | Kafka support | Description |
+| --- | --- | --- |
+| `PendingMessages` | ✅ Available | Difference between partition high watermarks and committed consumer-group offsets |
+| `ActiveConsumers` | ✅ Available | Active group members owning at least one partition of the requested topic |
+| `LastActivity` | 🚫 Not supported | Kafka does not expose an unambiguous last-activity timestamp for a topic/consumer-group pair |
 
 ### Metric availability
 

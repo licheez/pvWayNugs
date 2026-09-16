@@ -32,28 +32,34 @@ public sealed class PvNugsMessagingKafkaSecurityConfig
     public Dictionary<string, string> SaslPasswordParams { get; set; } = new ();
 
     /// <summary>
-    /// Gets or sets a value indicating whether SSL/TLS encryption is enabled
-    /// for SASL-authenticated Kafka connections.
+    /// Gets or sets the authentication and transport security mode used
+    /// when connecting to Kafka.
     /// </summary>
     /// <remarks>
-    /// The default value is <see langword="true"/>, causing the provider to use
-    /// <see cref="SecurityProtocol.SaslSsl"/>.
-    /// When set to <see langword="false"/>, the provider uses
-    /// <see cref="SecurityProtocol.SaslPlaintext"/> instead.
+    /// The default value is
+    /// <see cref="PvNugsMessagingKafkaSecurityMode.SaslSsl"/>.
     ///
-    /// Disabling SSL/TLS is primarily intended for local development,
-    /// integration testing, or other trusted environments.
+    /// Use <see cref="PvNugsMessagingKafkaSecurityMode.None"/> to connect
+    /// without SASL authentication.
+    ///
+    /// Use <see cref="PvNugsMessagingKafkaSecurityMode.SaslPlaintext"/> to
+    /// authenticate with SASL without SSL/TLS encryption.
     /// </remarks>
-    public bool EnableSsl { get; set; } = true;
+    public PvNugsMessagingKafkaSecurityMode Mode { get; set; } =
+        PvNugsMessagingKafkaSecurityMode.SaslSsl;
     
     /// <summary>
     /// Gets or sets a value indicating whether SSL certificate verification
-    /// is enabled when connecting to Kafka.
+    /// is enabled when connecting to Kafka over SSL/TLS.
     /// </summary>
     /// <remarks>
     /// The default value is <see langword="true"/>.
+    /// This setting only applies when <see cref="Mode"/> is
+    /// <see cref="PvNugsMessagingKafkaSecurityMode.SaslSsl"/>.
+    ///
     /// Disabling certificate verification should only be used in controlled
     /// environments where certificate validation cannot be performed.
     /// </remarks>
     public bool EnableSslCertificateVerification { get; set; } = true;
+    
 }
