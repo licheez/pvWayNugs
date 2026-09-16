@@ -30,7 +30,7 @@ public sealed class PvNugsMessagingKafkaConsumerConfig
     /// The default value is one hour.
     /// </remarks>
     public TimeSpan SessionTimeout { get; set; } =
-        TimeSpan.FromHours(1);
+        TimeSpan.FromSeconds(10);
 
     /// <summary>
     /// Gets or sets a value indicating whether the consumer should operate

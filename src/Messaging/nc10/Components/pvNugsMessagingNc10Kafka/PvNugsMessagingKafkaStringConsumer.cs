@@ -32,7 +32,7 @@ internal sealed class PvNugsMessagingKafkaStringConsumer(
     /// <inheritdoc />
     public async Task<Guid> SubscribeAsync(
         string topic,
-        Func<string, PvNugsPublishResult, Task<bool>>
+        Func<string, PvNugsPublishResult, string, Task<bool>>
             handleIncomingMessageAsync,
         string? consumerGroup = null,
         CancellationToken cancellationToken = default)
@@ -87,16 +87,17 @@ internal sealed class PvNugsMessagingKafkaStringConsumer(
     /// The unique identifier of the subscription.
     /// </param>
     /// <param name="handleIncomingMessageAsync">
-    /// The callback invoked for each consumed message.
-    /// </param>
-    /// <param name="cts">
+    /// The callback invoked for each consumed message. The callback receives,
+    /// in order, the source topic, the publication metadata, and the raw
+    /// message payload.
+    /// </param>    /// <param name="cts">
     /// The cancellation source controlling the lifetime of the subscription.
     /// </param>
     private async Task ListenerAsync(
         string topic,
         ConsumerConfig consumerConfig,
         Guid subscriberId,
-        Func<string, PvNugsPublishResult, Task<bool>>
+        Func<string, PvNugsPublishResult, string, Task<bool>>
             handleIncomingMessageAsync,
         CancellationTokenSource cts)
     {
@@ -131,10 +132,13 @@ internal sealed class PvNugsMessagingKafkaStringConsumer(
                         Offset = consumeResult.Offset.Value,
                         PublishedAt = publishedAt
                     };
+                    
+                    var payload = consumeResult.Message.Value;
 
                     var commit = await handleIncomingMessageAsync(
                         topic,
-                        publishResult);
+                        publishResult,
+                        payload);
 
                     if (commit)
                     {

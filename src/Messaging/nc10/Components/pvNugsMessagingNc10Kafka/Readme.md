@@ -32,7 +32,7 @@ The package provides broker-neutral **Producer**, **Consumer** and
 
 ```bash
 dotnet add package pvNugsMessagingNc10Kafka
-````
+```
 
 The package implements the contracts defined by:
 
@@ -48,13 +48,13 @@ The package separates messaging into three independent responsibilities:
 
 ```text
                   pvNugsMessagingNc10Abstractions
-                              │
-          ┌───────────────────┼───────────────────┐
-          │                   │                   │
-      Producer             Consumer             Monitor
-          │                   │                   │
-          └───────────────────┼───────────────────┘
-                              │
+                             │
+          ┌──────────────────┼───────────────────┐
+          │                  │                   │
+      Producer            Consumer             Monitor
+          │                  │                   │
+          └──────────────────┼───────────────────┘
+                             │
                          Apache Kafka
 ```
 
@@ -101,7 +101,7 @@ A Kafka instance whose bootstrap server starts with `localhost` or
 ```json
 {
   "PvNugsMessagingKafkaConsumerConfig": {
-    "SessionTimeout": "01:00:00",
+    "SessionTimeout": "00:00:10",
     "Dummy": false,
     "AutoOffsetReset": "Earliest",
     "IsolationLevel": "ReadCommitted"
@@ -261,12 +261,25 @@ Kafka partition and offset information are also exposed when available.
 
 A subscription returns a unique subscription identifier.
 
+The raw string consumer callback receives, in order, the source topic,
+the publication metadata and the raw message payload:
+
+```text
+topic → publication metadata → raw message payload
+```
+
+For example:
+
 ```csharp
 var subscriptionId =
     await consumer.SubscribeAsync(
         "orders",
-        async (message, publishResult) =>
+        async (topic, publishResult, message) =>
         {
+            Console.WriteLine(
+                $"Received message {publishResult.MessageId} " +
+                $"from topic '{topic}'.");
+
             await ProcessAsync(message);
 
             return true;
@@ -293,7 +306,11 @@ A consumer group can be specified explicitly:
 ```csharp
 await consumer.SubscribeAsync(
     "orders",
-    HandleMessageAsync,
+    async (topic, publishResult, message) =>
+    {
+        await ProcessAsync(message);
+        return true;
+    },
     consumerGroup: "billing");
 ```
 
@@ -318,6 +335,15 @@ allowing applications to opt into explicit consumer groups.
 
 Typed consumers separate message deserialization from message
 processing.
+
+They follow the same callback structure as raw string consumers:
+
+```text
+topic → publication metadata → typed message
+```
+
+The raw Kafka payload is first passed to the materialization factory,
+which creates the application object supplied to the message handler.
 
 ```csharp
 var subscriptionId =
@@ -347,6 +373,16 @@ The message handler then receives:
 topic
 publication metadata
 deserialized object
+```
+
+The raw and typed consumer contracts are therefore symmetrical:
+
+```text
+IPvNugsMessagingConsumer
+    topic + PvNugsPublishResult + string
+
+IPvNugsMessagingConsumer<T>
+    topic + PvNugsPublishResult + T
 ```
 
 ---
@@ -453,4 +489,3 @@ This project is licensed under the MIT License.
 ## 🏢 pvWay
 
 Part of the **pvWay / pvNugs** collection of reusable .NET components.
-
