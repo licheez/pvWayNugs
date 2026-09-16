@@ -302,6 +302,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "intTesting", "intTesting", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PvNugsMessagingNc10KafkaLab.it", "src\Messaging\nc10\Testing\intTesting\PvNugsMessagingNc10KafkaLab.it\PvNugsMessagingNc10KafkaLab.it.csproj", "{38DFD0A6-920E-4347-998D-4AB65E781BB8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PvNugsMessagingNc10Kafka.it", "src\Messaging\nc10\Testing\intTesting\PvNugsMessagingNc10Kafka.it\PvNugsMessagingNc10Kafka.it.csproj", "{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -450,6 +452,7 @@ Global
 		{C9A699E0-CBF1-49EF-BFC2-E200C8C0E1EF} = {E8187C5E-5795-45A0-A5DE-9D5459A7FF24}
 		{2B76425B-F2F5-40BD-96FB-4EA8A21D8418} = {C9A699E0-CBF1-49EF-BFC2-E200C8C0E1EF}
 		{38DFD0A6-920E-4347-998D-4AB65E781BB8} = {2B76425B-F2F5-40BD-96FB-4EA8A21D8418}
+		{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371} = {2B76425B-F2F5-40BD-96FB-4EA8A21D8418}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -744,5 +747,9 @@ Global
 		{38DFD0A6-920E-4347-998D-4AB65E781BB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38DFD0A6-920E-4347-998D-4AB65E781BB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38DFD0A6-920E-4347-998D-4AB65E781BB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -8,13 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Confluent.Kafka" Version="2.15.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="compose.yaml">
-        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      </None>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     </ItemGroup>
 
 </Project>
