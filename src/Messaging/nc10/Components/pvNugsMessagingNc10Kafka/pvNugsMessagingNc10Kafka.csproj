@@ -15,7 +15,9 @@
             Provides Kafka producer, consumer, typed consumer, and monitoring
             implementations for the pvNugs messaging abstractions.
             Supports explicit consumer groups, explicit offset commits,
-            SASL/SSL authentication, dummy mode, and modular dependency injection.
+            configurable PLAINTEXT, SASL_PLAINTEXT and SASL_SSL security modes,
+            secret-manager-based credential resolution, dummy mode, and modular
+            dependency injection.
         </PackageReleaseNotes>
         
         <PackageReadmeFile>readme.md</PackageReadmeFile>
