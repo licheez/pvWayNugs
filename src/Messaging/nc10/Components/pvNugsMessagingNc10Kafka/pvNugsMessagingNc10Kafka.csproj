@@ -4,14 +4,61 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <Version>10.0.0</Version>
+
+        <Authors>Pierre Van Wallendael</Authors>
+        <Copyright>pvWay Ltd</Copyright>
+
+        <PackageReleaseNotes>
+            Initial release of the pvNugs Kafka messaging provider for .NET 10.
+            Provides Kafka producer, consumer, typed consumer, and monitoring
+            implementations for the pvNugs messaging abstractions.
+            Supports explicit consumer groups, explicit offset commits,
+            SASL/SSL authentication, dummy mode, and modular dependency injection.
+        </PackageReleaseNotes>
+        
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <PackageIcon>pvwayLogoTextLess256.png</PackageIcon>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+
+        <PackageTags>messaging, kafka, mq, rabbitmq, azure-service-bus, redis, pubsub, message-broker, monitoring, abstraction, .net, dependency-injection, pvway, pvwaynugs</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Confluent.Kafka" Version="2.15.1" />
-      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
-      <PackageReference Include="pvNugsLoggerNc10Abstractions" Version="10.0.1" />
-      <PackageReference Include="pvNugsMessagingNc10Abstractions" Version="10.0.0" />
-      <PackageReference Include="pvNugsSecretManagerNc10Abstractions" Version="10.0.1" />
+        <PackageReference Include="Confluent.Kafka"
+                          Version="2.15.1" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions"
+                          Version="10.0.12" />
+        <PackageReference Include="pvNugsLoggerNc10Abstractions"
+                          Version="10.0.1" />
+        <PackageReference Include="pvNugsMessagingNc10Abstractions"
+                          Version="10.0.1" />
+        <PackageReference Include="pvNugsSecretManagerNc10Abstractions"
+                          Version="10.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="readme.md"
+              Pack="true"
+              PackagePath="\" />
+
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
+
+        <None Update="pvwayLogoTextLess256.png">
+            <Pack>true</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
     </ItemGroup>
 
 </Project>
