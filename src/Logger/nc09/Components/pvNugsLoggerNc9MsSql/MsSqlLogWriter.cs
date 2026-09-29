@@ -175,7 +175,8 @@ namespace pvNugsLoggerNc9MsSql;
 /// });
 /// </code>
 /// </example>
-public sealed class MsSqlLogWriter : IMsSqlLogWriter{
+public sealed class MsSqlLogWriter : IMsSqlLogWriter
+{
     private const string SqlVarChar = "varchar";
     private const string SqlChar = "char";
     private const string SqlNVarChar = "nvarchar";
@@ -190,24 +191,24 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
 
     private readonly string _tableName;
     private readonly string _schemaName;
-    
+
     private readonly string _userIdColumnName;
     private int _userIdLength;
-    
+
     private readonly string _companyIdColumnName;
     private int _companyIdLength;
-    
+
     private readonly string _severityCodeColumnName;
-    
+
     private readonly string _machineNameColumnName;
     private int _machineNameLength;
-    
+
     private readonly string _topicColumnName;
     private int _topicLength;
-    
+
     private readonly string _contextColumnName;
     private int _contextLength;
-    
+
     private readonly string _messageColumnName;
     private readonly string _createDateColumnName;
 
@@ -220,24 +221,24 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
 
         _tableName = _config.TableName;
         _schemaName = _config.SchemaName;
-        
+
         _userIdColumnName = _config.UserIdColumnName;
         _userIdLength = _config.UserIdColumnLength;
-        
+
         _companyIdColumnName = _config.CompanyIdColumnName;
         _companyIdLength = _config.CompanyIdColumnLength;
-        
+
         _severityCodeColumnName = _config.SeverityCodeColumnName;
-        
+
         _machineNameColumnName = _config.MachineNameColumnName;
         _machineNameLength = _config.MachineNameColumnLength;
-        
+
         _topicColumnName = _config.TopicColumnName;
         _topicLength = _config.TopicColumnLength;
-        
+
         _contextColumnName = _config.ContextColumnName;
         _contextLength = _config.ContextColumnLength;
-        
+
         _messageColumnName = _config.MessageColumnName;
         _createDateColumnName = _config.CreateDateUtcColumnName;
     }
@@ -536,7 +537,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
             { SeverityEnu.Debug, _config.DefaultRetentionPeriodForDebug },
             { SeverityEnu.Trace, _config.DefaultRetentionPeriodForTrace },
         };
-        
+
         string appCs;
         try
         {
@@ -560,15 +561,15 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
                 var cmdText = $"DELETE FROM [{_schemaName}].[{_tableName}] " +
                               $"WHERE [{_severityCodeColumnName}] = @severity " +
                               $"AND [{_createDateColumnName}] < @cutoffDate";
-            
+
                 await using var cmd = new SqlCommand(cmdText, appCn);
-            
+
                 var severityCode = GetSeverityCode(severity);
                 var cutoffUtc = DateTime.UtcNow - keep;
-            
+
                 cmd.Parameters.Add("@severity", SqlDbType.Char, 1).Value = severityCode;
                 cmd.Parameters.Add("@cutoffDate", SqlDbType.DateTime).Value = cutoffUtc;
-            
+
                 var rows = await cmd.ExecuteNonQueryAsync();
                 totRows += rows;
             }
@@ -578,7 +579,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
             await LogExceptionAsync(e);
             throw new MsSqlLogWriterException(e);
         }
-    
+
         return totRows;
     }
 
@@ -634,7 +635,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         try
         {
             await LogActivityAsync($"Checking table '{_tableName}' existence");
-            var readerCs = 
+            var readerCs =
                 await _csp.GetConnectionStringAsync(_config.ConnectionStringName);
             await using var readerCn = new SqlConnection(readerCs);
             await readerCn.OpenAsync();
@@ -648,7 +649,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
             cmd.Parameters.Add("@schemaName", SqlDbType.NVarChar, 128).Value = _schemaName;
 
             var tableExists = await cmd.ExecuteScalarAsync() != null;
-            
+
             await readerCn.CloseAsync();
 
             if (tableExists) return;
@@ -657,7 +658,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         {
             await LogExceptionAsync(e);
         }
-        
+
         try
         {
             await LogActivityAsync($"creating table {_schemaName}.{_tableName}");
@@ -665,10 +666,10 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
             var ownerCs = await _csp.GetConnectionStringAsync(SqlRoleEnu.Owner);
             await using var ownerCn = new SqlConnection(ownerCs);
             await ownerCn.OpenAsync();
-            
+
             // Create the table
             await CreateTableAsync(ownerCn);
-            
+
             // Create indexes for optimal query performance
             await CreateIndexesAsync(ownerCn);
         }
@@ -678,7 +679,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
             throw new MsSqlLogWriterException(e);
         }
     }
-    
+
     /// <summary>
     /// Creates the log table with the configured schema.
     /// </summary>
@@ -686,8 +687,8 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
     private async Task CreateTableAsync(SqlConnection connection)
     {
         // Note: Table/column names can't be parameterized in DDL, but they come from config, not user input
-        var identityColumn = _config.IncludeIdentityColumn 
-            ? $"[{_config.IdentityColumnName}] INT IDENTITY(1,1) PRIMARY KEY CLUSTERED," 
+        var identityColumn = _config.IncludeIdentityColumn
+            ? $"[{_config.IdentityColumnName}] INT IDENTITY(1,1) PRIMARY KEY CLUSTERED,"
             : "";
 
         var createCommandText =
@@ -706,11 +707,11 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
 
         await using var createCmd = new SqlCommand(createCommandText, connection);
         await createCmd.ExecuteNonQueryAsync();
-        
+
         await LogActivityAsync($"Created table structure for {_schemaName}.{_tableName}");
     }
-    
-        /// <summary>
+
+    /// <summary>
     /// Creates performance-optimized indexes on the log table.
     /// </summary>
     /// <param name="connection">Open database connection with owner privileges.</param>
@@ -722,7 +723,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         if (_config.IncludeDateIndex)
         {
             var dateIndexName = $"IX_{_tableName}_{_createDateColumnName}";
-            var dateIndexSql = 
+            var dateIndexSql =
                 $"CREATE NONCLUSTERED INDEX [{dateIndexName}] " +
                 $"ON [{_schemaName}].[{_tableName}] ([{_createDateColumnName}] DESC)";
             indexes.Add(dateIndexSql);
@@ -732,7 +733,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         if (_config.IncludePurgeIndex)
         {
             var purgeIndexName = $"IX_{_tableName}_Purge";
-            var purgeIndexSql = 
+            var purgeIndexSql =
                 $"CREATE NONCLUSTERED INDEX [{purgeIndexName}] " +
                 $"ON [{_schemaName}].[{_tableName}] ([{_severityCodeColumnName}], [{_createDateColumnName}])";
             indexes.Add(purgeIndexSql);
@@ -742,7 +743,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         if (_config.IncludeUserIndex)
         {
             var userIndexName = $"IX_{_tableName}_User";
-            var userIndexSql = 
+            var userIndexSql =
                 $"CREATE NONCLUSTERED INDEX [{userIndexName}] " +
                 $"ON [{_schemaName}].[{_tableName}] ([{_userIdColumnName}], [{_createDateColumnName}] DESC) " +
                 $"WHERE [{_userIdColumnName}] IS NOT NULL";
@@ -753,7 +754,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         if (_config.IncludeTopicIndex)
         {
             var topicIndexName = $"IX_{_tableName}_Topic";
-            var topicIndexSql = 
+            var topicIndexSql =
                 $"CREATE NONCLUSTERED INDEX [{topicIndexName}] " +
                 $"ON [{_schemaName}].[{_tableName}] ([{_topicColumnName}], [{_createDateColumnName}] DESC) " +
                 $"WHERE [{_topicColumnName}] IS NOT NULL";
@@ -774,7 +775,7 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
                 // Don't throw - table creation should succeed even if some indexes fail
             }
         }
-        
+
         await LogActivityAsync($"Created {indexes.Count} indexes for {_schemaName}.{_tableName}");
     }
 
@@ -784,23 +785,23 @@ public sealed class MsSqlLogWriter : IMsSqlLogWriter{
         await LogActivityAsync($"Checking table {_tableName}");
         try
         {
-            var readerCs = 
+            var readerCs =
                 await _csp.GetConnectionStringAsync(_config.ConnectionStringName);
             await using var readerCn = new SqlConnection(readerCs);
 
             await readerCn.OpenAsync();
             const string cmdText = "SELECT [column_name], " +
-                          "       [data_type], " +
-                          "       [is_nullable], " +
-                          "       [character_maximum_length] " +
-                          "FROM [information_schema].[columns] " +
-                          "WHERE [table_schema] = @schemaName " +
-                          "AND   [table_name] = @tableName";
+                                   "       [data_type], " +
+                                   "       [is_nullable], " +
+                                   "       [character_maximum_length] " +
+                                   "FROM [information_schema].[columns] " +
+                                   "WHERE [table_schema] = @schemaName " +
+                                   "AND   [table_name] = @tableName";
 
             var cmd = readerCn.CreateCommand();
             cmd.CommandText = cmdText;
             cmd.CommandType = CommandType.Text;
-        
+
             cmd.Parameters.Add("@schemaName", SqlDbType.NVarChar, 128).Value = _schemaName;
             cmd.Parameters.Add("@tableName", SqlDbType.NVarChar, 128).Value = _tableName;
 

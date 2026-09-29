@@ -21,13 +21,15 @@ public interface ILogWriter : IDisposable, IAsyncDisposable
     /// <param name="lineNumber">The line number in the source file where the log was generated.</param>
     /// <param name="message">The actual log message content.</param>
     /// <param name="dateUtc">The UTC timestamp when the log entry was created.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A task representing the asynchronous write operation.</returns>
     Task WriteLogAsync(
         string? userId, string? companyId, string? topic,
         SeverityEnu severity,
         string machineName, string memberName,
         string filePath, int lineNumber,
-        string message, DateTime dateUtc);
+        string message, DateTime dateUtc,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Synchronously writes a log entry with full contextual information

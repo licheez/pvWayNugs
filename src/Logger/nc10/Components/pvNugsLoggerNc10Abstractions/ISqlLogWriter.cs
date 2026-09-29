@@ -31,6 +31,7 @@ public interface ISqlLogWriter : ILogWriter
     /// Log entries older than the retention period for each severity will be deleted.
     /// If null or not provided, the implementation should use its configured default retention policies.
     /// </param>
+    /// <param name="cancellationToken"></param>
     /// <returns>
     /// A task that represents the asynchronous purge operation. 
     /// The task result contains the total number of rows deleted across all severity levels.
@@ -90,5 +91,7 @@ public interface ISqlLogWriter : ILogWriter
     /// int errorDeleted = await logWriter.PurgeLogsAsync(errorOnlyPolicy);
     /// </code>
     /// </example>
-    Task<int> PurgeLogsAsync(IDictionary<SeverityEnu, TimeSpan>? retainDic = null);
+    Task<int> PurgeLogsAsync(
+        IDictionary<SeverityEnu, TimeSpan>? retainDic = null,
+        CancellationToken cancellationToken = default);
 }

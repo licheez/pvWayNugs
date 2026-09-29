@@ -209,6 +209,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     Task LogAsync(
         string message,
         SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
@@ -219,16 +220,18 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     Task LogAsync(
         IEnumerable<string> messages,
         SeverityEnu severity,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
 
-   /// <summary>
+    /// <summary>
     /// Asynchronously logs an exception with optional severity override.
     /// Follows the same pattern as the synchronous version but returns a Task.
     /// </summary>
     /// <param name="e">The exception to log.</param>
     /// <param name="severity">Severity level, defaults to Fatal for exceptions.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">Calling method name (autopopulated).</param>
     /// <param name="filePath">Source file path (autopopulated).</param>
     /// <param name="lineNumber">Source line number (autopopulated).</param>
@@ -236,6 +239,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     Task LogAsync(
         Exception e,
         SeverityEnu severity = SeverityEnu.Fatal,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
@@ -245,12 +249,14 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     /// Follows the same pattern as the synchronous version but returns a Task.
     /// </summary>
     /// <param name="result">The method result to log.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">Calling method name (autopopulated).</param>
     /// <param name="filePath">Source file path (autopopulated).</param>
     /// <param name="lineNumber">Source line number (autopopulated).</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task LogAsync(
         IMethodResult result,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
@@ -262,6 +268,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     /// <param name="message">The message to log.</param>
     /// <param name="topic">Topic to associate with this message. Overrides any topic set via SetTopic.</param>
     /// <param name="severity">Severity level, defaults to Debug.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">Calling method name (autopopulated).</param>
     /// <param name="filePath">Source file path (autopopulated).</param>
     /// <param name="lineNumber">Source line number (autopopulated).</param>
@@ -270,6 +277,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
         string message,
         string? topic,
         SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
@@ -281,6 +289,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     /// <param name="messages">Collection of messages to log.</param>
     /// <param name="topic">Topic to associate with these messages. Overrides any topic set via SetTopic.</param>
     /// <param name="severity">Severity level for the log entry.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">Calling method name (autopopulated).</param>
     /// <param name="filePath">Source file path (autopopulated).</param>
     /// <param name="lineNumber">Source line number (autopopulated).</param>
@@ -289,6 +298,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
         IEnumerable<string> messages,
         string? topic,
         SeverityEnu severity,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
@@ -300,6 +310,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     /// <param name="e">The exception to log.</param>
     /// <param name="topic">Topic to associate with this exception. Overrides any topic set via SetTopic.</param>
     /// <param name="severity">Severity level, defaults to Fatal.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">Calling method name (autopopulated).</param>
     /// <param name="filePath">Source file path (autopopulated).</param>
     /// <param name="lineNumber">Source line number (autopopulated).</param>
@@ -308,6 +319,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
         Exception e,
         string? topic,
         SeverityEnu severity = SeverityEnu.Fatal,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);
@@ -318,6 +330,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="result">The method result to log.</param>
     /// <param name="topic">Topic to associate with this result. Overrides any topic set via SetTopic.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">Calling method name (autopopulated).</param>
     /// <param name="filePath">Source file path (autopopulated).</param>
     /// <param name="lineNumber">Source line number (autopopulated).</param>
@@ -325,6 +338,7 @@ public interface ILoggerService : ILogger, IDisposable, IAsyncDisposable
     Task LogAsync(
         IMethodResult result,
         string? topic,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1);

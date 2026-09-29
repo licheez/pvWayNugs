@@ -20,12 +20,15 @@ public abstract class BaseLoggerService(
     private string? _topic;
 
     private bool _disposed;
-    
+
     // No-op scope to prevent disposing the logger when scopes end
     private sealed class NullScope : IDisposable
     {
         public static readonly NullScope Instance = new();
-        public void Dispose() { }
+
+        public void Dispose()
+        {
+        }
     }
 
     /// <inheritdoc />
@@ -38,9 +41,9 @@ public abstract class BaseLoggerService(
     {
         var severity = GetSeverity(logLevel);
         if (severity < minLevel) return;
-        
+
         var logMessage = formatter(state, exception);
-        
+
         // Append exception details (message + stack trace) if provided
         if (exception != null)
         {
@@ -78,6 +81,7 @@ public abstract class BaseLoggerService(
         {
             eventMessage = $"[{eventId.Id}:{eventId.Name}] ";
         }
+
         var message = $"{eventMessage}{logMessage}";
         Log(message, severity, memberName, filePath, lineNumber);
     }
@@ -109,7 +113,7 @@ public abstract class BaseLoggerService(
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed) return;
-        
+
         if (disposing)
         {
             foreach (var logWriter in logWriters)
@@ -117,7 +121,7 @@ public abstract class BaseLoggerService(
                 logWriter.Dispose();
             }
         }
-        
+
         _disposed = true;
     }
 
@@ -137,12 +141,12 @@ public abstract class BaseLoggerService(
             GC.SuppressFinalize(this);
             return;
         }
-        
+
         // Asynchronously dispose all writers in parallel
         var tasks = logWriters
             .Select(w => w.DisposeAsync().AsTask());
         await Task.WhenAll(tasks).ConfigureAwait(false);
-        
+
         _disposed = true;
 
         GC.SuppressFinalize(this);
@@ -263,11 +267,13 @@ public abstract class BaseLoggerService(
     public Task LogAsync(
         string message,
         SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
         return WriteLogAsync(message, _topic, severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -275,11 +281,14 @@ public abstract class BaseLoggerService(
     public Task LogAsync(
         IEnumerable<string> messages,
         SeverityEnu severity,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(GetMessage(messages), _topic, severity,
+        return WriteLogAsync(
+            GetMessage(messages), _topic, severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -287,22 +296,28 @@ public abstract class BaseLoggerService(
     public Task LogAsync(
         Exception e,
         SeverityEnu severity = SeverityEnu.Fatal,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(e.GetDeepMessage(), _topic, severity,
+        return WriteLogAsync(
+            e.GetDeepMessage(), _topic, severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
     /// <inheritdoc />
     public Task LogAsync(
         IMethodResult result,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(result.ErrorMessage, _topic, result.Severity,
+        return WriteLogAsync(
+            result.ErrorMessage, _topic, result.Severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -311,11 +326,14 @@ public abstract class BaseLoggerService(
         string message,
         string? topic,
         SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(message, topic, severity,
+        return WriteLogAsync(
+            message, topic, severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -324,11 +342,14 @@ public abstract class BaseLoggerService(
         IEnumerable<string> messages,
         string? topic,
         SeverityEnu severity,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(GetMessage(messages), topic, severity,
+        return WriteLogAsync(
+            GetMessage(messages), topic, severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -337,11 +358,14 @@ public abstract class BaseLoggerService(
         Exception e,
         string? topic,
         SeverityEnu severity = SeverityEnu.Fatal,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(e.GetDeepMessage(), topic, severity,
+        return WriteLogAsync(
+            e.GetDeepMessage(), topic, severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -349,11 +373,14 @@ public abstract class BaseLoggerService(
     public Task LogAsync(
         IMethodResult result,
         string? topic,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "",
         [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1)
     {
-        return WriteLogAsync(result.ErrorMessage, topic, result.Severity,
+        return WriteLogAsync(
+            result.ErrorMessage, topic, result.Severity,
+            cancellationToken,
             memberName, filePath, lineNumber);
     }
 
@@ -412,6 +439,7 @@ public abstract class BaseLoggerService(
     /// <param name="message">The message to log.</param>
     /// <param name="topic">The topic associated with the message.</param>
     /// <param name="severity">The severity level of the message.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="memberName">The name of the calling member.</param>
     /// <param name="filePath">The path of the source file.</param>
     /// <param name="lineNumber">The line number in the source file.</param>
@@ -420,6 +448,7 @@ public abstract class BaseLoggerService(
         string message,
         string? topic,
         SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         string memberName = "",
         string filePath = "",
         int lineNumber = -1)
@@ -438,7 +467,8 @@ public abstract class BaseLoggerService(
                 severity,
                 machineName,
                 memberName, filePath, lineNumber,
-                message, now));
+                message, now,
+                cancellationToken));
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
