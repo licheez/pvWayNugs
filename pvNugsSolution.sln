@@ -306,7 +306,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PvNugsMessagingNc10KafkaLoc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc10PgSql", "src\Logger\nc10\Components\pvNugsLoggerNc10PgSql\pvNugsLoggerNc10PgSql.csproj", "{61B29E3D-0DD8-4B64-8652-21F779A8E447}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc10DockerBench.it", "src\Logger\nc10\Testing\intTesting\pvNugsLoggerNc10DockerBench.it\pvNugsLoggerNc10DockerBench.it.csproj", "{BAAF41B1-A923-46C6-9B1D-5E7B92D8382D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc10DockerBench.it", "src\Logger\nc10\Testing\intTesting\pvNugsLoggerNc10DockerBench.it\pvNugsLoggerNc10DockerBench.it.csproj", "{0603746F-A70C-4EC3-B6AA-DF28EBF92EC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pvNugsLoggerNc10PgSql.it", "src\Logger\nc10\Testing\intTesting\pvNugsLoggerNc10PgSql.it\pvNugsLoggerNc10PgSql.it.csproj", "{085F22A4-97E9-4266-82A6-F7CBEC3B4CAD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -458,7 +460,8 @@ Global
 		{38DFD0A6-920E-4347-998D-4AB65E781BB8} = {2B76425B-F2F5-40BD-96FB-4EA8A21D8418}
 		{3BBF33B6-41E6-4BB5-BCDF-7311A6ECA371} = {2B76425B-F2F5-40BD-96FB-4EA8A21D8418}
 		{61B29E3D-0DD8-4B64-8652-21F779A8E447} = {66CC2BBF-C5AD-4CA2-9285-60A0C6B02139}
-		{BAAF41B1-A923-46C6-9B1D-5E7B92D8382D} = {64FB453E-4A8A-4C72-A7FD-41D9AC8EB3D0}
+		{0603746F-A70C-4EC3-B6AA-DF28EBF92EC0} = {9617DEEA-FC09-4BC9-8C13-5608A275A7DD}
+		{085F22A4-97E9-4266-82A6-F7CBEC3B4CAD} = {9617DEEA-FC09-4BC9-8C13-5608A275A7DD}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{25E589B5-FC46-4502-8EFD-76E6706C568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -761,9 +764,13 @@ Global
 		{61B29E3D-0DD8-4B64-8652-21F779A8E447}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{61B29E3D-0DD8-4B64-8652-21F779A8E447}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{61B29E3D-0DD8-4B64-8652-21F779A8E447}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BAAF41B1-A923-46C6-9B1D-5E7B92D8382D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BAAF41B1-A923-46C6-9B1D-5E7B92D8382D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BAAF41B1-A923-46C6-9B1D-5E7B92D8382D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BAAF41B1-A923-46C6-9B1D-5E7B92D8382D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0603746F-A70C-4EC3-B6AA-DF28EBF92EC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0603746F-A70C-4EC3-B6AA-DF28EBF92EC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0603746F-A70C-4EC3-B6AA-DF28EBF92EC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0603746F-A70C-4EC3-B6AA-DF28EBF92EC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{085F22A4-97E9-4266-82A6-F7CBEC3B4CAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{085F22A4-97E9-4266-82A6-F7CBEC3B4CAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{085F22A4-97E9-4266-82A6-F7CBEC3B4CAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{085F22A4-97E9-4266-82A6-F7CBEC3B4CAD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
