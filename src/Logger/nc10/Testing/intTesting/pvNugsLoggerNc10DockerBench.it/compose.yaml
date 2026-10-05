@@ -1,0 +1,33 @@
+name: logger-lab
+
+services:
+  postgres5432:
+    image: postgres:latest
+    container_name: postgres5432
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: dev-only-password
+      
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql1433
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+
+  sqlpad:
+    image: sqlpad/sqlpad:latest
+    container_name: sqlpad
+    ports:
+      - "3000:3000"
+    environment:
+      SQLPAD_DB_IN_MEMORY: "true"
+      SQLPAD_ADMIN: "admin@local.local"
+      SQLPAD_ADMIN_PASSWORD: "admin"
+      SQLPAD_SEED_DATA_PATH: "/etc/sqlpad/seed"
+    volumes:
+      - ./sqlpad/seed:/etc/sqlpad/seed:ro
