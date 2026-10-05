@@ -11,7 +11,8 @@ namespace pvNugsCacheNc10Memory.ut;
 internal sealed class NullLoggerService : ILoggerService
 {
     // ── ILogger ────────────────────────────────────────────────────────────
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+    public void Log<TState>(
+        LogLevel logLevel, EventId eventId, TState state,
         Exception? exception, Func<TState, Exception?, string> formatter) { }
     public bool IsEnabled(LogLevel logLevel) => false;
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -21,7 +22,8 @@ internal sealed class NullLoggerService : ILoggerService
     public void SetTopic(string? topic) { }
 
     // ── ILoggerService – sync overloads ────────────────────────────────────
-    public void Log(string message, SeverityEnu severity = SeverityEnu.Debug,
+    public void Log(
+        string message, SeverityEnu severity = SeverityEnu.Debug,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) { }
 
@@ -55,34 +57,42 @@ internal sealed class NullLoggerService : ILoggerService
 
     // ── ILoggerService – async overloads ───────────────────────────────────
     public Task LogAsync(string message, SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(IEnumerable<string> messages, SeverityEnu severity,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(Exception e, SeverityEnu severity = SeverityEnu.Fatal,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(IMethodResult result,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(string message, string? topic, SeverityEnu severity = SeverityEnu.Debug,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(IEnumerable<string> messages, string? topic, SeverityEnu severity,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(Exception e, string? topic, SeverityEnu severity = SeverityEnu.Fatal,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
     public Task LogAsync(IMethodResult result, string? topic,
+        CancellationToken cancellationToken = default,
         [CallerMemberName] string memberName = "", [CallerFilePath] string filePath = "",
         [CallerLineNumber] int lineNumber = -1) => Task.CompletedTask;
 
