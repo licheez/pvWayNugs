@@ -1,55 +1,59 @@
 # pvNugsLoggerNc10Seri
 
-A Serilog-based console logging implementation for the pvNugsLogger framework, targeting .NET Core 10.0.
+A Serilog-based console logging implementation for the pvNugsLogger framework, targeting .NET 10.
+
+## Overview
+
+This component integrates a console logger with the standard Microsoft logging abstractions using a custom `ILoggerFactory` and a console-specific writer implementation.
+
+It registers:
+
+- `ILogWriter` and `IConsoleLogWriter`
+- `ILoggerFactory` => `SeriLogLoggerFactory`
+- `ISeriConsoleLoggerService`
+- `IConsoleLoggerService`
+- `ILoggerService`
+
+The logger follows the `TryAdd...` registration pattern so repeated startup calls do not create duplicate singleton registrations.
 
 ## Features
 
-- Structured console logging using Serilog
-- Color-coded output based on severity levels
-- Contextual logging support (user ID, company ID, topics)
-- Full integration with Microsoft.Extensions.Logging
-- Both synchronous and asynchronous logging methods
-- Comprehensive exception logging with full stack traces
-- UTC timestamp formatting using invariant culture
-
-## Installation
-
-Install via NuGet Package Manager:
-
-```powershell
-Install-Package pvNugsLoggerNc10Seri
-```
-
-Or using the .NET CLI:
-
-```bash
-dotnet add package pvNugsLoggerNc10Seri
-```
+- Serilog console output
+- Severity filtering via `PvNugsLoggerConfig.MinLogLevel`
+- Integration with `Microsoft.Extensions.Logging.ILoggerFactory`
+- Support for standard `ILogger` usage patterns
+- Context-aware logging via user/company/topic fields
+- Synchronous and asynchronous log APIs
+- Structured exception logging and stack trace handling
+- Compatible with the pvNugs logger abstraction layer
 
 ## Requirements
 
-- .NET Core 10.0 or higher
-- C# 13.0 or higher
+- .NET 10.0 or later
+- C# 13 or later
+- `Microsoft.Extensions.Logging`
+- `Microsoft.Extensions.Options.ConfigurationExtensions`
+- Serilog console sink dependency
 
-## Quick Start
+## Quick start
 
-1. Add to your services in `Program.cs`:
+1. Register the logging services in `Program.cs`:
 
 ```csharp
-builder.Services.AddPvNugsLoggerSeriService(builder.Configuration);
+builder.Services.TryAddPvNugsLoggerSeriService(builder.Configuration);
 ```
 
-2. Configure in `appsettings.json`:
+2. Configure the logger in `appsettings.json`:
 
 ```json
 {
-  "PvNugsLogger": {
-    "MinLevel": "Debug"
+  "PvNugsLoggerConfig": {
+    "MinLogLevel": "Debug"
   }
 }
 ```
 
-3. Inject and use in your code:
+3. Inject and use the logger:
 
 ```csharp
 public class MyService
@@ -63,38 +67,48 @@ public class MyService
 
     public void DoSomething()
     {
-        _logger.Log("Operation started", SeverityEnu.Info);
-
-        // With topic
-        _logger.Log("Processing complete", "OrderProcessor", SeverityEnu.Debug);
-
-        // With user context
         _logger.SetUser("user123", "company456");
-        _logger.Log("User action performed", SeverityEnu.Info);
+        _logger.Log("Operation started", SeverityEnu.Info);
+        _logger.Log("Processing complete", "OrderProcessor", SeverityEnu.Debug);
     }
 }
 ```
 
+## Registration details
+
+The DI extension method is:
+
+```csharp
+services.TryAddPvNugsLoggerSeriService(configuration);
+```
+
+This method configures the writer and logger factory using the `PvNugsLoggerConfig` section and registers the following services as singletons:
+
+- `ILogWriter`
+- `IConsoleLogWriter`
+- `ILoggerFactory`
+- `ISeriConsoleLoggerService`
+- `IConsoleLoggerService`
+- `ILoggerService`
+
+## Notes
+
+- The factory class is `SeriLogLoggerFactory` and is responsible for creating category-specific loggers.
+- The writer class is `SerilogConsoleWriter`.
+- The logger implementation is `SerilogConsoleService`.
+- The provider implementation is `SerilogConsoleLoggerProvider` for provider-based logging scenarios.
+
 ## Dependencies
 
-- .NET Core 10.0
-- `Microsoft.Extensions.Logging.Abstractions` (10.0.9)
-- `Microsoft.Extensions.Options.ConfigurationExtensions` (10.0.9)
-- `Serilog.Sinks.Console` (6.1.1)
-- `pvNugsLoggerNc10Abstractions` (10.0.0)
+- `Microsoft.Extensions.Logging`
+- `Microsoft.Extensions.Options.ConfigurationExtensions`
+- `pvNugsLoggerNc10Abstractions`
+- Serilog console sink package
 
 ## License
 
 MIT License
 
-## Author
-
-Pierre Van Wallendael
-
 ## Repository
 
 [GitHub Repository](https://github.com/licheez/pvWayNugs.git)
-
-## Support
-
-For issues and feature requests, please use the GitHub issue tracker.

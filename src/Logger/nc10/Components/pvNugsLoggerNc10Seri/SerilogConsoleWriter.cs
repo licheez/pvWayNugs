@@ -47,12 +47,16 @@ internal sealed class SerilogConsoleWriter: IConsoleLogWriter
         string? userId, string? companyId, string? topic, 
         SeverityEnu severity, string machineName,
         string memberName, string filePath, int lineNumber, 
-        string message, DateTime dateUtc)
+        string message, DateTime dateUtc,
+        CancellationToken cancellationToken = default)
     {
-        WriteLog(userId, companyId, topic,
-            severity, machineName,
-            memberName, filePath, lineNumber,
-            message, dateUtc);
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            WriteLog(userId, companyId, topic,
+                severity, machineName,
+                memberName, filePath, lineNumber,
+                message, dateUtc);
+        }
         return Task.CompletedTask;
     }
 

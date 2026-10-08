@@ -4,9 +4,9 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>10.0.1</Version>
+        <Version>10.0.2</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>Updated pvNugsLoggerNc10Abstractions dependency from 10.0.0 to 10.0.1</PackageReleaseNotes>
+        <PackageReleaseNotes>Updated pvNugsLoggerNc10Abstractions dependency to 10.0.2; reviewed and completed XML documentation for the DI injector, logger factory, and README; improved metadata consistency for the Serilog console logger component.</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
@@ -20,9 +20,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
-        <PackageReference Include="pvNugsLoggerNc10Abstractions" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.12" />
+        <PackageReference Include="pvNugsLoggerNc10Abstractions" Version="10.0.2" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     </ItemGroup>
 
