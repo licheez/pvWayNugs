@@ -4,6 +4,18 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Version>10.0.0</Version>
+        <Authors>Pierre Van Wallendael</Authors>
+        <PackageReleaseNotes>Initial .NET 10 PostgreSQL logger implementation.</PackageReleaseNotes>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RepositoryType>GitHub</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+        <PackageProjectUrl>https://github.com/licheez/pvWayNugs.git</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/licheez/pvWayNugs.git</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>pvWay Ltd</Copyright>
+        <PackageTags>logging, postgresql, structured-logging, dotnet, net10, async-logging, contextual-logging, enterprise-logging, database-logging, log-writer, log-purging, dependency-injection, thread-safe, retention-policy, schema-validation, npgsql</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,6 +23,14 @@
       <PackageReference Include="Npgsql" Version="10.0.3" />
       <PackageReference Include="pvNugsCsProviderNc10Abstractions" Version="10.0.0" />
       <PackageReference Include="pvNugsLoggerNc10Abstractions" Version="10.0.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="readme.md" Pack="true" PackagePath="\" />
+        <None Update="bin/$(Configuration)\$(TargetFramework)\$(AssemblyName).xml">
+            <Pack>true</Pack>
+            <PackagePath>lib\$(TargetFramework)</PackagePath>
+        </None>
     </ItemGroup>
 
 </Project>

@@ -3,16 +3,16 @@ using pvNugsLoggerNc10Abstractions;
 namespace pvNugsLoggerNc10PgSql;
 
 /// <summary>
-/// Defines the contract for a Microsoft SQL Server-specific log writer implementation.
+/// Defines the contract for a PostgreSQL-specific log writer implementation.
 /// </summary>
 /// <remarks>
 /// <para>
-/// This interface extends <see cref="ISqlLogWriter"/> to provide SQL Server-specific logging capabilities.
-/// It serves as a marker interface that allows for dependency injection scenarios where SQL Server-specific
+/// This interface extends <see cref="ISqlLogWriter"/> to provide PostgreSQL-specific logging capabilities.
+/// It serves as a marker interface that allows dependency injection scenarios where PostgreSQL-specific
 /// implementations need to be distinguished from other SQL database implementations.
 /// </para>
 /// <para>
-/// Implementations of this interface should provide robust, secure, and performant logging to SQL Server databases,
+/// Implementations of this interface should provide robust, secure, and performant logging to PostgreSQL databases,
 /// including features such as:
 /// </para>
 /// <list type="bullet">
@@ -26,14 +26,14 @@ namespace pvNugsLoggerNc10PgSql;
 /// <example>
 /// <code>
 /// // Registration in DI container
-/// services.AddSingleton&lt;IMsSqlLogWriter, MsSqlLogWriter&gt;();
+/// services.AddSingleton&lt;IPgSqlLogWriter, PgSqlLogWriter&gt;();
 /// 
 /// // Usage in a service
 /// public class LoggingService
 /// {
-///     private readonly IMsSqlLogWriter _logWriter;
+///     private readonly IPgSqlLogWriter _logWriter;
 ///     
-///     public LoggingService(IMsSqlLogWriter logWriter)
+///     public LoggingService(IPgSqlLogWriter logWriter)
 ///     {
 ///         _logWriter = logWriter;
 ///     }
@@ -47,8 +47,8 @@ namespace pvNugsLoggerNc10PgSql;
 ///             severity: SeverityEnu.Info,
 ///             machineName: Environment.MachineName,
 ///             memberName: nameof(LogMessageAsync),
-///             filePath: __FILE__,
-///             lineNumber: __LINE__,
+///             filePath: "LoggingService.cs",
+///             lineNumber: 42,
 ///             message: message,
 ///             dateUtc: DateTime.UtcNow);
 ///     }
