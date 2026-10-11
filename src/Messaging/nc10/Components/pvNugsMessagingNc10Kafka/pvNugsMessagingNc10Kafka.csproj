@@ -5,19 +5,13 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
 
-        <Version>10.0.0</Version>
+        <Version>10.0.1</Version>
 
         <Authors>Pierre Van Wallendael</Authors>
         <Copyright>pvWay Ltd</Copyright>
 
         <PackageReleaseNotes>
-            Initial release of the pvNugs Kafka messaging provider for .NET 10.
-            Provides Kafka producer, consumer, typed consumer, and monitoring
-            implementations for the pvNugs messaging abstractions.
-            Supports explicit consumer groups, explicit offset commits,
-            configurable PLAINTEXT, SASL_PLAINTEXT and SASL_SSL security modes,
-            secret-manager-based credential resolution, dummy mode, and modular
-            dependency injection.
+            Updated dependencies
         </PackageReleaseNotes>
         
         <PackageReadmeFile>readme.md</PackageReadmeFile>
@@ -35,12 +29,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Confluent.Kafka"
-                          Version="2.15.1" />
+        <PackageReference Include="Confluent.Kafka" Version="2.16.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions"
                           Version="10.0.12" />
-        <PackageReference Include="pvNugsLoggerNc10Abstractions"
-                          Version="10.0.1" />
+        <PackageReference Include="pvNugsLoggerNc10Abstractions" Version="10.0.2" />
         <PackageReference Include="pvNugsMessagingNc10Abstractions" Version="10.1.0" />
         <PackageReference Include="pvNugsSecretManagerNc10Abstractions"
                           Version="10.0.1" />
