@@ -1,3 +1,5 @@
+using pvNugsLoggerNc10Abstractions;
+
 namespace pvNugsLoggerNc10PgSql;
 
 /// <summary>
@@ -10,6 +12,13 @@ public class PvNugsPgSqlLogWriterConfig
     /// </summary>
     public const string Section = nameof(PvNugsPgSqlLogWriterConfig);
     
+    /// <summary>
+    /// Gets or sets the named connection configuration used by the PostgreSQL cs-provider.
+    /// </summary>
+    /// <remarks>
+    /// This value is passed to <c>IPvNugsPgSqlCsProvider.GetConnectionStringAsync</c> to resolve
+    /// role-based connection strings for reader, application, and owner operations.
+    /// </remarks>
     public string ConnectionStringName { get; set; } = "Default";
 
     /// <summary>
@@ -83,7 +92,7 @@ public class PvNugsPgSqlLogWriterConfig
     /// <strong>Usage in Purge Operations:</strong>
     /// </para>
     /// <para>
-    /// This value is used when <see cref="MsSqlLogWriter.PurgeLogsAsync(IDictionary{SeverityEnu, TimeSpan}?)"/>
+    /// This value is used when <see cref="PgSqlLogWriter.PurgeLogsAsync(IDictionary{SeverityEnu, TimeSpan}?, CancellationToken)"/>
     /// is called with a null retention dictionary parameter, implementing the three-tier decision cascade:
     /// </para>
     /// <list type="number">
@@ -100,13 +109,13 @@ public class PvNugsPgSqlLogWriterConfig
     /// <code>
     /// // appsettings.json
     /// {
-    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///   "PvNugsPgSqlLogWriterConfig": {
     ///     "DefaultRetentionPeriodForFatal": "730.00:00:00"  // 2 years for compliance
     ///   }
     /// }
     /// 
     /// // Or programmatically
-    /// builder.Services.Configure&lt;PvNugsMsSqlLogWriterConfig&gt;(options =&gt;
+    /// builder.Services.Configure&lt;PvNugsPgSqlLogWriterConfig&gt;(options =&gt;
     /// {
     ///     options.DefaultRetentionPeriodForFatal = TimeSpan.FromDays(1095); // 3 years
     /// });
@@ -278,21 +287,21 @@ public class PvNugsPgSqlLogWriterConfig
     /// <code>
     /// // Development environment - longer retention for active debugging
     /// {
-    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///   "PvNugsPgSqlLogWriterConfig": {
     ///     "DefaultRetentionPeriodForTrace": "24:00:00"  // 24 hours
     ///   }
     /// }
     /// 
     /// // Production environment - minimal retention
     /// {
-    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///   "PvNugsPgSqlLogWriterConfig": {
     ///     "DefaultRetentionPeriodForTrace": "00:10:00"  // 10 minutes
     ///   }
     /// }
     /// 
     /// // Testing/CI environment - very short retention
     /// {
-    ///   "PvNugsMsSqlLogWriterConfig": {
+    ///   "PvNugsPgSqlLogWriterConfig": {
     ///     "DefaultRetentionPeriodForTrace": "00:00:30"  // 30 seconds
     ///   }
     /// }
@@ -300,8 +309,23 @@ public class PvNugsPgSqlLogWriterConfig
     /// </remarks>
     public TimeSpan DefaultRetentionPeriodForTrace { get; set; } = TimeSpan.FromHours(1);
 
+    /// <summary>
+    /// Gets or sets a value indicating whether to create a descending date index on the UTC date column.
+    /// </summary>
     public bool IncludeDateIndex { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to create a composite index optimized for purge operations.
+    /// </summary>
     public bool IncludePurgeIndex { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to create a partial index for user-focused queries.
+    /// </summary>
     public bool IncludeUserIndex { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to create a partial index for topic-focused queries.
+    /// </summary>
     public bool IncludeTopicIndex { get; set; } = true;
 }

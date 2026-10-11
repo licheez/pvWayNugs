@@ -3,17 +3,17 @@
 namespace pvNugsLoggerNc10PgSql;
 
 /// <summary>
-/// Represents metadata information about a database table column retrieved from SQL Server's information schema.
+/// Represents metadata information about a database table column retrieved from PostgreSQL's information schema.
 /// </summary>
 /// <remarks>
 /// <para>
-/// This internal class is used by <see cref="MsSqlLogWriter"/> during table schema validation to ensure
+/// This internal class is used by <see cref="PgSqlLogWriter"/> during table schema validation to ensure
 /// that the logging table structure matches expected requirements. It encapsulates column metadata
 /// retrieved from the <c>INFORMATION_SCHEMA.COLUMNS</c> system view.
 /// </para>
 /// <para>
 /// The class is designed to work specifically with the column information returned by queries against
-/// SQL Server's information schema views and expects specific column names in the result set.
+/// PostgreSQL information schema views and expects specific column names in the result set.
 /// </para>
 /// </remarks>
 internal class ColumnInfo
@@ -31,7 +31,7 @@ internal class ColumnInfo
     /// Gets the data type of the database column.
     /// </summary>
     /// <value>
-    /// The SQL Server data type name (e.g., "varchar", "nvarchar", "int", "datetime").
+    /// The PostgreSQL data type name (e.g., "character varying", "character", "integer", "timestamp without time zone").
     /// This value is retrieved from the <c>data_type</c> field in the <c>INFORMATION_SCHEMA.COLUMNS</c> view.
     /// </value>
     public string Type { get; }
@@ -89,7 +89,7 @@ internal class ColumnInfo
     /// </remarks>
     /// <example>
     /// <code>
-    /// // Typical usage within MsSqlLogWriter.CheckTable method
+    /// // Typical usage within PgSqlLogWriter.CheckTableAsync method
     /// using var reader = await cmd.ExecuteReaderAsync();
     /// var columns = new Dictionary&lt;string, ColumnInfo&gt;();
     /// 

@@ -1,0 +1,12 @@
+{
+  "id": "pg5432",
+  "name": "pg5432",
+  "driver": "postgres",
+  "data": {
+    "host": "postgres5432",
+    "port": 5432,
+    "database": "postgres",
+    "username": "postgres",
+    "password": "dev-only-password"
+  }
+}

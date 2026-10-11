@@ -3,7 +3,7 @@ name: logger-lab
 services:
   postgres5432:
     image: postgres:latest
-    container_name: postgres5432
+    container_name: logger-lab-bpostgres5432
     ports:
       - "5432:5432"
     environment:
@@ -11,7 +11,7 @@ services:
       
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: mssql1433
+    container_name: logger-lab-bmssql1433
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
@@ -21,7 +21,7 @@ services:
 
   sqlpad:
     image: sqlpad/sqlpad:latest
-    container_name: sqlpad
+    container_name: logger-lab-bsqlpad
     ports:
       - "3000:3000"
     environment:
