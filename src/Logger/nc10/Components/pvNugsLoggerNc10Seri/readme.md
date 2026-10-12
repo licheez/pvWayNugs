@@ -4,7 +4,10 @@ A Serilog-based console logging implementation for the pvNugsLogger framework, t
 
 ## Overview
 
-This component integrates a console logger with the standard Microsoft logging abstractions using a custom `ILoggerFactory` and a console-specific writer implementation.
+This component integrates a console logger with Microsoft logging abstractions through:
+
+- package-level DI registration (`TryAddPvNugsLoggerSeriService`)
+- provider-based integration (`GetProvider`) for `AddLogging(...).AddProvider(...)` scenarios
 
 It registers:
 
@@ -74,6 +77,19 @@ public class MyService
 }
 ```
 
+## Provider-based usage (optional)
+
+If you need to register directly in the standard `AddLogging` pipeline:
+
+```csharp
+builder.Services.AddLogging(logging =>
+{
+    logging.AddProvider(PvNugsLoggerSeriDi.GetProvider(SeverityEnu.Info));
+});
+```
+
+This path is useful for host-level logging configuration where you want an `ILoggerProvider` instance explicitly.
+
 ## Registration details
 
 The DI extension method is:
@@ -91,12 +107,18 @@ This method configures the writer and logger factory using the `PvNugsLoggerConf
 - `IConsoleLoggerService`
 - `ILoggerService`
 
+For provider-based registration, use:
+
+```csharp
+var provider = PvNugsLoggerSeriDi.GetProvider(SeverityEnu.Debug);
+```
+
 ## Notes
 
 - The factory class is `SeriLogLoggerFactory` and is responsible for creating category-specific loggers.
 - The writer class is `SerilogConsoleWriter`.
 - The logger implementation is `SerilogConsoleService`.
-- The provider implementation is `SerilogConsoleLoggerProvider` for provider-based logging scenarios.
+- The provider implementation is `SerilogConsoleLoggerProvider` and is exposed by `GetProvider(...)` for provider-based logging scenarios.
 
 ## Dependencies
 

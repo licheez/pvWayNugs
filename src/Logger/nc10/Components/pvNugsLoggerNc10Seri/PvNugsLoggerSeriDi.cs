@@ -16,8 +16,25 @@ namespace pvNugsLoggerNc10Seri;
 /// configuration, and exposes the logger through the abstractions used by the rest of the application.
 /// </para>
 /// <para>
-/// The methods use the <c>TryAdd...</c> pattern to preserve existing registrations and avoid duplicate service
-/// definitions when the logger is configured from multiple initialization paths.
+/// Two integration styles are available:
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <description>
+/// <see cref="TryAddPvNugsLoggerSeriService(IServiceCollection, IConfiguration)"/> for the package-level
+/// registration path used in this library.
+/// </description>
+/// </item>
+/// <item>
+/// <description>
+/// <see cref="GetProvider(SeverityEnu)"/> when a caller wants to plug an <see cref="ILoggerProvider"/>
+/// into the standard <c>AddLogging(...)</c> pipeline.
+/// </description>
+/// </item>
+/// </list>
+/// <para>
+/// The registration methods use the <c>TryAdd...</c> pattern to preserve existing registrations and avoid
+/// duplicate service definitions when logger setup is invoked multiple times.
 /// </para>
 /// </remarks>
 public static class PvNugsLoggerSeriDi
@@ -78,7 +95,7 @@ public static class PvNugsLoggerSeriDi
     /// <item>Registers the console log writer in the container.</item>
     /// <item>Binds <see cref="PvNugsLoggerConfig"/> from the configuration section.</item>
     /// <item>Registers a <see cref="ILoggerFactory"/> implementation for the Serilog console pipeline.</item>
-    /// <item>Registers the concrete concrete service as <see cref="ISeriConsoleLoggerService"/>,
+    /// <item>Registers the concrete service as <see cref="ISeriConsoleLoggerService"/>,
     /// <see cref="IConsoleLoggerService"/>, and <see cref="ILoggerService"/>.</item>
     /// </list>
     /// <para>
@@ -112,5 +129,21 @@ public static class PvNugsLoggerSeriDi
         );
 
         return services;
+    }
+
+    /// <summary>
+    /// Creates a standalone Serilog console <see cref="ILoggerProvider"/> instance.
+    /// </summary>
+    /// <param name="minLogLevel">
+    /// Minimum severity level enforced by the provider-created logger services.
+    /// </param>
+    /// <returns>
+    /// A provider that can be attached to the Microsoft logging pipeline, for example via
+    /// <c>services.AddLogging(builder =&gt; builder.AddProvider(...))</c>.
+    /// </returns>
+    public static ILoggerProvider GetProvider(
+        SeverityEnu minLogLevel = SeverityEnu.Trace)
+    {
+        return new SerilogConsoleLoggerProvider(minLogLevel);
     }
 }
