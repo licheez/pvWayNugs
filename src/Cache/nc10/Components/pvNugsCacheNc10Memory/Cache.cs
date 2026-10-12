@@ -49,7 +49,8 @@ internal class Cache(
 
         cache.Set(key, value, cacheEntryOptions);
 
-        await logger.LogAsync($"Cached item with key: {key}", SeverityEnu.Trace);
+        await logger.LogAsync(
+            $"Cached item with key: {key}", SeverityEnu.Trace, cancellationToken);
 
         await Task.CompletedTask;
     }
@@ -74,8 +75,11 @@ internal class Cache(
             : default;
 
         if (result == null)
-            await logger.LogAsync($"Cache miss for key: {key}", SeverityEnu.Trace);
-        else await logger.LogAsync($"Cache hit for key: {key}", SeverityEnu.Trace);
+            await logger.LogAsync(
+                $"Cache miss for key: {key}", SeverityEnu.Trace, cancellationToken);
+        else 
+            await logger.LogAsync(
+                $"Cache hit for key: {key}", SeverityEnu.Trace, cancellationToken);
 
         return await Task.FromResult(result);
     }
@@ -95,7 +99,8 @@ internal class Cache(
 
         cache.Remove(key);
 
-        await logger.LogAsync($"Removed item with key: {key}", SeverityEnu.Trace);
+        await logger.LogAsync(
+            $"Removed item with key: {key}", SeverityEnu.Trace, cancellationToken);
 
         await Task.CompletedTask;
     }
