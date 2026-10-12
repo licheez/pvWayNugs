@@ -57,7 +57,7 @@ public static class PgSqlLoggerDi
     /// <see cref="PvNugsPgSqlLogWriterConfig.Section"/> and <see cref="PvNugsLoggerConfig.Section"/>.
     /// </para>
     /// </remarks>
-    public static IServiceCollection TryAddPvNugsPgSqlLoggerNc10PgSql(
+    public static IServiceCollection TryAddPvNugsLoggerPgSql(
         this IServiceCollection services,
         IConfiguration config)
     {

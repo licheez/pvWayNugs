@@ -4,9 +4,9 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>10.0.1</Version>
+        <Version>10.0.2</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>Added pvWay logo</PackageReleaseNotes>
+        <PackageReleaseNotes>Fixing Di injector name</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>

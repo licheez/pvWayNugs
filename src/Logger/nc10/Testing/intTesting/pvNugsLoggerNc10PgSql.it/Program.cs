@@ -28,7 +28,7 @@ var services = new ServiceCollection();
 services.AddTransient<IPvNugsPgSqlCsProvider, TestBenchCsProvider>();
 
 services.TryAddPvNugsLoggerSeriService(config)
-    .TryAddPvNugsPgSqlLoggerNc10PgSql(config);
+    .TryAddPvNugsLoggerPgSql(config);
 
 var sp = services.BuildServiceProvider();
 var cLogger = sp.GetRequiredService<IConsoleLoggerService>();
