@@ -137,7 +137,8 @@ internal class SecretManager(
         var cacheKeyId = GetCacheKeyId(cacheKey);
         await logger.LogAsync(
             $"Getting static secrets. {GetParameterSummary(parameters)}; cacheKeyId={cacheKeyId}",
-            SeverityEnu.Trace);
+            SeverityEnu.Trace,
+            cancellationToken);
 
         var cached = await cache.GetAsync<IReadOnlyDictionary<string, string>>(
             cacheKey, cancellationToken);
@@ -156,7 +157,7 @@ internal class SecretManager(
         }
         catch (Exception e)
         {
-            await logger.LogAsync(e, SeverityEnu.Error);
+            await logger.LogAsync(e, SeverityEnu.Error, cancellationToken);
             throw new PvNugsSecretManagerException(e);
         }
     }
@@ -194,7 +195,8 @@ internal class SecretManager(
         var cacheKeyId = GetCacheKeyId(cacheKey);
         await logger.LogAsync(
             $"Getting static secret. {GetParameterSummary(parameters)}; cacheKeyId={cacheKeyId}",
-            SeverityEnu.Trace);
+            SeverityEnu.Trace,
+            cancellationToken);
         var cached = await cache.GetAsync<string>(
             cacheKey, cancellationToken);
         if (cached != null) return cached;
@@ -213,7 +215,7 @@ internal class SecretManager(
         }
         catch (Exception e)
         {
-            await logger.LogAsync(e, SeverityEnu.Error);
+            await logger.LogAsync(e, cancellationToken:cancellationToken);
             throw new PvNugsSecretManagerException(e);
         }
     }
@@ -265,7 +267,8 @@ internal class SecretManager(
         var cacheKeyId = GetCacheKeyId(cacheKey);
         await logger.LogAsync(
             $"Getting dynamic secret. {GetParameterSummary(parameters)}; cacheKeyId={cacheKeyId}",
-            SeverityEnu.Trace);
+            SeverityEnu.Trace,
+            cancellationToken);
 
         var cached = await cache.GetAsync<IPvNugsDynamicCredential>(
             cacheKey, cancellationToken);
@@ -284,7 +287,7 @@ internal class SecretManager(
         catch (Exception e)
         {
             // Dynamic flow propagates provider exceptions, but we still log for observability.
-            await logger.LogAsync(e, SeverityEnu.Error);
+            await logger.LogAsync(e, cancellationToken:cancellationToken);
             throw;
         }
 
