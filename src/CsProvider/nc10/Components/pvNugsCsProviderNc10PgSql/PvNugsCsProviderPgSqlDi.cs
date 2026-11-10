@@ -219,7 +219,7 @@ public static class PvNugsCsProviderPgSqlDi
         });
 
         // Factory-based registration for mode-specific constructor selection
-        services.TryAddSingleton<IPvNugsCsProvider>(serviceProvider =>
+        services.TryAddSingleton<IPvNugsPgSqlCsProvider>(serviceProvider =>
         {
             try
             {
@@ -234,8 +234,8 @@ public static class PvNugsCsProviderPgSqlDi
         });
 
         // Register specific interface
-        services.TryAddSingleton<IPvNugsPgSqlCsProvider>(serviceProvider =>
-            (CsProvider)serviceProvider.GetRequiredService<IPvNugsCsProvider>());
+        services.TryAddSingleton<IPvNugsCsProvider>(serviceProvider =>
+            serviceProvider.GetRequiredService<IPvNugsPgSqlCsProvider>());
 
         return services;
     }
