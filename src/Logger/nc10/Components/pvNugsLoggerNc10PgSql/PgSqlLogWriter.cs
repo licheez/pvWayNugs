@@ -53,7 +53,7 @@ public sealed class PgSqlLogWriter : IPgSqlLogWriter
     {
         _csp = csp ?? throw new ArgumentNullException(nameof(csp));
         _config = (options ?? throw new ArgumentNullException(nameof(options))).Value;
-        _schemaName = csp.Schema;
+        _schemaName = csp.GetSchema(_config.ConnectionStringName);
         _tableName = _config.TableName;
         _userIdColumnName = _config.UserIdColumnName;
         _companyIdColumnName = _config.CompanyIdColumnName;

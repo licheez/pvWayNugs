@@ -4,9 +4,9 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>10.0.2</Version>
+        <Version>10.0.3</Version>
         <Authors>Pierre Van Wallendael</Authors>
-        <PackageReleaseNotes>Fixing Di injector name</PackageReleaseNotes>
+        <PackageReleaseNotes>Update schema name retrieval in PgSqlLogWriter to use connection string name</PackageReleaseNotes>
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RepositoryType>GitHub</RepositoryType>
