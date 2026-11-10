@@ -62,6 +62,16 @@ public class PvNugsCsProviderPgSqlConfig
     }
 
     /// <summary>
+    /// Gets or sets the unique name/identifier for this configuration row.
+    /// Used to distinguish between multiple PostgreSQL connection configurations.
+    /// </summary>
+    public string Name
+    {
+        get     => Row0.Name;  
+        set => Row0.Name = value;
+    }
+    
+    /// <summary>
     /// Gets or sets the PostgreSQL server hostname or IP address.
     /// Used directly in the PostgreSQL connection string as the Server parameter.
     /// </summary>
